@@ -1462,9 +1462,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 result.Index,
                 selectorLabel,
                 result.Label,
-                BuildPatternChartBars("Outputs", result.Outputs, "#D6453D", -0.1, 1.1),
-                BuildPatternChartBars("Targets", result.Targets ?? Array.Empty<double>(), "#2C67C7", -0.1, 1.1),
-                BuildPatternChartBars("Inputs", result.Inputs, "#2F9C42", -1.1, 1.1));
+                BuildPatternChartBars("Outputs", "output", result.Outputs, "#D6453D", -0.1, 1.1),
+                BuildPatternChartBars("Targets", "target", result.Targets ?? Array.Empty<double>(), "#2C67C7", -0.1, 1.1),
+                BuildPatternChartBars("Inputs", "input", result.Inputs, "#2F9C42", -1.1, 1.1));
         }).ToArray();
 
         return new PatternPlotSession("Show Patterns and Outputs", patterns);
@@ -1656,7 +1656,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(text.Trim('-')) ? "signalweave" : text.Trim('-');
     }
 
-    private static IReadOnlyList<PatternChartBar> BuildPatternChartBars(string chartTitle, IReadOnlyList<double> values, string fill, double minValue, double maxValue)
+    private static IReadOnlyList<PatternChartBar> BuildPatternChartBars(string chartTitle, string categoryPrefix, IReadOnlyList<double> values, string fill, double minValue, double maxValue)
     {
         const double plotHeight = 100;
         const double left = 34;
@@ -1678,7 +1678,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             bars.Add(new PatternChartBar(
                 chartTitle,
-                $"unit {index + 1}",
+                $"{categoryPrefix}{index + 1}",
                 barX,
                 barTop,
                 barWidth,

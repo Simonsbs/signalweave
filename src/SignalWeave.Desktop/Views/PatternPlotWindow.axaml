@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         x:Class="SignalWeave.Desktop.Views.PatternPlotWindow"
         x:DataType="vm:PatternPlotWindowViewModel"
-        Width="860"
-        Height="640"
+        Width="800"
+        Height="600"
         Background="#E1E1E1"
         Title="{Binding WindowTitle}">
 

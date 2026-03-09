@@ -63,6 +63,7 @@ Source basis used for this implementation:
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
+  - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
 
