@@ -81,6 +81,7 @@ Source basis used for this implementation:
   - weight legend and axis-based error progress plot
   - progress bar state with `Untrained` and cycle-count display
   - per-step training progress now updates the desktop progress bar value/string during active learning instead of only jumping before and after the run
+  - the error-progress chart now advances live during training instead of waiting until the run completes
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - startup now mirrors BasicProp more closely: a default feed-forward network is loaded with no patterns, and the initial desktop note prompts the user to load patterns before running simulations
@@ -106,7 +107,7 @@ Source basis used for this implementation:
   - `Configure Network...` now opens from the loaded network definition rather than reparsing the editor first
   - `Network Configuration -> Apply` now updates the live desktop network without closing the dialog, matching the original workflow more closely
   - network configuration sliders, bias column, and centered action buttons now follow the BasicProp dialog proportions more closely
-  - popup weight display now uses numeric layer entries plus `Rec` for SRN recurrent weights, a matrix-sized Hinton-style frame, and a compact left-aligned bottom control strip closer to the original window
+  - popup weight display now uses numeric layer entries plus `Rec` for SRN recurrent weights, a matrix-sized Hinton-style frame, a compact left-aligned bottom control strip, and live `Refresh` behavior against the current engine weights
 
 ## Remaining parity work
 

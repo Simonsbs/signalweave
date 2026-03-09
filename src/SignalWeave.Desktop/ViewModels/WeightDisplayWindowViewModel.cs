@@ -14,13 +14,14 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     private const double CellSize = 96;
     private const double CellInset = 4;
     private const double CanvasPadding = 10;
-    private readonly WeightSet _weights;
-    private readonly IReadOnlyList<WeightLayerOption> _layerOptions;
+    private readonly WeightDisplaySession _session;
+    private WeightSet _weights;
+    private IReadOnlyList<WeightLayerOption> _layerOptions = [];
 
     public WeightDisplayWindowViewModel()
         : this(new WeightDisplaySession(
             "Weights",
-            new WeightSet(
+            () => new WeightSet(
                 new double[,] { { -0.8, -0.7 }, { 0.9, 0.2 }, { -0.1, 0.6 } },
                 new double[,] { { 0.8 }, { -0.4 }, { 0.1 } })))
     {
@@ -28,16 +29,13 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
 
     public WeightDisplayWindowViewModel(WeightDisplaySession session)
     {
-        _weights = session.Weights.Clone();
-        BaseTitle = "Weights";
-
-        _layerOptions = BuildLayerOptions(_weights).ToArray();
-        WeightLayerOptions = new ReadOnlyCollection<string>(_layerOptions.Select(option => option.Id).ToArray());
-        SelectedWeightLayer = WeightLayerOptions[0];
-        RebuildWeightMap();
+        _session = session;
+        _weights = session.WeightSource();
+        BaseTitle = session.Title;
+        RebuildLayerOptions(preserveSelection: false);
     }
 
-    public IReadOnlyList<string> WeightLayerOptions { get; }
+    public ObservableCollection<string> WeightLayerOptions { get; } = [];
     public ObservableCollection<WeightGlyphItem> WeightGlyphs { get; } = [];
 
     [ObservableProperty]
@@ -69,7 +67,8 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     [RelayCommand]
     private void Refresh()
     {
-        RebuildWeightMap();
+        _weights = _session.WeightSource();
+        RebuildLayerOptions(preserveSelection: true);
     }
 
     private void RebuildWeightMap()
@@ -113,7 +112,37 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
         }
 
         WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
-        WindowTitle = BaseTitle;
+        WindowTitle = $"{BaseTitle} - {layer.Id}";
+    }
+
+    private void RebuildLayerOptions(bool preserveSelection)
+    {
+        var previousSelection = SelectedWeightLayer;
+        _layerOptions = BuildLayerOptions(_weights).ToArray();
+
+        WeightLayerOptions.Clear();
+        foreach (var option in _layerOptions)
+        {
+            WeightLayerOptions.Add(option.Id);
+        }
+
+        if (WeightLayerOptions.Count == 0)
+        {
+            SelectedWeightLayer = string.Empty;
+            WeightGlyphs.Clear();
+            WeightMapSummary = "No weights loaded.";
+            WindowTitle = BaseTitle;
+            return;
+        }
+
+        if (preserveSelection && !string.IsNullOrWhiteSpace(previousSelection) && WeightLayerOptions.Contains(previousSelection))
+        {
+            SelectedWeightLayer = previousSelection;
+            RebuildWeightMap();
+            return;
+        }
+
+        SelectedWeightLayer = WeightLayerOptions[0];
     }
 
     private static IEnumerable<WeightLayerOption> BuildLayerOptions(WeightSet weights)

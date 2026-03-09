@@ -83,6 +83,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - native desktop workflows for loading/saving `signalweave-project/v1` and `signalweave-checkpoint/v1` documents from the `Network` menu
 - progress state now follows cumulative completed training cycles more closely across repeated `Train` runs
 - per-step training progress now updates the progress display during active learning instead of only changing at the start and end of a run
+- the error-progress plot now updates live during active learning instead of only after the run completes
 - right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
 - explicit controller activity states now keep `Train` / `continue` aligned with BasicProp, so test actions no longer flip the train button to `continue`
 - train/test actions now enter a real busy state so the control-panel labels, combos, Batch Update checkbox, pattern selector, and run buttons disable during active controller work more like BasicProp’s `SimControl.checkControls()`
@@ -116,7 +117,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - the visible menu labels now mirror the BasicProp wording more closely by removing extra ellipses and non-reference top-level actions
 - network configuration `Apply` now updates the live desktop state without closing the dialog
 - network configuration styling now follows the BasicProp dialog more closely, with centered `OK` / `Apply` / `Cancel` buttons and tighter slider/bias layout
-- weight display now uses a matrix-sized Hinton-style frame with numeric layer selectors plus `Rec` for SRN recurrent weights and a compact BasicProp-like bottom control strip
+- weight display now uses a matrix-sized Hinton-style frame with numeric layer selectors plus `Rec` for SRN recurrent weights, a compact BasicProp-like bottom control strip, and a live `Refresh` action against the current engine weights
 - utility-window launches stay quiet in the main console, matching BasicProp more closely
 - in-place analysis/refresh actions also stay quiet unless they actually produce user-facing output or a note
 - reset and hidden-activation export no longer emit synthetic console lines

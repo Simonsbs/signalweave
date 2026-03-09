@@ -242,6 +242,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var patternSet = _patternSet!;
             var steps = GetLearningStepsValue();
             var startingCycles = engine.CompletedCycles;
+            var liveHistory = new List<TrainingPoint>(steps);
             ProgressMaximum = Math.Max(engine.CompletedCycles + steps, 1);
             ProgressValue = engine.CompletedCycles;
             ProgressLabel = engine.CompletedCycles == 0
@@ -249,9 +250,12 @@ public partial class MainWindowViewModel : ViewModelBase
                 : engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
             var progress = new Progress<TrainingPoint>(point =>
             {
+                liveHistory.Add(point);
                 var completedCycles = startingCycles + point.Epoch;
                 ProgressValue = completedCycles;
                 ProgressLabel = completedCycles.ToString(CultureInfo.InvariantCulture);
+                ErrorProgressPoints = BuildErrorPolyline(liveHistory);
+                UpdateErrorPlotScale(liveHistory);
             });
 
             await WithBusyControllerAsync(ControllerActivity.Learning, async () =>
@@ -1667,7 +1671,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         EnsureContext(resetWeights: false);
         RebuildWeightMap();
-        return new WeightDisplaySession(_definition!.Name, _engine!.Weights.Clone());
+        return new WeightDisplaySession("Weights", () => _engine!.Weights.Clone());
     }
 
     public PatternOutputsSnapshot CreatePatternOutputsSnapshot()
@@ -2077,7 +2081,7 @@ public sealed record WeightGlyphItem(double X, double Y, double CellWidth, doubl
 public sealed record PatternOutputRow(int Index, string Label, string Inputs, string Targets, string Outputs, string Error);
 public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);
 public sealed record TimeSeriesPlotOption(string Id, string Label, string Summary, IReadOnlyList<double> Values, string Stroke);
-public sealed record WeightDisplaySession(string Title, WeightSet Weights);
+public sealed record WeightDisplaySession(string Title, Func<WeightSet> WeightSource);
 public sealed record TextReportSnapshot(string Title, string Text);
 public sealed record PatternOutputsSnapshot(string Title, string Summary, IReadOnlyList<PatternOutputRow> Rows);
 public sealed record TimeSeriesPlotSession(

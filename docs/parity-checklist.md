@@ -58,15 +58,15 @@ Status legend:
 - `[in-progress]` detached message window
 - `[done]` modal invalid-value dialogs
 - `[done]` `SimControl.checkPatternsAvailable()` note/modal routing
-- `[in-progress]` error-progress chart
+- `[done]` error-progress chart
 
 ## Weights workflows
 
 - `[in-progress]` Hinton-style weight window
 - `[done]` SignalWeave-native weight persistence
 - `[done]` separate FF and SRN weight-load workflows
-- `[in-progress]` layer switching
-- `[in-progress]` refresh behavior
+- `[done]` layer switching
+- `[done]` refresh behavior
 - `[todo]` screenshot-verified visual parity
 
 ## Patterns workflows
