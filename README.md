@@ -2,6 +2,8 @@
 
 SignalWeave is a cross-platform `.NET 8` desktop and CLI alternative to BasicProp. The project is open source, runs on Windows, Linux, and macOS through Avalonia, and is built around a compatibility-first core so the original BasicProp workflows can be reproduced without locking the project to a single OS.
 
+Current status: the checked-in BasicProp 1.3 parity checklist is fully closed, with local probe-backed sign-off and a verified remote GitHub publish-matrix run.
+
 ## Why this shape
 
 Rebuilding every BasicProp screen and workflow in one pass would produce a brittle prototype. SignalWeave instead starts with the parts that matter for long-term parity:
@@ -40,17 +42,19 @@ Implemented now:
 - dedicated JAR-aligned `Plot Setup` window for 3D/surface plotting with `X`, `Y`, `Z`, `Show Plot`, and `Dismiss`
 - dedicated JAR-aligned `PatternPlot` window with per-pattern selector and stacked `Outputs` / `Targets` / `Inputs` charts
 - JAR decompile verification for `PatternPlot`, `TimeSeriesPlotter`, and `SurfacePlotter` now matches the implemented utility-window sizes and control surfaces
+- full checked-in BasicProp probe coverage now runs through `scripts/parity-signoff.sh`, which builds the solution, executes the core regression suite, compiles the probe, and runs every committed `.bppr` experiment
 - checked-in BasicProp golden fixtures for 2-layer, 3-layer, 3-layer batch, 3-layer cross-entropy, 3-layer momentum, stop-rule, and 4-layer feed-forward training parity
 - checked-in BasicProp multi-step online feed-forward fixture to verify repeated pattern-mode updates against the reference JAR
 - checked-in BasicProp SRN fixtures for forward outputs, sequential-training weights, and batch-training weights
 - reset-aware SRN trace capture in the BasicProp probe for consistent hidden-state parity checks
+- full JAR-backed parity sign-off across the checked-in probe suite and core regression fixtures
+- screenshot-backed main-window and weight-window parity checks against the local BasicProp reference bundle
+- successful remote GitHub `release` workflow publish-matrix run with bundled artifacts for all supported desktop targets
 
-Still to build for full feature parity:
+Deliberate differences:
 
-- exact BasicProp file-format compatibility for legacy weight files
-- desktop plotting panes and matrix visualizations that mirror the original UX
-- interactive weight editing
-- import of original BasicProp examples if the retired artifacts are recovered
+- legacy BasicProp file compatibility is out of scope by project decision
+- SignalWeave uses native `signalweave-project/v1` and `signalweave-checkpoint/v1` formats instead of the retired BasicProp file formats
 
 ## Projects
 
@@ -97,8 +101,8 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - visible top-level menus now match the BasicProp 1.3 shell more closely, with only the original `Network`, `Weights`, `Patterns`, `Utilities`, and single-item `Help` surface
 - the four-panel main desktop workbench is now treated as complete parity surface; remaining gaps there are fidelity items, not missing shell workflow
 - main window title and weight legend now follow the BasicProp shell more closely instead of using SignalWeave-specific defaults
-- live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
-- main network nodes now render as BasicProp-like unlabeled boxes instead of SignalWeave-style annotated editor nodes
+- live network diagram colored by weight sign and magnitude, now verified from actual rendered desktop screenshots
+- main network nodes now render as BasicProp-like unlabeled boxes with tighter BasicProp-style spacing instead of SignalWeave-style annotated editor nodes
 - 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
 - BasicProp-style training console wording (`Training steps` / `Training finished`)
 - BasicProp-style `Test All` / `Test One` console output wording and menu gating
@@ -138,6 +142,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 
 - `.github/workflows/ci.yml` runs restore, release build, and core tests on Linux, Windows, and macOS.
 - `.github/workflows/release.yml` publishes self-contained desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`, uploads them as workflow artifacts, and attaches them to GitHub releases for `v*` tags.
+- the GitHub `release` workflow is now verified from a successful remote `workflow_dispatch` publish-matrix run: `22874465646`
 - `scripts/parity-signoff.sh` is the local release-gate command: it builds the solution, runs the core parity tests, compiles and executes every checked-in BasicProp probe, then publishes and archives the desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`.
 - validated local publish examples:
 

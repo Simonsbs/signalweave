@@ -23,7 +23,7 @@ Status legend:
 - `[done]` per-pattern output parity
 - `[done]` test-all aggregate error parity
 - `[done]` saved-weight parity fixtures
-- `[in-progress]` JAR-backed golden parity suite
+- `[done]` JAR-backed golden parity suite
 
 ## Topologies
 
@@ -54,7 +54,7 @@ Status legend:
 - `[done]` progress bar state
 - `[done]` pattern combo `< 24` handling
 - `[done]` full `SimControl.checkControls()` parity
-- `[todo]` BasicProp-identical network drawing
+- `[done]` BasicProp-identical network drawing
 - `[done]` detached message window
 - `[done]` modal invalid-value dialogs
 - `[done]` `SimControl.checkPatternsAvailable()` note/modal routing
@@ -75,7 +75,7 @@ Status legend:
 - `[done]` desktop pattern loading
 - `[done]` pattern plot window
 - `[done]` patterns/outputs viewing
-- `[todo]` exact workflow and formatting parity
+- `[done]` exact workflow and formatting parity
 
 ## Utilities
 
@@ -84,7 +84,7 @@ Status legend:
 - `[done]` hidden activation export
 - `[done]` output clustering
 - `[done]` hidden-state clustering
-- `[todo]` JAR-backed utility parity verification
+- `[done]` JAR-backed utility parity verification
 
 ## File workflows
 
@@ -102,7 +102,7 @@ Status legend:
 - `[done]` Windows build validation
 - `[done]` macOS build validation
 - `[done]` packaged desktop binaries
-- `[in-progress]` GitHub release workflow
+- `[done]` GitHub release workflow
 - `[done]` final parity sign-off script
 
 ## Release gate

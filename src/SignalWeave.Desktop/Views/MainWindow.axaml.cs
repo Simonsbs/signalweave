@@ -97,8 +97,12 @@ public partial class MainWindow : Window
                 Height = node.Height,
                 Background = Brush.Parse(node.Fill),
                 BorderBrush = Brush.Parse(node.Stroke),
-                BorderThickness = new Thickness(1.2),
-                Child = new TextBlock
+                BorderThickness = new Thickness(1)
+            };
+
+            if (!string.IsNullOrWhiteSpace(node.Label))
+            {
+                border.Child = new TextBlock
                 {
                     Text = node.Label,
                     TextAlignment = TextAlignment.Center,
@@ -106,8 +110,8 @@ public partial class MainWindow : Window
                     VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                     FontWeight = FontWeight.SemiBold,
                     Foreground = Brush.Parse("#4A4A4A")
-                }
-            };
+                };
+            }
 
             Canvas.SetLeft(border, node.X);
             Canvas.SetTop(border, node.Y);

@@ -598,24 +598,33 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        const double inputX = 165;
-        const double hiddenX = 285;
-        const double hidden2X = 405;
-        const double outputX = 525;
-        const double nodeWidth = 48;
+        const double nodeWidth = 50;
         const double nodeHeight = 40;
-        const double biasWidth = 50;
-        const double biasHeight = 54;
-        const double inputBiasX = 105;
-        const double hiddenBiasX = 225;
-        const double secondHiddenBiasX = 345;
+        const double biasWidth = 54;
+        const double biasHeight = 58;
 
-        var inputYs = BuildLane(_definition.InputUnits, 120, 350);
-        var hiddenYs = BuildLane(_definition.HiddenUnits, 90, 300);
+        var inputX = _definition.IsDirectFeedForward
+            ? 175
+            : _definition.HasSecondHiddenLayer
+                ? 140
+                : 165;
+        var hiddenX = _definition.HasSecondHiddenLayer ? 265 : 295;
+        var hidden2X = _definition.HasSecondHiddenLayer ? 390 : 0;
+        var outputX = _definition.IsDirectFeedForward
+            ? 390
+            : _definition.HasSecondHiddenLayer
+                ? 515
+                : 485;
+        var inputBiasX = inputX - 65;
+        var hiddenBiasX = hiddenX - 65;
+        var secondHiddenBiasX = hidden2X > 0 ? hidden2X - 65 : 0;
+
+        var inputYs = BuildLane(_definition.InputUnits, 145, 275);
+        var hiddenYs = BuildLane(_definition.HiddenUnits, 95, 255);
         var secondHiddenYs = _definition.HasSecondHiddenLayer
-            ? BuildLane(_definition.SecondHiddenUnits, 90, 300)
+            ? BuildLane(_definition.SecondHiddenUnits, 95, 255)
             : [];
-        var outputYs = BuildLane(_definition.OutputUnits, 160, 240);
+        var outputYs = BuildLane(_definition.OutputUnits, 165, 225);
         var maxWeight = CalculateMaxWeight(_engine.Weights);
         UpdateWeightLegend(maxWeight);
 
@@ -1299,7 +1308,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private static double WeightThickness(double weight, double maxWeight)
     {
-        return 0.8 + (Math.Abs(weight) / maxWeight * 3.8);
+        return 0.7 + (Math.Abs(weight) / maxWeight * 2.6);
     }
 
     private static string PickNearest(IEnumerable<string> options, double value)

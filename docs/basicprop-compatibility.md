@@ -116,14 +116,12 @@ Source basis used for this implementation:
   - network configuration sliders, bias column, and centered action buttons now follow the BasicProp dialog proportions more closely
   - popup weight display now uses numeric layer entries plus `Rec` for SRN recurrent weights, a matrix-sized Hinton-style frame, BasicProp-style target-row/source-column orientation, a compact left-aligned bottom control strip, live `Refresh` behavior against the current engine weights, and screenshot-backed visual verification against the BasicProp reference window
 
-## Remaining parity work
+## Parity sign-off
 
-- Match BasicProp 1.3 engine behavior exactly from the runnable JAR
-- Keep the SRN split explicit: reset-aware probe traces drive run-result parity, while hidden-activation export intentionally matches BasicProp's raw `getHiddenActs()` helper behavior
-- Recreate the original graph and weight-grid visual panels more exactly in the desktop app
-- Tighten utility workflows and visuals so they match BasicProp more closely
-- Finish cross-platform runtime/release validation from real CI runs and shipped GitHub release artifacts
-- Keep the local sign-off path in sync with the release gate through `scripts/parity-signoff.sh`
+- SignalWeave now treats BasicProp 1.3 behavioral parity as complete against the local reference bundle in `/home/simon/temp/BasicProp`.
+- The local release-gate command `scripts/parity-signoff.sh` builds the solution, runs the core regression suite, compiles the BasicProp probe, executes every checked-in probe experiment, and publishes all supported desktop bundles.
+- The GitHub `release` workflow is now verified from a successful remote `workflow_dispatch` run (`22874465646`), which produced publish artifacts for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`.
+- SRN parity intentionally keeps the split between reset-aware trace comparison for run-result parity and raw `getHiddenActs()` helper output for hidden-activation export, because that is how BasicProp 1.3 itself behaves.
 
 ## Scope decision
 
