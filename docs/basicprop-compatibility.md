@@ -76,6 +76,7 @@ Source basis used for this implementation:
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
   - utility-window launches no longer inject extra console status text for weight, pattern, time-series, or 3D plot windows, matching the original controller more closely
   - tab-only utility refresh and analysis actions no longer inject synthetic console status text when they simply update in-place views
+  - `Reset` and hidden-activation export now stay quiet in the main console, matching the original controller's silent action flow more closely
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export

@@ -99,6 +99,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
 - utility-window launches stay quiet in the main console, matching BasicProp more closely
 - in-place analysis/refresh actions also stay quiet unless they actually produce user-facing output or a note
+- reset and hidden-activation export no longer emit synthetic console lines
 - a detached message-log window under `Help`, mirroring the original BasicProp message-frame workflow
 - hidden-activation export to CSV from the desktop app
 

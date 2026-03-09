@@ -207,7 +207,6 @@ public partial class MainWindowViewModel : ViewModelBase
             UtilityPlotMarkers.Clear();
             UtilityPlotPoints = "0,110 240,110";
             UtilityPlotSummary = "No utility plot prepared.";
-            ConsoleText = $"Reset {_definition!.Name}.{Environment.NewLine}{_definition.ToSummary()}";
         });
     }
 
@@ -372,7 +371,6 @@ public partial class MainWindowViewModel : ViewModelBase
             var run = EnsureRun();
             var path = Path.Combine(Path.GetTempPath(), $"signalweave-hidden-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
             File.WriteAllText(path, BuildHiddenActivationCsv(run));
-            ConsoleText = $"Exported hidden activations to {path}";
             AnalysisText = $"Hidden activations exported:{Environment.NewLine}{path}";
         });
     }
