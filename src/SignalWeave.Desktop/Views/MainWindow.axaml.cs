@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Specialized;
 using System.IO;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -302,6 +303,20 @@ public partial class MainWindow : Window
             {
                 _messageWindow.Activate();
             }
+
+            return Task.CompletedTask;
+        });
+    }
+
+    private async void OpenRepository_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(() =>
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://github.com/Simonsbs/signalweave",
+                UseShellExecute = true
+            });
 
             return Task.CompletedTask;
         });

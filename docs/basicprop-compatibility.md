@@ -48,6 +48,7 @@ Source basis used for this implementation:
   - desktop save/load workflows for networks and weights, plus pattern loading
   - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
   - screenshot-driven four-panel main workbench layout closer to the original `Network` / `Control panel` / `Console` / `Error progress` arrangement
+  - top-level menu surface now tracks the BasicProp 1.3 shell more closely by removing extra SignalWeave-only menu actions and matching the original visible wording
   - BasicProp-style training console phrasing, control-value validation messages, and `continue` button text only while a training action is active
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating

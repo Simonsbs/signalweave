@@ -78,6 +78,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - progress state now follows cumulative completed training cycles more closely across repeated `Train` runs
 - right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
 - screenshot-verified four-panel main shell matching the original BasicProp layout more closely: `Network`, `Control panel`, `Console`, and `Error progress`
+- visible top-level menus now match the BasicProp 1.3 shell more closely, with only the original `Network`, `Weights`, `Patterns`, `Utilities`, and single-item `Help` surface
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
 - 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
 - BasicProp-style training console wording (`Training steps` / `Training finished`)
@@ -98,6 +99,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `No can do!` modal feedback when train/test actions are attempted with zero loaded patterns
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
+- the visible menu labels now mirror the BasicProp wording more closely by removing extra ellipses and non-reference top-level actions
 - network configuration `Apply` now updates the live desktop state without closing the dialog
 - network configuration styling now follows the BasicProp dialog more closely, with centered `OK` / `Apply` / `Cancel` buttons and tighter slider/bias layout
 - weight display now uses a full-width Hinton-style frame with a compact BasicProp-like bottom control strip

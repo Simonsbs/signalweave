@@ -51,13 +51,9 @@
               Margin="0,0,0,4"
               Background="#ECECEC">
             <MenuItem Header="_Network">
-                <MenuItem Header="_Configure Network..." Click="ConfigureNetwork_Click" />
-                <MenuItem Header="_Load Network..." Click="LoadNetwork_Click" />
-                <MenuItem Header="_Save Network..." Click="SaveNetwork_Click" />
-                <Separator />
-                <MenuItem Header="_Load XOR Demo" Command="{Binding LoadXorDemoCommand}" />
-                <MenuItem Header="Load _SRN Demo" Command="{Binding LoadSrnDemoCommand}" />
-                <MenuItem Header="_Reset Network" Command="{Binding ResetNetworkCommand}" />
+                <MenuItem Header="_Configure Network" Click="ConfigureNetwork_Click" />
+                <MenuItem Header="_Load Network" Click="LoadNetwork_Click" />
+                <MenuItem Header="_Save Network" Click="SaveNetwork_Click" />
             </MenuItem>
             <MenuItem Header="_Weights">
                 <MenuItem Header="_Show Weights" Click="ShowWeightsWindow_Click" />
@@ -67,24 +63,15 @@
             </MenuItem>
             <MenuItem Header="_Patterns">
                 <MenuItem Header="_Show Patterns and Outputs" Click="ShowPatternsWindow_Click" />
-                <MenuItem Header="_Load Patterns..." Click="LoadPatterns_Click" />
-                <Separator />
-                <MenuItem Header="_Test One" Command="{Binding TestOneCommand}" IsEnabled="{Binding CanTestOne}" />
-                <MenuItem Header="Test _All" Command="{Binding TestAllCommand}" />
+                <MenuItem Header="_Load Patterns" Click="LoadPatterns_Click" />
             </MenuItem>
             <MenuItem Header="_Utilities">
                 <MenuItem Header="_3D Plotting" Click="Show3DPlotWindow_Click" />
                 <MenuItem Header="_Time Series Plot" Click="ShowTimeSeriesPlotWindow_Click" />
-                <MenuItem Header="_Export Hidden Units Activations" Command="{Binding ExportHiddenActivationsCommand}" />
-                <Separator />
-                <MenuItem Header="Cluster _Outputs" Command="{Binding ClusterOutputsCommand}" />
-                <MenuItem Header="Cluster _Hidden States" Command="{Binding ClusterHiddenCommand}" />
+                <MenuItem Header="_Export hidden units activations" Command="{Binding ExportHiddenActivationsCommand}" />
             </MenuItem>
             <MenuItem Header="_Help">
-                <MenuItem Header="_Messages" Click="ShowMessageWindow_Click" />
-                <MenuItem Header="_Clear Messages" Command="{Binding MessageWindow.ClearCommand}" />
-                <Separator />
-                <MenuItem Header="_Compatibility Profile" Command="{Binding ShowCompatibilityCommand}" />
+                <MenuItem Header="_Open SignalWeave repository" Click="OpenRepository_Click" />
             </MenuItem>
         </Menu>
 
