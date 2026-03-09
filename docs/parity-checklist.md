@@ -14,7 +14,7 @@ Status legend:
 - `[done]` feed-forward 4-layer execution exists in the core
 - `[in-progress]` feed-forward online training parity
 - `[in-progress]` feed-forward batch update parity
-- `[in-progress]` feed-forward cross-entropy parity
+- `[done]` feed-forward cross-entropy parity
 - `[in-progress]` feed-forward momentum parity
 - `[in-progress]` feed-forward stop-rule parity
 - `[in-progress]` SRN sequential training parity

@@ -39,6 +39,7 @@ Current checked-in feed-forward training probes:
 - `examples/ff2-train-single.bppr`
 - `examples/ff3-train-single.bppr`
 - `examples/ff3-train-batch.bppr`
+- `examples/ff3-train-cross-entropy.bppr`
 - `examples/ff4-train-single.bppr`
 
 Current checked-in SRN probes:

@@ -482,6 +482,55 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void MatchesBasicPropProbeForCrossEntropyThreeLayerFeedForwardTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 3-layer cross-entropy parity
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = crossEntropy
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1,0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2, 0.5 },
+                { -0.3, 0.6 },
+                { 0.1, -0.4 }
+            },
+            new double[,]
+            {
+                { -0.8 },
+                { 0.9 },
+                { 0.7 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var result = engine.Train(patterns, 1);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff3-train-cross-entropy.json");
+
+        Assert.Single(result.History);
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
     public void MatchesBasicPropProbeForFixedWeightSrnForwardPass()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""
