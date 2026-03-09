@@ -100,7 +100,7 @@ Source basis used for this implementation:
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export through a save dialog using the BasicProp `getHiddenActs()` helper semantics, including raw concatenated `.dat` rows with no separators between values
-  - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
+  - detached message-log window under `Help`, with restored `Messages` and `Clear Messages` actions aligned to the BasicProp `MessageWindow` workflow
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: BasicProp-style `Note:` message output that appends to the desktop console for uninitialized patterns, plus a `No can do!` modal for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
   - screenshot-driven cleanup of the main window and configuration dialog to remove SignalWeave-specific chrome and move closer to the BasicProp 1.3 layout

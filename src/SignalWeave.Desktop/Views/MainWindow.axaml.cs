@@ -443,6 +443,15 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void ClearMessageWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(() =>
+        {
+            ViewModel.MessageWindow.ClearCommand.Execute(null);
+            return Task.CompletedTask;
+        });
+    }
+
     private async void OpenRepository_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         await RunWithConsoleAsync(() =>

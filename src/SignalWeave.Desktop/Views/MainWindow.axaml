@@ -79,6 +79,9 @@
                 <MenuItem Header="Cluster _Hidden States" Click="ShowHiddenClusterReport_Click" />
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="_Messages" Click="ShowMessageWindow_Click" />
+                <MenuItem Header="_Clear Messages" Click="ClearMessageWindow_Click" />
+                <Separator />
                 <MenuItem Header="_Open SignalWeave repository" Click="OpenRepository_Click" />
             </MenuItem>
         </Menu>
