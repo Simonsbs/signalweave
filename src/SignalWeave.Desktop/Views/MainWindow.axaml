@@ -82,7 +82,7 @@
         </Menu>
 
         <Grid ColumnDefinitions="*,300"
-              RowDefinitions="*,220">
+              RowDefinitions="*,250">
             <Border Grid.Row="0"
                     Classes="group"
                     Margin="0,0,8,8">
@@ -168,7 +168,7 @@
                                 SelectedIndex="{Binding EditorTabIndex, Mode=TwoWay}"
                                 Margin="0,8,0,0">
                         <TabItem Header="Console">
-                            <TextBox Classes="editor"
+                                <TextBox Classes="editor"
                                      Text="{Binding ConsoleText}"
                                      IsReadOnly="True"
                                      AcceptsReturn="True"
@@ -314,7 +314,7 @@
                                    FontWeight="SemiBold"
                                    Foreground="#3A3A3A" />
                         <TabControl SelectedIndex="{Binding ResultsTabIndex, Mode=TwoWay}"
-                                    Height="170">
+                                    Height="200">
                             <TabItem Header="Overview">
                                 <TextBox Classes="editor"
                                          Text="{Binding AnalysisText}"
