@@ -7,8 +7,10 @@
         mc:Ignorable="d"
         x:Class="SignalWeave.Desktop.Views.WeightDisplayWindow"
         x:DataType="vm:WeightDisplayWindowViewModel"
-        Width="1366"
-        Height="768"
+        Width="960"
+        Height="640"
+        MinWidth="560"
+        MinHeight="420"
         Background="#D5D5D5"
         Title="{Binding WindowTitle}">
 
@@ -20,8 +22,8 @@
           Margin="0">
         <ScrollViewer HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
-            <Canvas Width="1360"
-                    Height="680"
+            <Canvas Width="{Binding CanvasWidth}"
+                    Height="{Binding CanvasHeight}"
                     Background="#D5D5D5">
                 <ItemsControl ItemsSource="{Binding WeightGlyphs}">
                     <ItemsControl.ItemsPanel>
@@ -57,21 +59,20 @@
                 Background="#E3E3E3"
                 BorderBrush="#B4B4B4"
                 BorderThickness="1,1,0,0"
-                Padding="8,8">
-            <DockPanel>
+                Padding="10,12">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="10"
+                        HorizontalAlignment="Left">
                 <TextBlock VerticalAlignment="Center"
                            Text="Weight layer:" />
-                <ComboBox Width="38"
-                          Margin="6,0,0,0"
+                <ComboBox Width="58"
                           ItemsSource="{Binding WeightLayerOptions}"
                           SelectedItem="{Binding SelectedWeightLayer, Mode=TwoWay}" />
-                <Button Margin="10,0,0,0"
-                        Content="Refresh"
+                <Button Content="Refresh"
                         Command="{Binding RefreshCommand}" />
-                <Button Margin="10,0,0,0"
-                        Content="Dismiss"
+                <Button Content="Dismiss"
                         Click="Dismiss_Click" />
-            </DockPanel>
+            </StackPanel>
         </Border>
     </Grid>
 </Window>

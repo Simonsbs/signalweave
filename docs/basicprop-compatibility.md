@@ -91,7 +91,7 @@ Source basis used for this implementation:
   - utility-window launches no longer inject extra console status text for weight, pattern, time-series, or 3D plot windows, matching the original controller more closely
   - tab-only utility refresh and analysis actions no longer inject synthetic console status text when they simply update in-place views
   - `Reset` and hidden-activation export now stay quiet in the main console, matching the original controller's silent action flow more closely
-  - output clustering, hidden-state clustering, and the compatibility summary are now reachable again from the visible desktop shell through dedicated text-report windows instead of remaining hidden behind dead viewmodel commands
+  - output clustering and hidden-state clustering are reachable from the desktop shell through dedicated text-report windows
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export through a save dialog using BasicProp-like raw `.dat` rows instead of the earlier SignalWeave temp-CSV flow
@@ -103,7 +103,7 @@ Source basis used for this implementation:
   - `Configure Network...` now opens from the loaded network definition rather than reparsing the editor first
   - `Network Configuration -> Apply` now updates the live desktop network without closing the dialog, matching the original workflow more closely
   - network configuration sliders, bias column, and centered action buttons now follow the BasicProp dialog proportions more closely
-  - popup weight display now uses a larger Hinton-style frame with a compact left-aligned bottom control strip closer to the original window
+  - popup weight display now uses numeric layer entries plus `Rec` for SRN recurrent weights, a matrix-sized Hinton-style frame, and a compact left-aligned bottom control strip closer to the original window
 
 ## Remaining parity work
 

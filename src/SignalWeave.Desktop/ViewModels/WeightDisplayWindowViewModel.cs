@@ -11,6 +11,9 @@ namespace SignalWeave.Desktop.ViewModels;
 
 public partial class WeightDisplayWindowViewModel : ViewModelBase
 {
+    private const double CellSize = 96;
+    private const double CellInset = 4;
+    private const double CanvasPadding = 10;
     private readonly WeightSet _weights;
     private readonly IReadOnlyList<WeightLayerOption> _layerOptions;
 
@@ -26,7 +29,7 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     public WeightDisplayWindowViewModel(WeightDisplaySession session)
     {
         _weights = session.Weights.Clone();
-        BaseTitle = $"{session.Title} - Weights";
+        BaseTitle = "Weights";
 
         _layerOptions = BuildLayerOptions(_weights).ToArray();
         WeightLayerOptions = new ReadOnlyCollection<string>(_layerOptions.Select(option => option.Id).ToArray());
@@ -48,6 +51,12 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _weightMapSummary = "No weights loaded.";
+
+    [ObservableProperty]
+    private double _canvasWidth = 320;
+
+    [ObservableProperty]
+    private double _canvasHeight = 320;
 
     partial void OnSelectedWeightLayerChanged(string value)
     {
@@ -74,7 +83,8 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
         var rows = matrix.GetLength(0);
         var columns = matrix.GetLength(1);
         var maxValue = Flatten(matrix).Select(Math.Abs).DefaultIfEmpty(1.0).Max();
-        const double cellSize = 156;
+        CanvasWidth = Math.Max(280, (columns * CellSize) + (CanvasPadding * 2));
+        CanvasHeight = Math.Max(280, (rows * CellSize) + (CanvasPadding * 2));
 
         for (var row = 0; row < rows; row++)
         {
@@ -82,19 +92,19 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
             {
                 var weight = matrix[row, column];
                 var normalized = Math.Abs(weight) / Math.Max(0.000001, maxValue);
-                var size = 16 + (normalized * 118);
+                var size = 12 + (normalized * 68);
                 var cellFill = ((row + column) % 2 == 0) ? "#C8C8C8" : "#D0D0D0";
-                var cellX = column * cellSize;
-                var cellY = row * cellSize;
+                var cellX = CanvasPadding + (column * CellSize);
+                var cellY = CanvasPadding + (row * CellSize);
 
                 WeightGlyphs.Add(new WeightGlyphItem(
                     cellX,
                     cellY,
-                    cellSize - 6,
-                    cellSize - 6,
+                    CellSize - CellInset,
+                    CellSize - CellInset,
                     cellFill,
-                    cellX + ((cellSize - 6 - size) / 2),
-                    cellY + ((cellSize - 6 - size) / 2),
+                    cellX + (((CellSize - CellInset) - size) / 2),
+                    cellY + (((CellSize - CellInset) - size) / 2),
                     size,
                     size,
                     weight >= 0 ? "#020202" : "#FF1616",
@@ -103,7 +113,7 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
         }
 
         WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
-        WindowTitle = $"{BaseTitle} ({layer.Id}: {layerTitle})";
+        WindowTitle = BaseTitle;
     }
 
     private static IEnumerable<WeightLayerOption> BuildLayerOptions(WeightSet weights)
@@ -127,7 +137,7 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
 
         if (weights.RecurrentHidden is not null)
         {
-            yield return new WeightLayerOption("3", "Hidden -> Hidden", value => value.RecurrentHidden!);
+            yield return new WeightLayerOption("Rec", "Hidden -> Hidden", value => value.RecurrentHidden!);
         }
     }
 
