@@ -30,6 +30,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private RunResult? _lastRun;
     private string? _engineSignature;
     private string _patternListCaption = "XOR demo";
+    private bool _suppressMessageMirror;
 
     public MainWindowViewModel()
     {
@@ -447,6 +448,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnConsoleTextChanged(string value)
     {
+        if (_suppressMessageMirror)
+        {
+            _suppressMessageMirror = false;
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(value))
         {
             MessageWindow.WriteLine(value);
@@ -1758,7 +1765,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void Inform(string message)
     {
-        ConsoleText = $"Note:{message}";
+        var note = $"Note:{message}";
+        _suppressMessageMirror = true;
+        ConsoleText = string.IsNullOrWhiteSpace(ConsoleText)
+            ? note
+            : $"{ConsoleText}{Environment.NewLine}{note}";
+        MessageWindow.WriteLine(note);
     }
 
     private sealed class BasicPropModalException(string title, string message) : InvalidOperationException(message)
