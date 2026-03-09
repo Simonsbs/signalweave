@@ -41,6 +41,7 @@ Source basis used for this implementation:
 - Training fixtures now also assert completed-cycle parity alongside the saved weight matrices
 - Reset-aware SRN trace capture in the BasicProp probe so hidden activations can be compared from one consistent execution path
 - Probe-backed SRN edge-case fixture for the ignored leading-`reset` marker behavior
+- Probe-backed SRN training fixture for the hidden-bias lifecycle across reset boundaries
 - BasicProp-style desktop shell with:
   - menu structure
   - dedicated network configuration dialog

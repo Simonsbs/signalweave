@@ -47,6 +47,7 @@ Current checked-in feed-forward training probes:
 Current checked-in SRN probes:
 
 - `examples/srn-forward.bppr`
+- `examples/srn-hidden-bias-lifecycle.bppr`
 - `examples/srn-leading-reset.bppr`
 - `examples/srn-train-sequential.bppr`
 - `examples/srn-train-batch.bppr`

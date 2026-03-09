@@ -19,7 +19,7 @@ Status legend:
 - `[done]` feed-forward stop-rule parity
 - `[in-progress]` SRN sequential training parity
 - `[done]` SRN hidden-state reset parity
-- `[in-progress]` SRN hidden-bias lifecycle parity
+- `[done]` SRN hidden-bias lifecycle parity
 - `[in-progress]` per-pattern output parity
 - `[in-progress]` test-all aggregate error parity
 - `[done]` saved-weight parity fixtures

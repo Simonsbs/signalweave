@@ -149,5 +149,6 @@ From `SpecStub` and config code:
 - SRN parity must preserve sequential progression and `lastTrainedIx`.
 - SRN parity must model BasicProp's non-standard hidden-bias lifecycle separately from feed-forward behavior.
 - Leading-`reset` behavior is now covered by a probe-backed regression fixture in SignalWeave rather than only by a decompile note.
+- SRN hidden-bias lifecycle is now covered by a probe-backed training fixture that crosses a reset boundary with repeated inputs.
 - Golden parity tests should not rely on BasicProp random initialization.
   - Instead, set explicit starting weights or capture saved initial weights.
