@@ -111,7 +111,7 @@ Source basis used for this implementation:
 ## Scope decision
 
 - Exact BasicProp file compatibility is not required.
-- SignalWeave may use its own project, dataset, and checkpoint formats.
+- SignalWeave now uses its own documented `signalweave-project/v1` and `signalweave-checkpoint/v1` JSON formats.
 - Exact behavioral parity remains the target for:
   - training results
   - testing outputs

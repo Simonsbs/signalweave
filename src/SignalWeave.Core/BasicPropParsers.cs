@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 
 namespace SignalWeave.Core;
 
@@ -303,6 +304,36 @@ public static class PatternSetParser
             .Split(new[] { ' ', '\t', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(value => double.Parse(value, CultureInfo.InvariantCulture))
             .ToArray();
+    }
+}
+
+public static class PatternSetWriter
+{
+    public static string Write(PatternSet patternSet)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var example in patternSet.Examples)
+        {
+            builder.Append(example.Label);
+            builder.Append(": ");
+            builder.Append(string.Join(" ", example.Inputs.Select(value => value.ToString("R", CultureInfo.InvariantCulture))));
+
+            if (example.Targets is not null)
+            {
+                builder.Append(" => ");
+                builder.Append(string.Join(" ", example.Targets.Select(value => value.ToString("R", CultureInfo.InvariantCulture))));
+            }
+
+            builder.AppendLine();
+
+            if (example.ResetsContextAfter)
+            {
+                builder.AppendLine("reset");
+            }
+        }
+
+        return builder.ToString();
     }
 }
 

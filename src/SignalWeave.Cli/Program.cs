@@ -25,6 +25,12 @@ try
         case "cluster":
             Cluster(options);
             break;
+        case "pack-project":
+            PackProject(options);
+            break;
+        case "pack-checkpoint":
+            PackCheckpoint(options);
+            break;
         default:
             throw new InvalidOperationException($"Unknown command '{command}'.");
     }
@@ -42,9 +48,19 @@ SignalWeave CLI
 
 Commands:
   summary   --network <file> --patterns <file>
-  train     --network <file> --patterns <file> --weights <file> [--seed <int>] [--epochs <int>]
+            --project <file>
+            --checkpoint <file>
+  train     --network <file> --patterns <file> [--weights <file>] [--load-weights <file>] [--seed <int>] [--epochs <int>] [--checkpoint-out <file>]
+            --project <file> [--weights <file>] [--load-weights <file>] [--seed <int>] [--epochs <int>] [--checkpoint-out <file>]
+            --checkpoint <file> [--weights <file>] [--load-weights <file>] [--epochs <int>] [--checkpoint-out <file>]
   test-all  --network <file> --patterns <file> --weights <file>
+            --project <file>
+            --checkpoint <file>
   cluster   --network <file> --patterns <file> --weights <file> [--mode outputs|hidden]
+            --project <file> [--mode outputs|hidden]
+            --checkpoint <file> [--mode outputs|hidden]
+  pack-project     --network <file> --patterns <file> [--weights <file>] --output <file>
+  pack-checkpoint  --network <file> --patterns <file> --weights <file> --output <file> [--cycles <int>]
 """);
 }
 
@@ -64,13 +80,26 @@ static void Train(Dictionary<string, string> options)
     var patterns = LoadPatterns(options);
     var seed = options.TryGetValue("seed", out var seedText) ? int.Parse(seedText) : (int?)null;
     var epochs = options.TryGetValue("epochs", out var epochText) ? int.Parse(epochText) : (int?)null;
+    var startingWeights = TryLoadEmbeddedOrExplicitWeights(options);
 
-    var engine = new SignalWeaveEngine(definition, seed: seed);
+    var engine = startingWeights is null
+        ? new SignalWeaveEngine(definition, seed: seed)
+        : new SignalWeaveEngine(definition, startingWeights);
     var result = engine.Train(patterns, epochs);
 
     if (options.TryGetValue("weights", out var weightsPath))
     {
         WeightSetSerializer.SaveFile(weightsPath, definition, result.Weights);
+    }
+
+    if (options.TryGetValue("checkpoint-out", out var checkpointPath))
+    {
+        SignalWeaveCheckpointSerializer.SaveFile(
+            checkpointPath,
+            definition,
+            patterns,
+            result.Weights,
+            result.History.Count);
     }
 
     Console.WriteLine($"Epochs: {result.History.Count}");
@@ -98,19 +127,89 @@ static void Cluster(Dictionary<string, string> options)
     Console.WriteLine(cluster.ToDisplayText());
 }
 
+static void PackProject(Dictionary<string, string> options)
+{
+    var definition = BasicPropNetworkConfigParser.ParseFile(GetRequired(options, "network"));
+    var patterns = PatternSetParser.ParseFile(GetRequired(options, "patterns"));
+    var weights = options.TryGetValue("weights", out var weightsPath)
+        ? WeightSetSerializer.LoadFile(weightsPath)
+        : null;
+    SignalWeaveProjectSerializer.SaveFile(GetRequired(options, "output"), definition, patterns, weights);
+}
+
+static void PackCheckpoint(Dictionary<string, string> options)
+{
+    var definition = BasicPropNetworkConfigParser.ParseFile(GetRequired(options, "network"));
+    var patterns = PatternSetParser.ParseFile(GetRequired(options, "patterns"));
+    var weights = WeightSetSerializer.LoadFile(GetRequired(options, "weights"));
+    var cycles = options.TryGetValue("cycles", out var cyclesText) ? int.Parse(cyclesText) : 0;
+    SignalWeaveCheckpointSerializer.SaveFile(GetRequired(options, "output"), definition, patterns, weights, cycles);
+}
+
 static NetworkDefinition LoadDefinition(Dictionary<string, string> options)
 {
+    if (options.TryGetValue("checkpoint", out var checkpointPath))
+    {
+        return SignalWeaveCheckpointSerializer.LoadFile(checkpointPath).Definition;
+    }
+
+    if (options.TryGetValue("project", out var projectPath))
+    {
+        return SignalWeaveProjectSerializer.LoadFile(projectPath).Definition;
+    }
+
     return BasicPropNetworkConfigParser.ParseFile(GetRequired(options, "network"));
 }
 
 static PatternSet LoadPatterns(Dictionary<string, string> options)
 {
+    if (options.TryGetValue("checkpoint", out var checkpointPath))
+    {
+        return SignalWeaveCheckpointSerializer.LoadFile(checkpointPath).Patterns;
+    }
+
+    if (options.TryGetValue("project", out var projectPath))
+    {
+        return SignalWeaveProjectSerializer.LoadFile(projectPath).Patterns;
+    }
+
     return PatternSetParser.ParseFile(GetRequired(options, "patterns"));
 }
 
 static WeightSet LoadWeights(Dictionary<string, string> options)
 {
+    if (options.TryGetValue("checkpoint", out var checkpointPath))
+    {
+        return SignalWeaveCheckpointSerializer.LoadFile(checkpointPath).Weights;
+    }
+
+    if (options.TryGetValue("project", out var projectPath))
+    {
+        return SignalWeaveProjectSerializer.LoadFile(projectPath).Weights
+            ?? throw new InvalidOperationException("Project file does not contain embedded weights.");
+    }
+
     return WeightSetSerializer.LoadFile(GetRequired(options, "weights"));
+}
+
+static WeightSet? TryLoadEmbeddedOrExplicitWeights(Dictionary<string, string> options)
+{
+    if (options.TryGetValue("load-weights", out var explicitWeightsPath))
+    {
+        return WeightSetSerializer.LoadFile(explicitWeightsPath);
+    }
+
+    if (options.TryGetValue("checkpoint", out var checkpointPath))
+    {
+        return SignalWeaveCheckpointSerializer.LoadFile(checkpointPath).Weights;
+    }
+
+    if (options.TryGetValue("project", out var projectPath))
+    {
+        return SignalWeaveProjectSerializer.LoadFile(projectPath).Weights;
+    }
+
+    return null;
 }
 
 static string GetRequired(Dictionary<string, string> options, string key)

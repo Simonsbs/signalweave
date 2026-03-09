@@ -92,9 +92,9 @@ Status legend:
 - `[done]` network save/load exists
 - `[done]` pattern load exists
 - `[done]` weight save/load exists
-- `[todo]` stable v1 project schema
-- `[todo]` checkpoint schema
-- `[todo]` SignalWeave-native schema documentation
+- `[done]` stable v1 project schema
+- `[done]` checkpoint schema
+- `[done]` SignalWeave-native schema documentation
 
 ## Release engineering
 

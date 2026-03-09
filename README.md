@@ -62,6 +62,11 @@ dotnet run --project src/SignalWeave.Cli -- summary --network samples/xor.swcfg 
 dotnet run --project src/SignalWeave.Cli -- train --network samples/xor.swcfg --patterns samples/xor.pat --weights weights.json --seed 42
 dotnet run --project src/SignalWeave.Cli -- test-all --network samples/xor.swcfg --patterns samples/xor.pat --weights weights.json
 dotnet run --project src/SignalWeave.Cli -- cluster --network samples/xor.swcfg --patterns samples/xor.pat --weights weights.json --mode outputs
+dotnet run --project src/SignalWeave.Cli -- pack-project --network samples/xor.swcfg --patterns samples/xor.pat --output xor.swproj.json
+dotnet run --project src/SignalWeave.Cli -- pack-checkpoint --network samples/xor.swcfg --patterns samples/xor.pat --weights weights.json --output xor.swcheckpoint.json --cycles 5000
+dotnet run --project src/SignalWeave.Cli -- summary --project xor.swproj.json
+dotnet run --project src/SignalWeave.Cli -- train --project xor.swproj.json --checkpoint-out xor.swcheckpoint.json
+dotnet run --project src/SignalWeave.Cli -- summary --checkpoint xor.swcheckpoint.json
 ```
 
 ## Desktop
@@ -148,3 +153,4 @@ SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JA
 - `docs/reference-assets.md`: local BasicProp reference bundle inventory
 - `docs/parity-checklist.md`: parity status by engine, UI, and utilities
 - `docs/e2e-backlog.md`: milestone backlog and implementation tasks
+- `docs/signalweave-schema.md`: native project and checkpoint schema definitions
