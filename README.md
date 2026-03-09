@@ -84,6 +84,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - pattern loading bound to the currently configured network state rather than an editor reparse
 - network saving bound to the currently loaded configured network state rather than an editor reparse
 - feed-forward-only `Batch Update` behavior in the desktop control panel
+- BasicProp-style pattern selector text in the main control panel
 - utility tabs for weight maps, pattern/output tables, and plots
 - weight legend and error plot styling that tracks the original BasicProp layout more closely
 - modal `Invalid value` dialogs plus BasicProp-style note routing into the detached messages window

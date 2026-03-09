@@ -28,6 +28,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private SignalWeaveEngine? _engine;
     private RunResult? _lastRun;
     private string? _engineSignature;
+    private string _patternListCaption = "XOR demo";
 
     public MainWindowViewModel()
     {
@@ -164,6 +165,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void LoadXorDemo()
     {
         SampleTitle = "XOR demo";
+        _patternListCaption = SampleTitle;
         ConfigText = SignalWeaveSamples.XorConfig;
         PatternText = SignalWeaveSamples.XorPatterns;
         ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: "Loaded XOR demo.");
@@ -173,6 +175,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void LoadSrnDemo()
     {
         SampleTitle = "Echo SRN demo";
+        _patternListCaption = SampleTitle;
         ConfigText = SignalWeaveSamples.EchoSrnConfig;
         PatternText = SignalWeaveSamples.EchoSrnPatterns;
         ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: "Loaded SRN demo.");
@@ -181,6 +184,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ParseEditor()
     {
+        _patternListCaption = SampleTitle;
         ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: "Parsed current editor contents and reset network weights.");
     }
 
@@ -494,7 +498,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             foreach (var example in patternSet.Examples)
             {
-                PatternOptions.Add(example.Label);
+                PatternOptions.Add(BasicPropDisplayFormatter.FormatPatternSelector(PatternOptions.Count, example.Inputs, example.Targets));
             }
 
             CanTestOne = patternSet.Examples.Count > 0;
@@ -502,7 +506,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        PatternOptions.Add($"{SampleTitle} ({patternSet.Examples.Count} patterns)");
+        PatternOptions.Add(_patternListCaption);
         SelectedPattern = PatternOptions[0];
         CanTestOne = false;
     }
@@ -1412,6 +1416,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (!string.IsNullOrWhiteSpace(sourceName))
         {
             SampleTitle = sourceName;
+            _patternListCaption = sourceName;
         }
 
         ConfigText = text;
@@ -1421,6 +1426,10 @@ public partial class MainWindowViewModel : ViewModelBase
     public void LoadPatternText(string text, string? sourceName = null)
     {
         PatternText = text;
+        if (!string.IsNullOrWhiteSpace(sourceName))
+        {
+            _patternListCaption = sourceName;
+        }
 
         if (_definition is null || _engine is null)
         {
@@ -1450,6 +1459,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public void ApplyConfiguredNetwork(NetworkDefinition definition)
     {
         SampleTitle = definition.Name;
+        _patternListCaption = definition.Name;
         ConfigText = BasicPropNetworkConfigWriter.Write(definition);
         ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: $"Configured network '{definition.Name}'.");
     }
