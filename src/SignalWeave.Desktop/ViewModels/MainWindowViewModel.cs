@@ -1336,6 +1336,45 @@ public partial class MainWindowViewModel : ViewModelBase
             "Dimension 2");
     }
 
+    public SurfacePlotSetupSession CreateSurfacePlotSetupSession()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+
+        var axisOptions = Enumerable.Range(0, _definition!.InputUnits)
+            .Select(index => new SurfacePlotAxisOption(
+                $"Input{index + 1}",
+                $"Input{index + 1}",
+                index))
+            .ToArray();
+
+        var hasTargets = run.Results.Any(result => result.Targets is not null);
+        var zOptions = new List<SurfacePlotZOption>();
+        for (var index = 0; index < _definition.OutputUnits; index++)
+        {
+            if (hasTargets)
+            {
+                zOptions.Add(new SurfacePlotZOption($"Target{index + 1}", $"Target{index + 1}", true, index));
+            }
+
+            zOptions.Add(new SurfacePlotZOption($"Output{index + 1}", $"Output{index + 1}", false, index));
+        }
+
+        var samples = run.Results
+            .Select(result => new SurfacePlotSample(
+                result.Label,
+                result.Inputs,
+                result.Targets,
+                result.Outputs))
+            .ToArray();
+
+        return new SurfacePlotSetupSession(
+            $"{_definition.Name} - Plot Setup",
+            axisOptions,
+            zOptions,
+            samples);
+    }
+
     private static string Slugify(string value)
     {
         var chars = value
@@ -1437,6 +1476,14 @@ public sealed record TimeSeriesPlotSession(
     string XAxisMidLabel,
     string XAxisRightLabel,
     string XAxisTitle);
+public sealed record SurfacePlotAxisOption(string Id, string Label, int InputIndex);
+public sealed record SurfacePlotZOption(string Id, string Label, bool UsesTargets, int OutputIndex);
+public sealed record SurfacePlotSample(string Label, double[] Inputs, double[]? Targets, double[] Outputs);
+public sealed record SurfacePlotSetupSession(
+    string Title,
+    IReadOnlyList<SurfacePlotAxisOption> AxisOptions,
+    IReadOnlyList<SurfacePlotZOption> ZOptions,
+    IReadOnlyList<SurfacePlotSample> Samples);
 public sealed record PlotWindowSnapshot(
     string Title,
     string Summary,

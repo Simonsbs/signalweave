@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.SurfacePlotSetupWindow"
+        x:DataType="vm:SurfacePlotSetupWindowViewModel"
+        Width="600"
+        Height="120"
+        CanResize="False"
+        Background="#E3E3E3"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:SurfacePlotSetupWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*"
+          Margin="10">
+        <Border Background="#ECECEC"
+                BorderBrush="#B8C0CA"
+                BorderThickness="1"
+                Padding="6">
+            <DockPanel>
+                <TextBlock VerticalAlignment="Center" Text="X:" />
+                <ComboBox Width="90"
+                          Margin="6,0,10,0"
+                          ItemsSource="{Binding XAxisOptions}"
+                          SelectedItem="{Binding SelectedX, Mode=TwoWay}" />
+                <TextBlock VerticalAlignment="Center" Text="Y:" />
+                <ComboBox Width="90"
+                          Margin="6,0,10,0"
+                          ItemsSource="{Binding YAxisOptions}"
+                          SelectedItem="{Binding SelectedY, Mode=TwoWay}" />
+                <TextBlock VerticalAlignment="Center" Text="Z:" />
+                <ComboBox Width="100"
+                          Margin="6,0,10,0"
+                          ItemsSource="{Binding ZAxisOptions}"
+                          SelectedItem="{Binding SelectedZ, Mode=TwoWay}" />
+                <Button Margin="4,0,0,0"
+                        Content="Show Plot"
+                        Click="ShowPlot_Click" />
+                <Button Margin="8,0,0,0"
+                        Content="Dismiss"
+                        Click="Dismiss_Click" />
+            </DockPanel>
+        </Border>
+
+        <TextBlock Grid.Row="1"
+                   Margin="4,8,0,0"
+                   Text="{Binding Summary}"
+                   Foreground="#4F4F4F" />
+    </Grid>
+</Window>

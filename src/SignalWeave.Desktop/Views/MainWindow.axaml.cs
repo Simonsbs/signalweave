@@ -176,8 +176,8 @@ public partial class MainWindow : Window
     {
         await RunWithConsoleAsync(async () =>
         {
-            var window = new UtilityPlotWindow(ViewModel.Create3DPlotSnapshot());
-            ViewModel.ConsoleText = "Showing projected 3D plot from hidden/output activations.";
+            var window = new SurfacePlotSetupWindow(ViewModel.CreateSurfacePlotSetupSession());
+            ViewModel.ConsoleText = "Showing plot setup window.";
             await window.ShowDialog(this);
         });
     }

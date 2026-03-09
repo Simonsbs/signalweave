@@ -50,6 +50,7 @@ Source basis used for this implementation:
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
+  - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
   - hidden activation export
 
 ## Remaining parity work
