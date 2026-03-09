@@ -74,7 +74,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
-- right-side training/test control panel with BasicProp-like defaults, button layout, and `Train`/`continue` progress behavior
+- right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
 - 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
 - console/config/pattern/weight tabs

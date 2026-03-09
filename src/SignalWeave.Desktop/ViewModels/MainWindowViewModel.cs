@@ -217,6 +217,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: false);
             EnsurePatternsAvailable();
+            TrainButtonLabel = "continue";
             var steps = GetLearningStepsValue();
             var result = _engine!.Train(_patternSet!, steps);
             _lastRun = result.FinalRun;
@@ -1480,7 +1481,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ProgressMaximum = Math.Max(1, GetLearningStepsValueOrDefault());
         ProgressValue = ProgressMaximum;
         ProgressLabel = "Loaded weights";
-        TrainButtonLabel = "continue";
+        TrainButtonLabel = "Train";
         WeightsText = BuildWeightsText(_engine.Weights);
         HistoryText = "No training history yet.";
         ErrorProgressPoints = "0,132 240,132";
@@ -1702,7 +1703,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ProgressMaximum = effectiveCycles;
         ProgressValue = effectiveCycles;
         ProgressLabel = effectiveCycles.ToString(CultureInfo.InvariantCulture);
-        TrainButtonLabel = "continue";
+        TrainButtonLabel = "Train";
     }
 
     private double GetLearningRateValue()
