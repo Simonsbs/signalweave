@@ -142,6 +142,46 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void ShowWeightsWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var window = new WeightDisplayWindow(ViewModel.CreateWeightDisplaySession());
+            ViewModel.ConsoleText = "Showing current network weights.";
+            await window.ShowDialog(this);
+        });
+    }
+
+    private async void ShowPatternsWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var window = new PatternOutputsWindow(ViewModel.CreatePatternOutputsSnapshot());
+            ViewModel.ConsoleText = "Showing patterns and outputs.";
+            await window.ShowDialog(this);
+        });
+    }
+
+    private async void ShowTimeSeriesPlotWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var window = new UtilityPlotWindow(ViewModel.CreateTimeSeriesPlotSnapshot());
+            ViewModel.ConsoleText = "Showing time series plot for output unit 1.";
+            await window.ShowDialog(this);
+        });
+    }
+
+    private async void Show3DPlotWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var window = new UtilityPlotWindow(ViewModel.Create3DPlotSnapshot());
+            ViewModel.ConsoleText = "Showing projected 3D plot from hidden/output activations.";
+            await window.ShowDialog(this);
+        });
+    }
+
     private async Task RunWithConsoleAsync(Func<Task> action)
     {
         try

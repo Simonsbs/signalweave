@@ -1,0 +1,73 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        xmlns:shapes="clr-namespace:Avalonia.Controls.Shapes;assembly=Avalonia.Controls"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.UtilityPlotWindow"
+        x:DataType="vm:UtilityPlotWindowViewModel"
+        Width="560"
+        Height="420"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:UtilityPlotWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          Margin="10">
+        <TextBlock FontWeight="SemiBold"
+                   Text="{Binding Summary}" />
+
+        <Border Grid.Row="1"
+                Margin="0,8,0,8"
+                Background="#F8F8F8"
+                BorderBrush="#AAB4C0"
+                BorderThickness="1"
+                Padding="8">
+            <Canvas Width="340"
+                    Height="240"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <shapes:Line StartPoint="20,210"
+                             EndPoint="320,210"
+                             Stroke="#5A5A5A"
+                             StrokeThickness="1.5" />
+                <shapes:Line StartPoint="20,20"
+                             EndPoint="20,210"
+                             Stroke="#5A5A5A"
+                             StrokeThickness="1.5" />
+                <shapes:Polyline Points="{Binding PlotPoints}"
+                                 Stroke="#B24C3D"
+                                 StrokeThickness="2" />
+                <ItemsControl ItemsSource="{Binding Markers}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PlotMarkerItem">
+                            <shapes:Ellipse Width="{Binding Width}"
+                                            Height="{Binding Height}"
+                                            Fill="{Binding Fill}"
+                                            Canvas.Left="{Binding X}"
+                                            Canvas.Top="{Binding Y}">
+                                <ToolTip.Tip>
+                                    <TextBlock Text="{Binding Label}" />
+                                </ToolTip.Tip>
+                            </shapes:Ellipse>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Canvas>
+        </Border>
+
+        <Button Grid.Row="2"
+                HorizontalAlignment="Right"
+                Content="Dismiss"
+                Click="Dismiss_Click" />
+    </Grid>
+</Window>

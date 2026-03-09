@@ -47,6 +47,7 @@ Source basis used for this implementation:
   - pattern/output inspection
   - projected 3D and time-series utility plots
   - weight legend and axis-based error progress plot
+  - dedicated secondary windows for weights, plots, and patterns/outputs
   - hidden activation export
 
 ## Remaining parity work

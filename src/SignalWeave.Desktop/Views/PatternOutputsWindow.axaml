@@ -1,0 +1,63 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.PatternOutputsWindow"
+        x:DataType="vm:PatternOutputsWindowViewModel"
+        Width="820"
+        Height="520"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:PatternOutputsWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          Margin="10">
+        <TextBlock FontWeight="SemiBold"
+                   Text="{Binding Summary}" />
+
+        <Border Grid.Row="1"
+                Margin="0,8,0,8"
+                Background="#F3F3F3"
+                BorderBrush="#B8C0CA"
+                BorderThickness="1">
+            <ScrollViewer>
+                <StackPanel Margin="8"
+                            Spacing="4">
+                    <Grid ColumnDefinitions="36,160,120,120,120,*"
+                          Margin="0,0,0,4">
+                        <TextBlock FontWeight="Bold" Text="#" />
+                        <TextBlock Grid.Column="1" FontWeight="Bold" Text="Pattern" />
+                        <TextBlock Grid.Column="2" FontWeight="Bold" Text="Inputs" />
+                        <TextBlock Grid.Column="3" FontWeight="Bold" Text="Targets" />
+                        <TextBlock Grid.Column="4" FontWeight="Bold" Text="Outputs" />
+                        <TextBlock Grid.Column="5" FontWeight="Bold" Text="Error" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PatternOutputRow">
+                                <Grid ColumnDefinitions="36,160,120,120,120,*">
+                                    <TextBlock Text="{Binding Index}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Label}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Inputs}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Targets}" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Outputs}" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Error}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Button Grid.Row="2"
+                HorizontalAlignment="Right"
+                Content="Dismiss"
+                Click="Dismiss_Click" />
+    </Grid>
+</Window>

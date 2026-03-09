@@ -1206,6 +1206,40 @@ public partial class MainWindowViewModel : ViewModelBase
         ConsoleText = "Loaded weights from file.";
     }
 
+    public WeightDisplaySession CreateWeightDisplaySession()
+    {
+        EnsureContext(resetWeights: false);
+        RebuildWeightMap();
+        return new WeightDisplaySession(_definition!.Name, _engine!.Weights.Clone());
+    }
+
+    public PatternOutputsSnapshot CreatePatternOutputsSnapshot()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+        RebuildPatternOutputs(run);
+        return new PatternOutputsSnapshot(
+            $"{_definition!.Name} - Patterns and Outputs",
+            PatternOutputSummary,
+            PatternOutputRows.ToArray());
+    }
+
+    public PlotWindowSnapshot CreateTimeSeriesPlotSnapshot()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+        BuildTimeSeriesPlot(run);
+        return CreateScaledPlotSnapshot($"{_definition!.Name} - Time Series Plot");
+    }
+
+    public PlotWindowSnapshot Create3DPlotSnapshot()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+        BuildScatterPlot(run);
+        return CreateScaledPlotSnapshot($"{_definition!.Name} - 3D Plot");
+    }
+
     private static string Slugify(string value)
     {
         var chars = value
@@ -1222,6 +1256,54 @@ public partial class MainWindowViewModel : ViewModelBase
 
         return string.IsNullOrWhiteSpace(text.Trim('-')) ? "signalweave" : text.Trim('-');
     }
+
+    private PlotWindowSnapshot CreateScaledPlotSnapshot(string title)
+    {
+        return new PlotWindowSnapshot(
+            title,
+            UtilityPlotSummary,
+            ScalePlotPoints(UtilityPlotPoints),
+            UtilityPlotMarkers
+                .Select(marker => new PlotMarkerItem(
+                    ScalePlotX(marker.X),
+                    ScalePlotY(marker.Y),
+                    marker.Width,
+                    marker.Height,
+                    marker.Fill,
+                    marker.Label))
+                .ToArray());
+    }
+
+    private static string ScalePlotPoints(string points)
+    {
+        var scaled = points
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(point =>
+            {
+                var parts = point.Split(',');
+                if (parts.Length != 2)
+                {
+                    return point;
+                }
+
+                var x = double.Parse(parts[0], CultureInfo.InvariantCulture);
+                var y = double.Parse(parts[1], CultureInfo.InvariantCulture);
+                return $"{ScalePlotX(x).ToString("0.##", CultureInfo.InvariantCulture)},{ScalePlotY(y).ToString("0.##", CultureInfo.InvariantCulture)}";
+            });
+
+        return string.Join(" ", scaled);
+    }
+
+    private static double ScalePlotX(double x)
+    {
+        return 20 + (x * 300 / 240);
+    }
+
+    private static double ScalePlotY(double y)
+    {
+        var scaled = 20 + (y * 190 / 110);
+        return Math.Clamp(scaled, 20, 210);
+    }
 }
 
 public sealed record DiagramNodeItem(double X, double Y, double Width, double Height, string Label, string Fill, string Stroke);
@@ -1229,3 +1311,6 @@ public sealed record DiagramEdgeItem(string StartPoint, string EndPoint, string 
 public sealed record WeightGlyphItem(double X, double Y, double CellWidth, double CellHeight, string CellFill, double EllipseX, double EllipseY, double EllipseWidth, double EllipseHeight, string Fill, string Tooltip);
 public sealed record PatternOutputRow(int Index, string Label, string Inputs, string Targets, string Outputs, string Error);
 public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);
+public sealed record WeightDisplaySession(string Title, WeightSet Weights);
+public sealed record PatternOutputsSnapshot(string Title, string Summary, IReadOnlyList<PatternOutputRow> Rows);
+public sealed record PlotWindowSnapshot(string Title, string Summary, string Points, IReadOnlyList<PlotMarkerItem> Markers);

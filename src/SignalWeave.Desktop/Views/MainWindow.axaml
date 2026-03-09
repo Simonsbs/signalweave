@@ -53,20 +53,20 @@
                 <MenuItem Header="_Reset Network" Command="{Binding ResetNetworkCommand}" />
             </MenuItem>
             <MenuItem Header="_Weights">
-                <MenuItem Header="_Show Current Weights" Command="{Binding ShowWeightsCommand}" />
+                <MenuItem Header="_Show Current Weights" Click="ShowWeightsWindow_Click" />
                 <MenuItem Header="_Load Weights..." Click="LoadWeights_Click" />
                 <MenuItem Header="_Save Weights..." Click="SaveWeights_Click" />
             </MenuItem>
             <MenuItem Header="_Patterns">
-                <MenuItem Header="_Show Patterns and Outputs" Command="{Binding ShowPatternsCommand}" />
+                <MenuItem Header="_Show Patterns and Outputs" Click="ShowPatternsWindow_Click" />
                 <MenuItem Header="_Load Patterns..." Click="LoadPatterns_Click" />
                 <Separator />
                 <MenuItem Header="_Test One" Command="{Binding TestOneCommand}" />
                 <MenuItem Header="Test _All" Command="{Binding TestAllCommand}" />
             </MenuItem>
             <MenuItem Header="_Utilities">
-                <MenuItem Header="_3D Plotting" Command="{Binding Show3DPlotCommand}" />
-                <MenuItem Header="_Time Series Plot" Command="{Binding ShowTimeSeriesPlotCommand}" />
+                <MenuItem Header="_3D Plotting" Click="Show3DPlotWindow_Click" />
+                <MenuItem Header="_Time Series Plot" Click="ShowTimeSeriesPlotWindow_Click" />
                 <MenuItem Header="_Export Hidden Units Activations" Command="{Binding ExportHiddenActivationsCommand}" />
                 <Separator />
                 <MenuItem Header="Cluster _Outputs" Command="{Binding ClusterOutputsCommand}" />
