@@ -69,6 +69,7 @@ Source basis used for this implementation:
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - startup now mirrors BasicProp more closely: a default feed-forward network is loaded with no patterns, and the initial desktop note prompts the user to load patterns before running simulations
+  - training progress now tracks cumulative completed cycles more closely instead of resetting the progress label to the last training batch size
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
   - cumulative time-series `Add plot` behavior with `InputN`, `TargetN`, and `OutputN` selectors, plus the BasicProp-sized 600x300 frame
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface

@@ -217,12 +217,17 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: false);
             EnsurePatternsAvailable();
-            TrainButtonLabel = "continue";
             var steps = GetLearningStepsValue();
+            ProgressMaximum = Math.Max(_engine!.CompletedCycles + steps, 1);
+            ProgressValue = _engine.CompletedCycles;
+            ProgressLabel = _engine.CompletedCycles == 0
+                ? "Untrained"
+                : _engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
+            TrainButtonLabel = "continue";
             var result = _engine!.Train(_patternSet!, steps);
             _lastRun = result.FinalRun;
 
-            SetTrainedState(result.History.Count);
+            SetTrainedState(_engine.CompletedCycles);
             HistoryText = BuildHistoryText(result.History);
             ErrorProgressPoints = BuildErrorPolyline(result.History);
             UpdateErrorPlotScale(result.History);
