@@ -30,6 +30,7 @@ Implemented now:
 - desktop workbench with a BasicProp-style control panel, live network view, editor tabs, testing, clustering, and weight inspection
 - dedicated desktop network-configuration dialog with feed-forward and SRN modes, including 2-layer, 3-layer, and 4-layer feed-forward paths
 - screenshot-verified feed-forward and SRN configuration tabs with BasicProp-style layer-count and bias controls
+- 4-layer feed-forward topology now flows through the live desktop summary, network diagram, and weight-inspection utilities
 - native desktop file workflows for network save/load, pattern load, and weight save/load
 - utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
 - BasicProp-style visual touches including weight-value legend, Hinton-like weight cells, and axis-based error plotting
@@ -116,6 +117,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
 - visible utility-menu access to output clustering and hidden-state clustering through dedicated text-report windows
+- desktop pattern loading and clustering utilities are now fully reachable through the visible controller/menu workflow
 - the visible menu labels now mirror the BasicProp wording more closely by removing extra ellipses and non-reference top-level actions
 - network configuration `Apply` now updates the live desktop state without closing the dialog
 - network configuration styling now follows the BasicProp dialog more closely, with centered `OK` / `Apply` / `Cancel` buttons and tighter slider/bias layout

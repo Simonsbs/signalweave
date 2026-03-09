@@ -50,6 +50,7 @@ Source basis used for this implementation:
   - distinct feed-forward and SRN tab content in the configuration dialog, instead of one merged form
   - working 2-layer feed-forward apply path in the desktop dialog
   - working 4-layer feed-forward apply path in the desktop dialog
+  - 4-layer feed-forward topology is now carried through the live desktop summary, network diagram, popup weight window, and in-app weight-map utilities
   - screenshot-verified feed-forward and SRN configuration tabs aligned to the BasicProp reference bundle, including the layer-count slider and per-layer bias toggles
   - desktop save/load workflows for networks and weights, plus pattern loading
   - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
@@ -98,6 +99,7 @@ Source basis used for this implementation:
   - tab-only utility refresh and analysis actions no longer inject synthetic console status text when they simply update in-place views
   - `Reset` and hidden-activation export now stay quiet in the main console, matching the original controller's silent action flow more closely
   - output clustering and hidden-state clustering are reachable from the desktop shell through dedicated text-report windows
+  - desktop pattern loading, output clustering, and hidden-state clustering are all wired through the visible controller/menu workflow rather than only existing as internal actions
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export through a save dialog using the BasicProp `getHiddenActs()` helper semantics, including raw concatenated `.dat` rows with no separators between values

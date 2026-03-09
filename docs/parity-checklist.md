@@ -32,7 +32,7 @@ Status legend:
 - `[done]` feed-forward 4-layer topology
 - `[done]` SRN topology
 - `[done]` 4-layer topology support in persistence
-- `[in-progress]` 4-layer topology support in diagrams and utilities
+- `[done]` 4-layer topology support in diagrams and utilities
 
 ## Network configuration dialog
 
@@ -72,7 +72,7 @@ Status legend:
 ## Patterns workflows
 
 - `[done]` pattern parsing with `reset`
-- `[in-progress]` desktop pattern loading
+- `[done]` desktop pattern loading
 - `[done]` pattern plot window
 - `[in-progress]` patterns/outputs viewing
 - `[todo]` exact workflow and formatting parity
@@ -82,8 +82,8 @@ Status legend:
 - `[done]` 3D plotting workflow
 - `[done]` time-series plotting workflow
 - `[done]` hidden activation export
-- `[in-progress]` output clustering
-- `[in-progress]` hidden-state clustering
+- `[done]` output clustering
+- `[done]` hidden-state clustering
 - `[todo]` JAR-backed utility parity verification
 
 ## File workflows
