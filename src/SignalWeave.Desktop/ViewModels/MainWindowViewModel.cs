@@ -86,6 +86,15 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _progressLabel = "Untrained";
 
     [ObservableProperty]
+    private string _trainButtonLabel = "Train";
+
+    [ObservableProperty]
+    private int _progressMaximum = 5000;
+
+    [ObservableProperty]
+    private int _progressValue;
+
+    [ObservableProperty]
     private string _consoleText = "Use the menu or editor tabs to configure a network, then train or test it.";
 
     [ObservableProperty]
@@ -173,7 +182,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: true);
             _lastRun = null;
-            ProgressLabel = "Untrained";
+            SetUntrainedState();
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
             UpdateErrorPlotScale([]);
@@ -193,11 +202,11 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights: false);
-            var steps = ParseInt(SelectedLearningSteps);
+            var steps = GetLearningStepsValue();
             var result = _engine!.Train(_patternSet!, steps);
             _lastRun = result.FinalRun;
 
-            ProgressLabel = $"{result.History.Count} cycles";
+            SetTrainedState(result.History.Count);
             HistoryText = BuildHistoryText(result.History);
             ErrorProgressPoints = BuildErrorPolyline(result.History);
             UpdateErrorPlotScale(result.History);
@@ -361,7 +370,7 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights, syncControlsFromEditor);
-            ProgressLabel = "Untrained";
+            SetUntrainedState();
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
             UpdateErrorPlotScale([]);
@@ -437,11 +446,11 @@ public partial class MainWindowViewModel : ViewModelBase
             OutputUnits = definition.OutputUnits,
             UseInputBias = definition.UseInputBias,
             UseHiddenBias = definition.UseHiddenBias,
-            LearningRate = ParseDouble(SelectedLearningRate),
-            Momentum = ParseDouble(SelectedMomentum),
+            LearningRate = GetLearningRateValue(),
+            Momentum = GetMomentumValue(),
             RandomWeightRange = ParseWeightRange(SelectedWeightRange),
             SigmoidPrimeOffset = definition.SigmoidPrimeOffset,
-            MaxEpochs = ParseInt(SelectedLearningSteps),
+            MaxEpochs = GetLearningStepsValue(),
             ErrorThreshold = definition.ErrorThreshold,
             UpdateMode = BatchUpdate ? UpdateMode.Batch : UpdateMode.Pattern,
             CostFunction = CrossEntropy ? CostFunction.CrossEntropy : CostFunction.SumSquaredError
@@ -1240,7 +1249,10 @@ public partial class MainWindowViewModel : ViewModelBase
         _engine = new SignalWeaveEngine(_definition!, weights);
         _engineSignature = BuildSignature(_definition!);
         _lastRun = null;
+        ProgressMaximum = Math.Max(1, GetLearningStepsValueOrDefault());
+        ProgressValue = ProgressMaximum;
         ProgressLabel = "Loaded weights";
+        TrainButtonLabel = "continue";
         WeightsText = BuildWeightsText(_engine.Weights);
         HistoryText = "No training history yet.";
         ErrorProgressPoints = "0,132 240,132";
@@ -1393,6 +1405,68 @@ public partial class MainWindowViewModel : ViewModelBase
             axisOptions,
             zOptions,
             samples);
+    }
+
+    partial void OnSelectedLearningStepsChanged(string value)
+    {
+        if (ProgressValue == 0 && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var cycles) && cycles > 0)
+        {
+            ProgressMaximum = cycles;
+        }
+    }
+
+    private void SetUntrainedState()
+    {
+        ProgressMaximum = Math.Max(1, GetLearningStepsValueOrDefault());
+        ProgressValue = 0;
+        ProgressLabel = "Untrained";
+        TrainButtonLabel = "Train";
+    }
+
+    private void SetTrainedState(int cycles)
+    {
+        var effectiveCycles = Math.Max(1, cycles);
+        ProgressMaximum = effectiveCycles;
+        ProgressValue = effectiveCycles;
+        ProgressLabel = effectiveCycles.ToString(CultureInfo.InvariantCulture);
+        TrainButtonLabel = "continue";
+    }
+
+    private double GetLearningRateValue()
+    {
+        return ValidateDoubleValue(SelectedLearningRate, "An invalid value for the learning rate was given!");
+    }
+
+    private double GetMomentumValue()
+    {
+        return ValidateDoubleValue(SelectedMomentum, "An invalid value for momentum was given!");
+    }
+
+    private int GetLearningStepsValue()
+    {
+        if (int.TryParse(SelectedLearningSteps, NumberStyles.Integer, CultureInfo.InvariantCulture, out var steps) && steps > 0)
+        {
+            return steps;
+        }
+
+        throw new InvalidOperationException("An invalid value for the learning steps was given!");
+    }
+
+    private int GetLearningStepsValueOrDefault()
+    {
+        return int.TryParse(SelectedLearningSteps, NumberStyles.Integer, CultureInfo.InvariantCulture, out var steps) && steps > 0
+            ? steps
+            : 1;
+    }
+
+    private static double ValidateDoubleValue(string value, string message)
+    {
+        if (double.TryParse(value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var parsed))
+        {
+            return parsed;
+        }
+
+        throw new InvalidOperationException(message);
     }
 
     private static string Slugify(string value)

@@ -71,7 +71,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
-- right-side training/test control panel with BasicProp defaults
+- right-side training/test control panel with BasicProp defaults, `Train`/`continue` state, and progress bar behavior
 - live network diagram colored by weight sign and magnitude
 - console/config/pattern/weight tabs
 - test-one gating that follows the original `< 24 patterns` behavior
@@ -89,7 +89,7 @@ The `samples/` directory contains starter network and pattern files:
 
 ## Compatibility note
 
-SignalWeave targets the BasicProp feature model described on `basicprop.wordpress.com` as of March 9, 2026. The original downloadable JAR and weight-format reference were not publicly reachable during implementation, so legacy binary-level compatibility is the remaining gap.
+SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JAR in `/home/simon/temp/BasicProp/basicProp-1.3.jar`. Legacy BasicProp file compatibility is intentionally out of scope.
 
 ## Delivery docs
 

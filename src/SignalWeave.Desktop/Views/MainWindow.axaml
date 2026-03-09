@@ -291,7 +291,7 @@
 
                         <CheckBox Grid.Row="4"
                                   Grid.ColumnSpan="2"
-                                  Content="Batch update"
+                                  Content="Batch Update"
                                   IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
                         <CheckBox Grid.Row="5"
                                   Grid.ColumnSpan="2"
@@ -305,21 +305,26 @@
                         <Button Grid.Row="6"
                                 Grid.Column="1"
                                 Classes="panel"
-                                Content="Train"
+                                Content="{Binding TrainButtonLabel}"
                                 Command="{Binding TrainCommand}" />
 
                         <TextBlock Grid.Row="7" Text="Progress" />
-                        <Border Grid.Row="7"
-                                Grid.Column="1"
-                                Background="#E9EEF2"
-                                BorderBrush="#9FB0C0"
-                                BorderThickness="1"
-                                Padding="6,4">
+                        <Grid Grid.Row="7"
+                              Grid.Column="1">
+                            <ProgressBar Minimum="0"
+                                         Maximum="{Binding ProgressMaximum}"
+                                         Value="{Binding ProgressValue}"
+                                         Height="28"
+                                         Foreground="#5E7FA3"
+                                         Background="#E9EEF2"
+                                         BorderBrush="#9FB0C0"
+                                         BorderThickness="1" />
                             <TextBlock Text="{Binding ProgressLabel}"
                                        HorizontalAlignment="Center"
-                                       Foreground="#3F5F88"
+                                       VerticalAlignment="Center"
+                                       Foreground="#2F4964"
                                        FontWeight="SemiBold" />
-                        </Border>
+                        </Grid>
 
                         <TextBlock Grid.Row="8" Text="Pattern" />
                         <ComboBox Grid.Row="8"

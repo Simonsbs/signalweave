@@ -40,6 +40,7 @@ Source basis used for this implementation:
   - dedicated network configuration dialog
   - desktop save/load workflows for networks and weights, plus pattern loading
   - control panel defaults
+  - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
   - test-one/test-all interaction
   - current weight inspection
   - live network diagram
@@ -47,6 +48,7 @@ Source basis used for this implementation:
   - pattern/output inspection
   - projected 3D and time-series utility plots
   - weight legend and axis-based error progress plot
+  - progress bar state with `Untrained` and cycle-count display
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
