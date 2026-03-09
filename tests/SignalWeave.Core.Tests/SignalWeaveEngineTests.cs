@@ -597,6 +597,65 @@ public class SignalWeaveEngineTests
         AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
     }
 
+    [Fact]
+    public void MatchesBasicPropProbeForBatchSrnTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = SRN train batch parity
+            network = srn
+            inputs = 1
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 4
+            errorThreshold = 0.0
+            update = batch
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            c: 1 => 0
+            d: 0 => 1
+            reset
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.4, 0.7 },
+                { 0.2, -0.3 }
+            },
+            new double[,]
+            {
+                { -0.5 },
+                { 0.8 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.6, 0.1 },
+                { -0.2, 0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var result = engine.Train(patterns, 4);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("srn-train-batch.json");
+
+        Assert.Equal(4, result.History.Count);
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+        AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
+    }
+
     private static BasicPropGoldenFixture LoadGoldenFixture(string fileName)
     {
         var path = Path.GetFullPath(Path.Combine(

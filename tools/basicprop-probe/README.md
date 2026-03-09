@@ -45,6 +45,7 @@ Current checked-in SRN probes:
 
 - `examples/srn-forward.bppr`
 - `examples/srn-train-sequential.bppr`
+- `examples/srn-train-batch.bppr`
 
 ## Probe file format
 
