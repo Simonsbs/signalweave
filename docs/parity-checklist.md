@@ -99,9 +99,9 @@ Status legend:
 ## Release engineering
 
 - `[done]` Linux build validation
-- `[in-progress]` Windows build validation
-- `[in-progress]` macOS build validation
-- `[in-progress]` packaged desktop binaries
+- `[done]` Windows build validation
+- `[done]` macOS build validation
+- `[done]` packaged desktop binaries
 - `[in-progress]` GitHub release workflow
 - `[done]` final parity sign-off script
 

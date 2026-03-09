@@ -111,7 +111,7 @@ Source basis used for this implementation:
 - Keep the SRN split explicit: reset-aware probe traces drive run-result parity, while hidden-activation export intentionally matches BasicProp's raw `getHiddenActs()` helper behavior
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely
-- Finish cross-platform release validation from real CI runs and ship the packaged desktop bundles
+- Finish cross-platform runtime/release validation from real CI runs and shipped GitHub release artifacts
 - Keep the local sign-off path in sync with the release gate through `scripts/parity-signoff.sh`
 
 ## Scope decision

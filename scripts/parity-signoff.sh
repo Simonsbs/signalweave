@@ -5,7 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 JAR_PATH="${BASICPROP_JAR:-/home/simon/temp/BasicProp/basicProp-1.3.jar}"
 PROBE_DIR="$ROOT_DIR/tools/basicprop-probe"
 PROBE_SRC="$PROBE_DIR/BasicPropProbe.java"
-PUBLISH_DIR="$ROOT_DIR/artifacts/signalweave-desktop-linux-x64"
+ARTIFACTS_DIR="$ROOT_DIR/artifacts"
+RIDS=("linux-x64" "win-x64" "osx-x64" "osx-arm64")
 
 echo "[1/5] Building solution"
 dotnet build "$ROOT_DIR/SignalWeave.sln"
@@ -27,17 +28,31 @@ while IFS= read -r probe_file; do
     java -cp "$JAR_PATH:$PROBE_DIR" BasicPropProbe run "$probe_file" > /dev/null
 done < <(find "$PROBE_DIR/examples" -maxdepth 1 -name '*.bppr' | sort)
 
-echo "[5/5] Publishing Linux desktop bundle"
-rm -rf "$PUBLISH_DIR"
-dotnet publish \
-    "$ROOT_DIR/src/SignalWeave.Desktop/SignalWeave.Desktop.csproj" \
-    -c Release \
-    -r linux-x64 \
-    --self-contained true \
-    -p:PublishSingleFile=false \
-    -p:PublishReadyToRun=false \
-    -o "$PUBLISH_DIR"
+echo "[5/5] Publishing desktop bundles"
+for rid in "${RIDS[@]}"; do
+    publish_dir="$ARTIFACTS_DIR/signalweave-desktop-$rid"
+    archive_path="$ARTIFACTS_DIR/signalweave-desktop-$rid.zip"
+    echo "  - $rid"
+    rm -rf "$publish_dir"
+    rm -f "$archive_path"
+    dotnet publish \
+        "$ROOT_DIR/src/SignalWeave.Desktop/SignalWeave.Desktop.csproj" \
+        -c Release \
+        -r "$rid" \
+        --self-contained true \
+        -p:PublishSingleFile=false \
+        -p:PublishReadyToRun=false \
+        -o "$publish_dir"
+    (
+        cd "$ARTIFACTS_DIR"
+        zip -qr "$(basename "$archive_path")" "$(basename "$publish_dir")"
+    )
+done
 
 echo
 echo "Parity sign-off completed successfully."
-echo "Published desktop bundle: $PUBLISH_DIR"
+echo "Published desktop bundles:"
+for rid in "${RIDS[@]}"; do
+    echo "  - $ARTIFACTS_DIR/signalweave-desktop-$rid"
+    echo "  - $ARTIFACTS_DIR/signalweave-desktop-$rid.zip"
+done

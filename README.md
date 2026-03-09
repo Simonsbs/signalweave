@@ -125,11 +125,14 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 
 - `.github/workflows/ci.yml` runs restore, release build, and core tests on Linux, Windows, and macOS.
 - `.github/workflows/release.yml` publishes self-contained desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`, uploads them as workflow artifacts, and attaches them to GitHub releases for `v*` tags.
-- `scripts/parity-signoff.sh` is the local release-gate command: it builds the solution, runs the core parity tests, compiles and executes every checked-in BasicProp probe, and publishes the Linux desktop bundle.
-- local Linux publish example:
+- `scripts/parity-signoff.sh` is the local release-gate command: it builds the solution, runs the core parity tests, compiles and executes every checked-in BasicProp probe, then publishes and archives the desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`.
+- validated local publish examples:
 
 ```bash
 dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r linux-x64 --self-contained true -o artifacts/signalweave-desktop-linux-x64
+dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/signalweave-desktop-win-x64
+dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r osx-x64 --self-contained true -o artifacts/signalweave-desktop-osx-x64
+dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r osx-arm64 --self-contained true -o artifacts/signalweave-desktop-osx-arm64
 ```
 
 Full local sign-off:
