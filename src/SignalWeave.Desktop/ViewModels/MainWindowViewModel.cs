@@ -1229,7 +1229,17 @@ public partial class MainWindowViewModel : ViewModelBase
         EnsureContext(resetWeights: false);
         var run = EnsureRun();
         BuildTimeSeriesPlot(run);
-        return CreateScaledPlotSnapshot($"{_definition!.Name} - Time Series Plot");
+        var patternCount = Math.Max(1, run.Results.Count);
+        return CreateScaledPlotSnapshot(
+            $"{_definition!.Name} - Time Series Plot",
+            "1.000",
+            "0.500",
+            "0.000",
+            "1",
+            ((patternCount + 1) / 2).ToString(CultureInfo.InvariantCulture),
+            patternCount.ToString(CultureInfo.InvariantCulture),
+            "Pattern order",
+            "Output 1");
     }
 
     public PlotWindowSnapshot Create3DPlotSnapshot()
@@ -1237,7 +1247,28 @@ public partial class MainWindowViewModel : ViewModelBase
         EnsureContext(resetWeights: false);
         var run = EnsureRun();
         BuildScatterPlot(run);
-        return CreateScaledPlotSnapshot($"{_definition!.Name} - 3D Plot");
+        var vectors = run.Results
+            .Select(result => result.HiddenActivations.Length >= 2
+                ? result.HiddenActivations
+                : result.Outputs)
+            .ToArray();
+        var xs = vectors.Select(vector => vector[0]).ToArray();
+        var ys = vectors.Select(vector => vector.Length > 1 ? vector[1] : 0.0).ToArray();
+        var minX = xs.Min();
+        var maxX = xs.Max();
+        var minY = ys.Min();
+        var maxY = ys.Max();
+
+        return CreateScaledPlotSnapshot(
+            $"{_definition!.Name} - 3D Plot",
+            maxY.ToString("0.000", CultureInfo.InvariantCulture),
+            ((minY + maxY) / 2).ToString("0.000", CultureInfo.InvariantCulture),
+            minY.ToString("0.000", CultureInfo.InvariantCulture),
+            minX.ToString("0.000", CultureInfo.InvariantCulture),
+            ((minX + maxX) / 2).ToString("0.000", CultureInfo.InvariantCulture),
+            maxX.ToString("0.000", CultureInfo.InvariantCulture),
+            "Dimension 1",
+            "Dimension 2");
     }
 
     private static string Slugify(string value)
@@ -1257,12 +1288,29 @@ public partial class MainWindowViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(text.Trim('-')) ? "signalweave" : text.Trim('-');
     }
 
-    private PlotWindowSnapshot CreateScaledPlotSnapshot(string title)
+    private PlotWindowSnapshot CreateScaledPlotSnapshot(
+        string title,
+        string yAxisTopLabel,
+        string yAxisMidLabel,
+        string yAxisBottomLabel,
+        string xAxisLeftLabel,
+        string xAxisMidLabel,
+        string xAxisRightLabel,
+        string xAxisTitle,
+        string yAxisTitle)
     {
         return new PlotWindowSnapshot(
             title,
             UtilityPlotSummary,
             ScalePlotPoints(UtilityPlotPoints),
+            yAxisTopLabel,
+            yAxisMidLabel,
+            yAxisBottomLabel,
+            xAxisLeftLabel,
+            xAxisMidLabel,
+            xAxisRightLabel,
+            xAxisTitle,
+            yAxisTitle,
             UtilityPlotMarkers
                 .Select(marker => new PlotMarkerItem(
                     ScalePlotX(marker.X),
@@ -1313,4 +1361,16 @@ public sealed record PatternOutputRow(int Index, string Label, string Inputs, st
 public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);
 public sealed record WeightDisplaySession(string Title, WeightSet Weights);
 public sealed record PatternOutputsSnapshot(string Title, string Summary, IReadOnlyList<PatternOutputRow> Rows);
-public sealed record PlotWindowSnapshot(string Title, string Summary, string Points, IReadOnlyList<PlotMarkerItem> Markers);
+public sealed record PlotWindowSnapshot(
+    string Title,
+    string Summary,
+    string Points,
+    string YAxisTopLabel,
+    string YAxisMidLabel,
+    string YAxisBottomLabel,
+    string XAxisLeftLabel,
+    string XAxisMidLabel,
+    string XAxisRightLabel,
+    string XAxisTitle,
+    string YAxisTitle,
+    IReadOnlyList<PlotMarkerItem> Markers);

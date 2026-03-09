@@ -10,6 +10,14 @@ public partial class UtilityPlotWindow : Window
             "Utility Plot",
             "No utility plot prepared.",
             "20,160 120,40 220,120",
+            "0.0",
+            "0.5",
+            "1.0",
+            "0",
+            "5",
+            "10",
+            "X axis",
+            "Y axis",
             new[]
             {
                 new PlotMarkerItem(20, 160, 8, 8, "#B24C3D", "p1"),

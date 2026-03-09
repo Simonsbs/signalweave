@@ -12,6 +12,7 @@ namespace SignalWeave.Desktop.ViewModels;
 public partial class WeightDisplayWindowViewModel : ViewModelBase
 {
     private readonly WeightSet _weights;
+    private readonly IReadOnlyList<WeightLayerOption> _layerOptions;
 
     public WeightDisplayWindowViewModel()
         : this(new WeightDisplaySession(
@@ -25,15 +26,19 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     public WeightDisplayWindowViewModel(WeightDisplaySession session)
     {
         _weights = session.Weights.Clone();
-        WindowTitle = $"{session.Title} - Weights";
+        BaseTitle = $"{session.Title} - Weights";
 
-        WeightLayerOptions = new ReadOnlyCollection<string>(BuildLayerOptions(_weights).ToArray());
+        _layerOptions = BuildLayerOptions(_weights).ToArray();
+        WeightLayerOptions = new ReadOnlyCollection<string>(_layerOptions.Select(option => option.Id).ToArray());
         SelectedWeightLayer = WeightLayerOptions[0];
         RebuildWeightMap();
     }
 
     public IReadOnlyList<string> WeightLayerOptions { get; }
     public ObservableCollection<WeightGlyphItem> WeightGlyphs { get; } = [];
+
+    [ObservableProperty]
+    private string _baseTitle = "Weights";
 
     [ObservableProperty]
     private string _windowTitle = "Weights";
@@ -43,6 +48,9 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _weightMapSummary = "No weights loaded.";
+
+    [ObservableProperty]
+    private string _selectedLayerDescription = "Input -> Hidden";
 
     partial void OnSelectedWeightLayerChanged(string value)
     {
@@ -62,12 +70,9 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     {
         WeightGlyphs.Clear();
 
-        var (matrix, layerTitle) = SelectedWeightLayer switch
-        {
-            "Hidden -> Output" => (_weights.HiddenOutput, "Hidden -> Output"),
-            "Hidden -> Hidden" when _weights.RecurrentHidden is not null => (_weights.RecurrentHidden, "Hidden -> Hidden"),
-            _ => (_weights.InputHidden, "Input -> Hidden")
-        };
+        var layer = _layerOptions.FirstOrDefault(option => option.Id == SelectedWeightLayer) ?? _layerOptions[0];
+        var matrix = layer.MatrixSelector(_weights);
+        var layerTitle = layer.Description;
 
         var rows = matrix.GetLength(0);
         var columns = matrix.GetLength(1);
@@ -101,16 +106,18 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
         }
 
         WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
+        SelectedLayerDescription = layerTitle;
+        WindowTitle = $"{BaseTitle} ({layer.Id}: {layerTitle})";
     }
 
-    private static IEnumerable<string> BuildLayerOptions(WeightSet weights)
+    private static IEnumerable<WeightLayerOption> BuildLayerOptions(WeightSet weights)
     {
-        yield return "Input -> Hidden";
-        yield return "Hidden -> Output";
+        yield return new WeightLayerOption("1", "Input -> Hidden", value => value.InputHidden);
+        yield return new WeightLayerOption("2", "Hidden -> Output", value => value.HiddenOutput);
 
         if (weights.RecurrentHidden is not null)
         {
-            yield return "Hidden -> Hidden";
+            yield return new WeightLayerOption("3", "Hidden -> Hidden", value => value.RecurrentHidden!);
         }
     }
 
@@ -124,4 +131,6 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
             }
         }
     }
+
+    private sealed record WeightLayerOption(string Id, string Description, Func<WeightSet, double[,]> MatrixSelector);
 }

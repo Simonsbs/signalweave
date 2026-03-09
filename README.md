@@ -33,6 +33,7 @@ Implemented now:
 - utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
 - BasicProp-style visual touches including weight-value legend, Hinton-like weight cells, and axis-based error plotting
 - dedicated secondary windows for weights, patterns/outputs, and plot utilities from the top-level menus
+- popup utility windows with BasicProp-style layer controls and axis labels
 
 Still to build for full feature parity:
 

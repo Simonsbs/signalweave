@@ -48,6 +48,7 @@ Source basis used for this implementation:
   - projected 3D and time-series utility plots
   - weight legend and axis-based error progress plot
   - dedicated secondary windows for weights, plots, and patterns/outputs
+  - popup plot axes/labels and BasicProp-style weight-layer controls
   - hidden activation export
 
 ## Remaining parity work

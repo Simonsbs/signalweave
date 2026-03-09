@@ -61,7 +61,7 @@
             <DockPanel>
                 <TextBlock VerticalAlignment="Center"
                            Text="Weight layer:" />
-                <ComboBox Width="120"
+                <ComboBox Width="72"
                           Margin="8,0,0,0"
                           ItemsSource="{Binding WeightLayerOptions}"
                           SelectedItem="{Binding SelectedWeightLayer, Mode=TwoWay}" />
@@ -70,7 +70,7 @@
                         Command="{Binding RefreshCommand}" />
                 <TextBlock Margin="16,3,0,0"
                            Foreground="#4C4C4C"
-                           Text="{Binding WeightMapSummary}" />
+                           Text="{Binding SelectedLayerDescription}" />
                 <Button DockPanel.Dock="Right"
                         Content="Dismiss"
                         Click="Dismiss_Click" />

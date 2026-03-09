@@ -27,42 +27,90 @@
                 BorderBrush="#AAB4C0"
                 BorderThickness="1"
                 Padding="8">
-            <Canvas Width="340"
-                    Height="240"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                <shapes:Line StartPoint="20,210"
-                             EndPoint="320,210"
-                             Stroke="#5A5A5A"
-                             StrokeThickness="1.5" />
-                <shapes:Line StartPoint="20,20"
-                             EndPoint="20,210"
-                             Stroke="#5A5A5A"
-                             StrokeThickness="1.5" />
-                <shapes:Polyline Points="{Binding PlotPoints}"
-                                 Stroke="#B24C3D"
-                                 StrokeThickness="2" />
-                <ItemsControl ItemsSource="{Binding Markers}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <Canvas />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:PlotMarkerItem">
-                            <shapes:Ellipse Width="{Binding Width}"
-                                            Height="{Binding Height}"
-                                            Fill="{Binding Fill}"
-                                            Canvas.Left="{Binding X}"
-                                            Canvas.Top="{Binding Y}">
-                                <ToolTip.Tip>
-                                    <TextBlock Text="{Binding Label}" />
-                                </ToolTip.Tip>
-                            </shapes:Ellipse>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Canvas>
+            <Grid ColumnDefinitions="Auto,*"
+                  RowDefinitions="*,Auto">
+                <StackPanel Spacing="54"
+                            VerticalAlignment="Center"
+                            Margin="0,16,8,24">
+                    <TextBlock Text="{Binding YAxisTopLabel}" />
+                    <TextBlock Text="{Binding YAxisMidLabel}" />
+                    <TextBlock Text="{Binding YAxisBottomLabel}" />
+                </StackPanel>
+                <Canvas Grid.Column="1"
+                        Width="340"
+                        Height="240"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <shapes:Line StartPoint="20,210"
+                                 EndPoint="320,210"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.5" />
+                    <shapes:Line StartPoint="20,20"
+                                 EndPoint="20,210"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.5" />
+                    <shapes:Line StartPoint="120,206"
+                                 EndPoint="120,214"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.2" />
+                    <shapes:Line StartPoint="220,206"
+                                 EndPoint="220,214"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.2" />
+                    <shapes:Line StartPoint="16,115"
+                                 EndPoint="24,115"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.2" />
+                    <shapes:Polyline Points="{Binding PlotPoints}"
+                                     Stroke="#B24C3D"
+                                     StrokeThickness="2" />
+                    <ItemsControl ItemsSource="{Binding Markers}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PlotMarkerItem">
+                                <shapes:Ellipse Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                Fill="{Binding Fill}"
+                                                Canvas.Left="{Binding X}"
+                                                Canvas.Top="{Binding Y}">
+                                    <ToolTip.Tip>
+                                        <TextBlock Text="{Binding Label}" />
+                                    </ToolTip.Tip>
+                                </shapes:Ellipse>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Canvas>
+                <Grid Grid.Row="1"
+                      Grid.Column="1"
+                      ColumnDefinitions="Auto,*,Auto"
+                      Margin="18,4,20,0">
+                    <TextBlock Text="{Binding XAxisLeftLabel}" />
+                    <TextBlock Grid.Column="1"
+                               HorizontalAlignment="Center"
+                               Text="{Binding XAxisMidLabel}" />
+                    <TextBlock Grid.Column="2"
+                               HorizontalAlignment="Right"
+                               Text="{Binding XAxisRightLabel}" />
+                </Grid>
+                <TextBlock Grid.Row="1"
+                           Grid.Column="1"
+                           Margin="0,22,0,0"
+                           HorizontalAlignment="Center"
+                           Text="{Binding XAxisTitle}" />
+                <TextBlock Grid.Column="0"
+                           Margin="0,0,8,0"
+                           VerticalAlignment="Center"
+                           Text="{Binding YAxisTitle}">
+                    <TextBlock.RenderTransform>
+                        <RotateTransform Angle="-90" />
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+            </Grid>
         </Border>
 
         <Button Grid.Row="2"
