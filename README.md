@@ -27,7 +27,7 @@ Implemented now:
 - test-all and test-one execution
 - weight save/load
 - output and hidden-state hierarchical clustering
-- desktop workbench for demo loading, parsing, training, testing, and clustering
+- desktop workbench with a BasicProp-style control panel, live network view, editor tabs, testing, clustering, and weight inspection
 
 Still to build for full feature parity:
 
@@ -58,7 +58,13 @@ dotnet run --project src/SignalWeave.Cli -- cluster --network samples/xor.swcfg 
 dotnet run --project src/SignalWeave.Desktop
 ```
 
-The desktop app ships with built-in XOR and SRN demos so it can be exercised immediately after clone.
+The desktop app ships with built-in XOR and SRN demos and now exposes a BasicProp-like workflow surface:
+
+- top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
+- right-side training/test control panel with BasicProp defaults
+- live network diagram colored by weight sign and magnitude
+- console/config/pattern/weight tabs
+- test-one gating that follows the original `< 24 patterns` behavior
 
 ## Samples
 

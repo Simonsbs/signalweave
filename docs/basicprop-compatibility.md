@@ -35,6 +35,12 @@ Source basis used for this implementation:
 - Training and testing workflows
 - Weight persistence
 - Hierarchical clustering over outputs and hidden activations
+- BasicProp-style desktop shell with:
+  - menu structure
+  - control panel defaults
+  - test-one/test-all interaction
+  - current weight inspection
+  - live network diagram
 
 ## Remaining parity work
 

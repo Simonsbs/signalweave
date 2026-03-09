@@ -1,135 +1,357 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="860"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        xmlns:shapes="clr-namespace:Avalonia.Controls.Shapes;assembly=Avalonia.Controls"
+        mc:Ignorable="d"
         x:Class="SignalWeave.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="SignalWeave"
-        Width="1280"
-        Height="860"
-        Background="#F3EFE5">
+        Width="1360"
+        Height="900"
+        MinWidth="1180"
+        MinHeight="780"
+        Background="#D9D9D9">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <Grid ColumnDefinitions="320,*" RowDefinitions="Auto,*" Margin="18">
-        <Border Grid.ColumnSpan="2"
-                Background="#10313F"
-                Padding="22"
-                CornerRadius="18">
-            <StackPanel Spacing="10">
-                <TextBlock Text="SignalWeave"
-                           FontSize="30"
-                           FontWeight="Bold"
-                           Foreground="#FFF7E9"/>
-                <TextBlock Text="A cross-platform BasicProp alternative for Windows, Linux, and macOS."
-                           FontSize="15"
-                           Foreground="#D9E2D3"/>
-            </StackPanel>
-        </Border>
+    <Window.Styles>
+        <Style Selector="Border.group">
+            <Setter Property="BorderBrush" Value="#A6B7C9" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#E7E7E7" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+        <Style Selector="TextBox.editor">
+            <Setter Property="FontFamily" Value="Courier New" />
+            <Setter Property="Background" Value="#F6F6F6" />
+            <Setter Property="BorderBrush" Value="#AAB3BE" />
+        </Style>
+        <Style Selector="Button.panel">
+            <Setter Property="MinHeight" Value="30" />
+        </Style>
+    </Window.Styles>
 
-        <Border Grid.Row="1"
-                Margin="0,18,18,0"
-                Padding="18"
-                Background="#E4D3B8"
-                CornerRadius="18">
-            <StackPanel Spacing="14">
-                <TextBlock Text="Workbench"
-                           FontSize="20"
-                           FontWeight="SemiBold"
-                           Foreground="#3A2212"/>
-                <TextBlock Text="{Binding FeatureText}"
-                           TextWrapping="Wrap"
-                           Foreground="#4E3523"/>
-                <TextBlock Text="Sample"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Margin="0,8,0,0"/>
-                <TextBlock Text="{Binding SampleTitle}"
-                           FontSize="18"
-                           FontWeight="Bold"
-                           Foreground="#10313F"/>
-                <Button Content="Load XOR demo" Command="{Binding LoadXorDemoCommand}" />
-                <Button Content="Load SRN demo" Command="{Binding LoadSrnDemoCommand}" />
-                <Separator Margin="0,8,0,8"/>
-                <Button Content="Parse config + patterns" Command="{Binding ParseCommand}" />
-                <Button Content="Train network" Command="{Binding TrainCommand}" />
-                <Button Content="Test all patterns" Command="{Binding TestCommand}" />
-                <Button Content="Cluster outputs" Command="{Binding ClusterOutputsCommand}" />
-                <Button Content="Cluster hidden states" Command="{Binding ClusterHiddenCommand}" />
-            </StackPanel>
-        </Border>
+    <DockPanel Margin="8">
+        <Menu DockPanel.Dock="Top"
+              Margin="0,0,0,8"
+              Background="#ECECEC">
+            <MenuItem Header="_Network">
+                <MenuItem Header="_Load XOR Demo" Command="{Binding LoadXorDemoCommand}" />
+                <MenuItem Header="Load _SRN Demo" Command="{Binding LoadSrnDemoCommand}" />
+                <Separator />
+                <MenuItem Header="_Parse Editors" Command="{Binding ParseEditorCommand}" />
+                <MenuItem Header="_Reset Network" Command="{Binding ResetNetworkCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Weights">
+                <MenuItem Header="_Show Current Weights" Command="{Binding ShowWeightsCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Patterns">
+                <MenuItem Header="_Show Pattern Summary" Command="{Binding ShowPatternsCommand}" />
+                <MenuItem Header="_Test One" Command="{Binding TestOneCommand}" />
+                <MenuItem Header="Test _All" Command="{Binding TestAllCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Utilities">
+                <MenuItem Header="Cluster _Outputs" Command="{Binding ClusterOutputsCommand}" />
+                <MenuItem Header="Cluster _Hidden States" Command="{Binding ClusterHiddenCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_Compatibility Profile" Command="{Binding ShowCompatibilityCommand}" />
+            </MenuItem>
+        </Menu>
 
-        <Grid Grid.Row="1" Grid.Column="1" Margin="0,18,0,0" ColumnDefinitions="*,*" RowDefinitions="Auto,*,Auto">
-            <TextBlock Grid.ColumnSpan="2"
-                       Text="Paste BasicProp-style files directly into the panels below."
-                       Foreground="#5A4436"
-                       Margin="0,0,0,10"/>
+        <Grid ColumnDefinitions="*,290"
+              RowDefinitions="Auto,*,220">
+            <TextBlock Text="SignalWeave"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="#2D2D2D"
+                       Margin="2,0,0,6" />
 
             <Border Grid.Row="1"
-                    Margin="0,0,9,0"
-                    Padding="14"
-                    Background="#FFF9F0"
-                    CornerRadius="16">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Network config"
+                    Classes="group"
+                    Margin="0,0,8,8">
+                <Grid RowDefinitions="Auto,*,Auto">
+                    <TextBlock Text="Network"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="#10313F"/>
-                    <TextBox Text="{Binding ConfigText, Mode=TwoWay}"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             MinHeight="420"
-                             FontFamily="Courier New" />
-                </StackPanel>
+                               Foreground="#3A3A3A"
+                               Margin="0,0,0,6" />
+
+                    <Border Grid.Row="1"
+                            Background="#F1F1F1"
+                            BorderBrush="#AAB4C0"
+                            BorderThickness="1"
+                            Padding="8">
+                        <Grid RowDefinitions="*,Auto">
+                            <Canvas Width="680"
+                                    Height="430"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <ItemsControl ItemsSource="{Binding DiagramEdges}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:DiagramEdgeItem">
+                                            <shapes:Line StartPoint="{Binding StartPoint}"
+                                                         EndPoint="{Binding EndPoint}"
+                                                         Stroke="{Binding Stroke}"
+                                                         StrokeThickness="{Binding Thickness}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl ItemsSource="{Binding DiagramNodes}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:DiagramNodeItem">
+                                            <Border Width="{Binding Width}"
+                                                    Height="{Binding Height}"
+                                                    Background="{Binding Fill}"
+                                                    BorderBrush="{Binding Stroke}"
+                                                    BorderThickness="1.2"
+                                                    Canvas.Left="{Binding X}"
+                                                    Canvas.Top="{Binding Y}">
+                                                <TextBlock Text="{Binding Label}"
+                                                           TextAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Center"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#4A4A4A" />
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Canvas>
+
+                            <StackPanel Grid.Row="1"
+                                        Margin="0,10,0,0"
+                                        Spacing="6"
+                                        HorizontalAlignment="Center">
+                                <Border Background="#EDEDED"
+                                        BorderBrush="#C6C6C6"
+                                        BorderThickness="1"
+                                        Padding="8,6">
+                                    <TextBlock Text="{Binding NetworkSummary}"
+                                               TextAlignment="Center"
+                                               Foreground="#4A4A4A" />
+                                </Border>
+                                <TextBlock Text="Red = negative weight | Green = positive weight"
+                                           Foreground="#676767" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <TabControl Grid.Row="2"
+                                SelectedIndex="{Binding EditorTabIndex, Mode=TwoWay}"
+                                Margin="0,8,0,0">
+                        <TabItem Header="Console">
+                            <TextBox Classes="editor"
+                                     Text="{Binding ConsoleText}"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="168" />
+                        </TabItem>
+                        <TabItem Header="Config">
+                            <TextBox Classes="editor"
+                                     Text="{Binding ConfigText, Mode=TwoWay}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="168" />
+                        </TabItem>
+                        <TabItem Header="Patterns">
+                            <TextBox Classes="editor"
+                                     Text="{Binding PatternText, Mode=TwoWay}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="168" />
+                        </TabItem>
+                        <TabItem Header="Weights">
+                            <TextBox Classes="editor"
+                                     Text="{Binding WeightsText}"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="168" />
+                        </TabItem>
+                    </TabControl>
+                </Grid>
             </Border>
 
-            <Border Grid.Row="1"
-                    Grid.Column="1"
-                    Margin="9,0,0,0"
-                    Padding="14"
-                    Background="#FFF9F0"
-                    CornerRadius="16">
+            <Border Grid.Column="1"
+                    Grid.Row="1"
+                    Classes="group"
+                    Margin="0,0,0,8">
                 <StackPanel Spacing="8">
-                    <TextBlock Text="Pattern file"
+                    <TextBlock Text="Control panel"
                                FontSize="18"
                                FontWeight="SemiBold"
-                               Foreground="#10313F"/>
-                    <TextBox Text="{Binding PatternText, Mode=TwoWay}"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             MinHeight="420"
-                             FontFamily="Courier New" />
+                               Foreground="#3A3A3A" />
+
+                    <Grid ColumnDefinitions="*,110"
+                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          RowSpacing="8"
+                          ColumnSpacing="8">
+                        <TextBlock Text="Learning rate" />
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding LearningRateOptions}"
+                                  SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="1" Text="Momentum" />
+                        <ComboBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  ItemsSource="{Binding MomentumOptions}"
+                                  SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="2" Text="Learning steps" />
+                        <ComboBox Grid.Row="2"
+                                  Grid.Column="1"
+                                  ItemsSource="{Binding LearningStepOptions}"
+                                  SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="3" Text="Weight range" />
+                        <ComboBox Grid.Row="3"
+                                  Grid.Column="1"
+                                  ItemsSource="{Binding WeightRangeOptions}"
+                                  SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
+
+                        <CheckBox Grid.Row="4"
+                                  Grid.ColumnSpan="2"
+                                  Content="Batch update"
+                                  IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
+                        <CheckBox Grid.Row="5"
+                                  Grid.ColumnSpan="2"
+                                  Content="X-entropy"
+                                  IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
+
+                        <Button Grid.Row="6"
+                                Classes="panel"
+                                Content="Reset"
+                                Command="{Binding ResetNetworkCommand}" />
+                        <Button Grid.Row="6"
+                                Grid.Column="1"
+                                Classes="panel"
+                                Content="Train"
+                                Command="{Binding TrainCommand}" />
+
+                        <TextBlock Grid.Row="7" Text="Progress" />
+                        <Border Grid.Row="7"
+                                Grid.Column="1"
+                                Background="#E9EEF2"
+                                BorderBrush="#9FB0C0"
+                                BorderThickness="1"
+                                Padding="6,4">
+                            <TextBlock Text="{Binding ProgressLabel}"
+                                       HorizontalAlignment="Center"
+                                       Foreground="#3F5F88"
+                                       FontWeight="SemiBold" />
+                        </Border>
+
+                        <TextBlock Grid.Row="8" Text="Pattern" />
+                        <ComboBox Grid.Row="8"
+                                  Grid.Column="1"
+                                  ItemsSource="{Binding PatternOptions}"
+                                  SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
+
+                        <Button Grid.Row="9"
+                                Grid.ColumnSpan="2"
+                                Classes="panel"
+                                Content="Test one"
+                                Command="{Binding TestOneCommand}"
+                                IsEnabled="{Binding CanTestOne}" />
+                        <Button Grid.Row="10"
+                                Grid.ColumnSpan="2"
+                                Classes="panel"
+                                Content="Test all"
+                                Command="{Binding TestAllCommand}" />
+                        <Button Grid.Row="11"
+                                Grid.ColumnSpan="2"
+                                Classes="panel"
+                                Content="Show weights"
+                                Command="{Binding ShowWeightsCommand}" />
+                    </Grid>
+
+                    <Separator Margin="0,6,0,4" />
+
+                    <Button Classes="panel"
+                            Content="Cluster outputs"
+                            Command="{Binding ClusterOutputsCommand}" />
+                    <Button Classes="panel"
+                            Content="Cluster hidden states"
+                            Command="{Binding ClusterHiddenCommand}" />
+                    <Button Classes="panel"
+                            Content="Pattern summary"
+                            Command="{Binding ShowPatternsCommand}" />
+                    <Button Classes="panel"
+                            Content="Compatibility"
+                            Command="{Binding ShowCompatibilityCommand}" />
                 </StackPanel>
             </Border>
 
             <Border Grid.Row="2"
                     Grid.ColumnSpan="2"
-                    Margin="0,16,0,0"
-                    Padding="14"
-                    Background="#10313F"
-                    CornerRadius="16">
-                <StackPanel Spacing="8">
-                    <TextBlock Text="Run output"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Foreground="#FFF7E9"/>
-                    <TextBox Text="{Binding ResultText}"
-                             IsReadOnly="True"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             MinHeight="180"
-                             Background="#10313F"
-                             Foreground="#F7F0E3"
-                             BorderThickness="0"
-                             FontFamily="Courier New" />
-                </StackPanel>
+                    Classes="group">
+                <Grid ColumnDefinitions="*,300"
+                      ColumnSpacing="10">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Results and utilities"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="#3A3A3A" />
+                        <TextBox Classes="editor"
+                                 Text="{Binding AnalysisText}"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Height="170" />
+                    </StackPanel>
+
+                    <Grid Grid.Column="1"
+                          RowDefinitions="Auto,*,Auto"
+                          RowSpacing="6">
+                        <TextBlock Text="Error progress"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   Foreground="#3A3A3A" />
+                        <Border Grid.Row="1"
+                                Background="#F7F7F7"
+                                BorderBrush="#AAB4C0"
+                                BorderThickness="1"
+                                Padding="8">
+                            <Grid>
+                                <Canvas Width="240"
+                                        Height="132"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                    <shapes:Polyline Points="{Binding ErrorProgressPoints}"
+                                                     Stroke="#4E7396"
+                                                     StrokeThickness="2" />
+                                </Canvas>
+                            </Grid>
+                        </Border>
+                        <TextBox Grid.Row="2"
+                                 Classes="editor"
+                                 Text="{Binding HistoryText}"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 Height="60" />
+                    </Grid>
+                </Grid>
             </Border>
         </Grid>
-    </Grid>
-
+    </DockPanel>
 </Window>
