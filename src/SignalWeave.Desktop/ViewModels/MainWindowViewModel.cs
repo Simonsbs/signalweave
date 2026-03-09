@@ -320,7 +320,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: false);
             AnalysisText = _engine!.ClusterOutputs(_patternSet!).ToDisplayText();
-            ConsoleText = "Output clustering complete.";
         });
     }
 
@@ -331,7 +330,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: false);
             AnalysisText = _engine!.ClusterHiddenStates(_patternSet!).ToDisplayText();
-            ConsoleText = "Hidden-state clustering complete.";
         });
     }
 
@@ -339,7 +337,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ShowCompatibility()
     {
         AnalysisText = CompatibilityProfile.ToDisplayText();
-        ConsoleText = "Showing current compatibility profile.";
     }
 
     [RelayCommand]
@@ -848,7 +845,6 @@ public partial class MainWindowViewModel : ViewModelBase
             EnsureContext(resetWeights: false);
             RebuildWeightMap();
             ResultsTabIndex = 1;
-            ConsoleText = "Refreshed weight map.";
         });
     }
 
