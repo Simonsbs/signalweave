@@ -10,6 +10,8 @@ public sealed class SignalWeaveEngine
     private readonly double[,]? _previousRecurrentDelta;
     private double[]? _trainingHiddenContext;
     private double _trainingHiddenBiasValue;
+    private double[]? _visibleHiddenContext;
+    private double _visibleHiddenBiasValue;
     private int _lastTrainedPatternIndex;
 
     public SignalWeaveEngine(NetworkDefinition definition, WeightSet? weights = null, int? seed = null)
@@ -30,6 +32,10 @@ public sealed class SignalWeaveEngine
             ? new double[_definition.HiddenUnits]
             : null;
         _trainingHiddenBiasValue = _definition.UseHiddenBias ? 1.0 : 0.0;
+        _visibleHiddenContext = _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? new double[_definition.HiddenUnits]
+            : null;
+        _visibleHiddenBiasValue = _definition.NetworkKind == NetworkKind.SimpleRecurrent && _definition.UseHiddenBias ? 1.0 : 0.0;
     }
 
     public WeightSet Weights { get; private set; }
@@ -57,6 +63,7 @@ public sealed class SignalWeaveEngine
         }
 
         CompletedCycles += history.Count;
+        SyncVisibleStateFromTraining();
         var finalRun = TestAll(patternSet);
         return new TrainResult(history, Weights.Clone(), finalRun);
     }
@@ -106,7 +113,11 @@ public sealed class SignalWeaveEngine
             }
         }
 
-        return new RunResult(results, labeled == 0 ? 0.0 : Math.Sqrt(totalSquaredError / labeled));
+        var averageError = labeled == 0 ? 0.0 : Math.Sqrt(totalSquaredError / labeled);
+        var reportedAverageError = _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? MeasureReportedSrnAggregateError(patternSet)
+            : averageError;
+        return new RunResult(results, averageError, reportedAverageError);
     }
 
     public TestResult TestOne(PatternSet patternSet, int index)
@@ -606,6 +617,54 @@ public sealed class SignalWeaveEngine
     private static double ComputeTsq(double squaredError)
     {
         return Math.Sqrt(squaredError);
+    }
+
+    private void SyncVisibleStateFromTraining()
+    {
+        if (_definition.NetworkKind != NetworkKind.SimpleRecurrent)
+        {
+            return;
+        }
+
+        _visibleHiddenContext = _trainingHiddenContext is null
+            ? new double[_definition.HiddenUnits]
+            : (double[])_trainingHiddenContext.Clone();
+        _visibleHiddenBiasValue = _trainingHiddenBiasValue;
+    }
+
+    private double MeasureReportedSrnAggregateError(PatternSet patternSet)
+    {
+        var context = _visibleHiddenContext is null
+            ? new double[_definition.HiddenUnits]
+            : (double[])_visibleHiddenContext.Clone();
+        var hiddenBiasValue = _visibleHiddenBiasValue;
+        var totalSquaredError = 0.0;
+        var labeled = 0;
+
+        foreach (var example in patternSet.Examples)
+        {
+            var step = Forward(example.Inputs, context, hiddenBiasValue);
+
+            if (example.Targets is not null)
+            {
+                totalSquaredError += CalculateSquaredError(step.Outputs, example.Targets);
+                labeled++;
+            }
+
+            if (example.ResetsContextAfter)
+            {
+                Array.Clear(context, 0, context.Length);
+                hiddenBiasValue = 0.0;
+            }
+            else
+            {
+                context = (double[])step.FinalHidden.Clone();
+            }
+        }
+
+        _visibleHiddenContext = (double[])context.Clone();
+        _visibleHiddenBiasValue = hiddenBiasValue;
+        return labeled == 0 ? 0.0 : Math.Sqrt(totalSquaredError / labeled);
     }
 
     private double[] AppendBias(double[] values, bool includeBias)

@@ -274,7 +274,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 var run = await Task.Run(() => engine.TestAll(patternSet));
                 _lastRun = run;
-                ConsoleText = $"Test All: Average per pattern error: {run.AverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
+                ConsoleText = $"Test All: Average per pattern error: {run.DisplayAverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
                 AnalysisText = run.ToTable();
                 WeightsText = BuildWeightsText(engine.Weights);
                 RefreshDiagram();
@@ -812,7 +812,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 result.Error.ToString("0.000000", CultureInfo.InvariantCulture)));
         }
 
-        PatternOutputSummary = $"Average error: {run.AverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
+        PatternOutputSummary = $"Average error: {run.DisplayAverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
     }
 
     private void RebuildWeightMap()

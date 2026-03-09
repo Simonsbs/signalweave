@@ -210,8 +210,10 @@ public sealed record TestResult(
     double[]? Targets,
     double Error);
 
-public sealed record RunResult(IReadOnlyList<TestResult> Results, double AverageError)
+public sealed record RunResult(IReadOnlyList<TestResult> Results, double AverageError, double? ReportedAverageError = null)
 {
+    public double DisplayAverageError => ReportedAverageError ?? AverageError;
+
     public string ToTable()
     {
         var builder = new StringBuilder();
@@ -224,7 +226,7 @@ public sealed record RunResult(IReadOnlyList<TestResult> Results, double Average
             builder.AppendLine($"{result.Index + 1,3} {result.Label,-17} {outputs,-16} {targets,-16} {FormatNumber(result.Error)}");
         }
 
-        builder.AppendLine($"Average error: {FormatNumber(AverageError)}");
+        builder.AppendLine($"Average error: {FormatNumber(DisplayAverageError)}");
         return builder.ToString();
     }
 

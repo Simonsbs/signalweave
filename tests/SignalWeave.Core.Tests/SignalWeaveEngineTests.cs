@@ -1025,6 +1025,11 @@ public class SignalWeaveEngineTests
     private static void AssertRunMatchesGolden(RunResult run, BasicPropGoldenFixture golden)
     {
         Assert.Equal(golden.AverageError, run.AverageError, 12);
+        if (golden.ReportedAverageError.HasValue)
+        {
+            Assert.Equal(golden.ReportedAverageError.Value, run.DisplayAverageError, 12);
+        }
+
         Assert.Equal(golden.Outputs.Length, run.Results.Count);
 
         for (var index = 0; index < golden.Outputs.Length; index++)
@@ -1065,6 +1070,7 @@ public class SignalWeaveEngineTests
     {
         public int? CyclesCompleted { get; set; }
         public double AverageError { get; set; }
+        public double? ReportedAverageError { get; set; }
         public double[][] Outputs { get; set; } = [];
         public double[][]? HiddenActivations { get; set; }
         public double[][] InputHidden { get; set; } = [];

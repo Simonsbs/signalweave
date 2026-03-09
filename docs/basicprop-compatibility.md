@@ -42,6 +42,7 @@ Source basis used for this implementation:
 - Reset-aware SRN trace capture in the BasicProp probe so hidden activations can be compared from one consistent execution path
 - Probe-backed SRN edge-case fixture for the ignored leading-`reset` marker behavior
 - Probe-backed SRN training fixture for the hidden-bias lifecycle across reset boundaries
+- BasicProp-style reported SRN `testAll()` average error is now tracked separately from the coherent reset-aware trace used for outputs and hidden states
 - BasicProp-style desktop shell with:
   - menu structure
   - dedicated network configuration dialog
