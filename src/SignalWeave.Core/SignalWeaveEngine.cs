@@ -41,18 +41,17 @@ public sealed class SignalWeaveEngine
 
         var steps = maxEpochs ?? _definition.MaxEpochs;
         var history = new List<TrainingPoint>(steps);
-        int completedSteps;
 
         if (_definition.NetworkKind == NetworkKind.FeedForward)
         {
-            completedSteps = TrainFeedForward(patternSet, steps, history);
+            TrainFeedForward(patternSet, steps, history);
         }
         else
         {
-            completedSteps = TrainSimpleRecurrent(patternSet, steps, history);
+            TrainSimpleRecurrent(patternSet, steps, history);
         }
 
-        CompletedCycles += completedSteps;
+        CompletedCycles += history.Count;
         var finalRun = TestAll(patternSet);
         return new TrainResult(history, Weights.Clone(), finalRun);
     }
@@ -123,7 +122,7 @@ public sealed class SignalWeaveEngine
         return HierarchicalClusterer.Cluster(run.Results.Select(result => (result.Label, result.HiddenActivations)).ToList());
     }
 
-    private int TrainSimpleRecurrent(PatternSet patternSet, int steps, List<TrainingPoint> history)
+    private void TrainSimpleRecurrent(PatternSet patternSet, int steps, List<TrainingPoint> history)
     {
         var examples = patternSet.Examples;
         var useSequentialUpdate = patternSet.HasResetMarkers;
@@ -134,13 +133,10 @@ public sealed class SignalWeaveEngine
             ? null
             : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
         var lastPatternIndex = _lastTrainedPatternIndex;
-        var completedSteps = 0;
-
         _trainingHiddenContext ??= new double[_definition.HiddenUnits];
 
         for (var step = 1; step <= steps; step++)
         {
-            completedSteps = step;
             lastPatternIndex = (_lastTrainedPatternIndex + step - 1) % examples.Count;
             var example = examples[lastPatternIndex];
             var previousHidden = (double[])_trainingHiddenContext.Clone();
@@ -210,7 +206,6 @@ public sealed class SignalWeaveEngine
         }
 
         _lastTrainedPatternIndex = lastPatternIndex;
-        return completedSteps;
     }
 
     private SequenceGradient ComputeSrnSequenceGradient(IReadOnlyList<PatternExample> sequence)
@@ -430,7 +425,7 @@ public sealed class SignalWeaveEngine
         return hiddenDelta;
     }
 
-    private int TrainFeedForward(PatternSet patternSet, int steps, List<TrainingPoint> history)
+    private void TrainFeedForward(PatternSet patternSet, int steps, List<TrainingPoint> history)
     {
         var examples = patternSet.Examples;
         var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
@@ -439,11 +434,8 @@ public sealed class SignalWeaveEngine
             ? null
             : new double[Weights.HiddenHidden.GetLength(0), Weights.HiddenHidden.GetLength(1)];
         var stepIndex = 0;
-        var completedSteps = 0;
-
         for (var step = 1; step <= steps; step++)
         {
-            completedSteps = step;
             var example = _definition.UpdateMode == UpdateMode.Batch
                 ? examples[stepIndex % examples.Count]
                 : examples[_patternRandom.Next(examples.Count)];
@@ -501,8 +493,6 @@ public sealed class SignalWeaveEngine
 
             stepIndex++;
         }
-
-        return completedSteps;
     }
 
     private void ApplyGradient(SequenceGradient gradient)

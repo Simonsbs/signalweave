@@ -637,9 +637,56 @@ public class SignalWeaveEngineTests
         var golden = LoadGoldenFixture("ff3-stop-rule.json");
 
         Assert.Equal(golden.CyclesCompleted, result.History.Count);
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
+    public void AccumulatesCompletedCyclesAcrossTrainingRuns()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = Completed cycles accumulation
+            network = feedforward
+            inputs = 1
+            hidden = 1
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 10
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.3 },
+                { -0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+
+        var first = engine.Train(patterns, 2);
+        var second = engine.Train(patterns, 3);
+
+        Assert.Equal(2, first.History.Count);
+        Assert.Equal(3, second.History.Count);
+        Assert.Equal(5, engine.CompletedCycles);
     }
 
     [Fact]
