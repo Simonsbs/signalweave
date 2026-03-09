@@ -1478,9 +1478,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _engine = new SignalWeaveEngine(_definition!, weights);
         _engineSignature = BuildSignature(_definition!);
         _lastRun = null;
-        ProgressMaximum = Math.Max(1, GetLearningStepsValueOrDefault());
-        ProgressValue = ProgressMaximum;
-        ProgressLabel = "Loaded weights";
+        SetUntrainedState();
         TrainButtonLabel = "Train";
         WeightsText = BuildWeightsText(_engine.Weights);
         HistoryText = "No training history yet.";

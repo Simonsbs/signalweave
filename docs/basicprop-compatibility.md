@@ -55,6 +55,7 @@ Source basis used for this implementation:
   - network saving now uses the loaded configured network state instead of reparsing the editor surface
   - `Batch Update` now behaves as a feed-forward-only control in the desktop UI, matching BasicProp's `SimControl.checkControls()` behavior more closely
   - main `Pattern` selector now uses BasicProp-style `PatternHolder` text for `< 24` patterns and falls back to the loaded pattern source name at `24+`, while keeping `Test one` enabled at exactly `24` patterns to match the original controller
+  - weight loading no longer fakes a `Loaded weights` progress-bar state; the progress bar stays aligned with BasicProp's cycle-based `Untrained`/count display
   - current weight inspection
   - screenshot-verified live network diagram with 2-layer, 3-layer, 4-layer, and SRN-aware weight routing
   - weight-map visualization with Hinton-style emphasis
