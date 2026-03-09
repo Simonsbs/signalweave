@@ -82,6 +82,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `Test All` / `Test One` console output wording and menu gating
 - test-one gating that follows the original controller behavior: enabled through `24` patterns, then disabled above that while the combo collapses to the pattern-source name
 - pattern loading bound to the currently configured network state rather than an editor reparse
+- BasicProp-style `Failed to load patterns` note for bad pattern files
 - network saving bound to the currently loaded configured network state rather than an editor reparse
 - feed-forward-only `Batch Update` behavior in the desktop control panel
 - BasicProp-style pattern selector text in the main control panel

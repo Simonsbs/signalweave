@@ -52,6 +52,7 @@ Source basis used for this implementation:
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating
   - test-one/test-all interaction
   - pattern loading now uses the current configured network state instead of reparsing the editor surface
+  - pattern-loading parse/validation failures now collapse to the original `Failed to load patterns` note instead of leaking raw parser exceptions into the desktop console
   - network saving now uses the loaded configured network state instead of reparsing the editor surface
   - `Batch Update` now behaves as a feed-forward-only control in the desktop UI, matching BasicProp's `SimControl.checkControls()` behavior more closely
   - main `Pattern` selector now uses BasicProp-style `PatternHolder` text for `< 24` patterns and falls back to the loaded pattern source name at `24+`, while keeping `Test one` enabled at exactly `24` patterns to match the original controller

@@ -1439,8 +1439,17 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        var parsedPatterns = PatternSetParser.Parse(text, _definition.Name);
-        parsedPatterns.ValidateAgainst(_definition, requireTargets: false);
+        PatternSet parsedPatterns;
+        try
+        {
+            parsedPatterns = PatternSetParser.Parse(text, _definition.Name);
+            parsedPatterns.ValidateAgainst(_definition, requireTargets: false);
+        }
+        catch
+        {
+            Inform("Failed to load patterns");
+            return;
+        }
 
         _patternSet = parsedPatterns;
         _lastRun = null;
