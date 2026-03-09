@@ -90,6 +90,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - utility tabs for weight maps, pattern/output tables, and plots
 - weight legend and error plot styling that tracks the original BasicProp layout more closely
 - modal `Invalid value` dialogs plus BasicProp-style note routing into the detached messages window
+- BasicProp-style note prefix formatting (`Note:`) in controller-driven desktop feedback
 - BasicProp-style `No can do!` modal feedback when train/test actions are attempted with zero loaded patterns
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots

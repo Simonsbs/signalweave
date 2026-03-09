@@ -1758,7 +1758,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void Inform(string message)
     {
-        ConsoleText = $"Note: {message}";
+        ConsoleText = $"Note:{message}";
     }
 
     private sealed class BasicPropModalException(string title, string message) : InvalidOperationException(message)
