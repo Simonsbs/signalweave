@@ -338,6 +338,7 @@ public class SignalWeaveEngineTests
         var run = engine.TestAll(patterns);
         var golden = LoadGoldenFixture("ff2-train-single.json");
 
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         Assert.Empty(engine.Weights.HiddenOutput);
@@ -386,6 +387,7 @@ public class SignalWeaveEngineTests
         var run = engine.TestAll(patterns);
         var golden = LoadGoldenFixture("ff3-train-single.json");
 
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
@@ -435,6 +437,7 @@ public class SignalWeaveEngineTests
         var run = engine.TestAll(patterns);
         var golden = LoadGoldenFixture("ff3-train-batch.json");
 
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
@@ -491,6 +494,7 @@ public class SignalWeaveEngineTests
         var run = engine.TestAll(patterns);
         var golden = LoadGoldenFixture("ff4-train-single.json");
 
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenHidden!, golden.HiddenHidden!);
@@ -541,6 +545,7 @@ public class SignalWeaveEngineTests
         var golden = LoadGoldenFixture("ff3-train-cross-entropy.json");
 
         Assert.Single(result.History);
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
@@ -590,6 +595,7 @@ public class SignalWeaveEngineTests
         var golden = LoadGoldenFixture("ff3-train-momentum.json");
 
         Assert.Equal(2, result.History.Count);
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
@@ -799,6 +805,7 @@ public class SignalWeaveEngineTests
         var golden = LoadGoldenFixture("srn-train-sequential.json");
 
         Assert.Equal(4, result.History.Count);
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
@@ -858,6 +865,7 @@ public class SignalWeaveEngineTests
         var golden = LoadGoldenFixture("srn-train-batch.json");
 
         Assert.Equal(4, result.History.Count);
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);

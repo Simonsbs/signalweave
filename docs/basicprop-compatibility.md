@@ -38,6 +38,7 @@ Source basis used for this implementation:
 - Hierarchical clustering over outputs and hidden activations
 - Probe-backed golden regression fixtures for 2-layer, 3-layer, 3-layer batch, 3-layer cross-entropy, 3-layer momentum, stop-rule, and 4-layer feed-forward training
 - Probe-backed SRN fixtures for forward outputs, sequential-training weights, and batch-training weights
+- Training fixtures now also assert completed-cycle parity alongside the saved weight matrices
 - Reset-aware SRN trace capture in the BasicProp probe so hidden activations can be compared from one consistent execution path
 - BasicProp-style desktop shell with:
   - menu structure

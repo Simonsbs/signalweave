@@ -22,7 +22,7 @@ Status legend:
 - `[in-progress]` SRN hidden-bias lifecycle parity
 - `[in-progress]` per-pattern output parity
 - `[in-progress]` test-all aggregate error parity
-- `[in-progress]` saved-weight parity fixtures
+- `[done]` saved-weight parity fixtures
 - `[in-progress]` JAR-backed golden parity suite
 
 ## Topologies
