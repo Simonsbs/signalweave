@@ -1027,6 +1027,107 @@ public partial class MainWindowViewModel : ViewModelBase
             ConsoleText = exception.Message;
         }
     }
+
+    public NetworkDefinition GetCurrentDefinition()
+    {
+        var parsedDefinition = BasicPropNetworkConfigParser.Parse(ConfigText, SampleTitle);
+        var effectiveDefinition = ApplyControlOverrides(parsedDefinition);
+        effectiveDefinition.Validate();
+        return effectiveDefinition;
+    }
+
+    public NetworkDefinition GetLoadedDefinition()
+    {
+        return _definition ?? GetCurrentDefinition();
+    }
+
+    public WeightSet GetCurrentWeights()
+    {
+        if (_engine is null)
+        {
+            EnsureContext(resetWeights: true);
+        }
+
+        return _engine!.Weights.Clone();
+    }
+
+    public string GetSuggestedNetworkFileName()
+    {
+        return $"{Slugify(SampleTitle)}.swcfg";
+    }
+
+    public string GetSuggestedPatternFileName()
+    {
+        return $"{Slugify(SampleTitle)}.pat";
+    }
+
+    public string GetSuggestedWeightFileName()
+    {
+        return $"{Slugify(SampleTitle)}.weights.json";
+    }
+
+    public void LoadNetworkText(string text, string? sourceName = null)
+    {
+        if (!string.IsNullOrWhiteSpace(sourceName))
+        {
+            SampleTitle = sourceName;
+        }
+
+        ConfigText = text;
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: $"Loaded network from {sourceName ?? "file"}.");
+    }
+
+    public void LoadPatternText(string text, string? sourceName = null)
+    {
+        PatternText = text;
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: false, consoleMessage: $"Loaded patterns from {sourceName ?? "file"}.");
+    }
+
+    public void ApplyConfiguredNetwork(NetworkDefinition definition)
+    {
+        SampleTitle = definition.Name;
+        ConfigText = BasicPropNetworkConfigWriter.Write(definition);
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: $"Configured network '{definition.Name}'.");
+    }
+
+    public void LoadWeights(WeightSet weights)
+    {
+        EnsureContext(resetWeights: false);
+
+        if (!CanReuseWeights(_definition!, weights))
+        {
+            throw new InvalidOperationException("Weight file does not match the current network shape.");
+        }
+
+        _engine = new SignalWeaveEngine(_definition!, weights);
+        _engineSignature = BuildSignature(_definition!);
+        _lastRun = null;
+        ProgressLabel = "Loaded weights";
+        WeightsText = BuildWeightsText(_engine.Weights);
+        HistoryText = "No training history yet.";
+        ErrorProgressPoints = "0,132 240,132";
+        RefreshDiagram();
+        RebuildWeightMap();
+        AnalysisText = "Weights loaded into the current network.";
+        ConsoleText = "Loaded weights from file.";
+    }
+
+    private static string Slugify(string value)
+    {
+        var chars = value
+            .Trim()
+            .ToLowerInvariant()
+            .Select(character => char.IsLetterOrDigit(character) ? character : '-')
+            .ToArray();
+
+        var text = new string(chars);
+        while (text.Contains("--", StringComparison.Ordinal))
+        {
+            text = text.Replace("--", "-", StringComparison.Ordinal);
+        }
+
+        return string.IsNullOrWhiteSpace(text.Trim('-')) ? "signalweave" : text.Trim('-');
+    }
 }
 
 public sealed record DiagramNodeItem(double X, double Y, double Width, double Height, string Label, string Fill, string Stroke);

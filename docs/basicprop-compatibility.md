@@ -37,6 +37,8 @@ Source basis used for this implementation:
 - Hierarchical clustering over outputs and hidden activations
 - BasicProp-style desktop shell with:
   - menu structure
+  - dedicated network configuration dialog
+  - desktop save/load workflows for networks and weights, plus pattern loading
   - control panel defaults
   - test-one/test-all interaction
   - current weight inspection

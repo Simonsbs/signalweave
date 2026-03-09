@@ -1,0 +1,116 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.NetworkConfigWindow"
+        x:DataType="vm:NetworkConfigDialogViewModel"
+        Width="520"
+        Height="540"
+        CanResize="False"
+        Title="Network Configuration">
+
+    <Design.DataContext>
+        <vm:NetworkConfigDialogViewModel />
+    </Design.DataContext>
+
+    <Grid Margin="12"
+          RowDefinitions="Auto,*,Auto">
+        <TabControl SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}">
+            <TabItem Header="FeedForward Net" />
+            <TabItem Header="SRN" />
+        </TabControl>
+
+        <Grid Grid.Row="1"
+              Margin="0,12,0,12"
+              ColumnDefinitions="*,160"
+              ColumnSpacing="16">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                  ColumnDefinitions="*,140"
+                  ColumnSpacing="12"
+                  RowSpacing="10">
+                <TextBlock Text="Network name" />
+                <TextBox Grid.Column="1"
+                         Text="{Binding Name, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="1" Text="Input units" />
+                <ComboBox Grid.Row="1"
+                          Grid.Column="1"
+                          ItemsSource="{Binding UnitOptions}"
+                          SelectedItem="{Binding SelectedInputUnits, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="2" Text="Hidden units" />
+                <ComboBox Grid.Row="2"
+                          Grid.Column="1"
+                          ItemsSource="{Binding UnitOptions}"
+                          SelectedItem="{Binding SelectedHiddenUnits, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="3" Text="Output units" />
+                <ComboBox Grid.Row="3"
+                          Grid.Column="1"
+                          ItemsSource="{Binding UnitOptions}"
+                          SelectedItem="{Binding SelectedOutputUnits, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="4" Text="Learning rate" />
+                <ComboBox Grid.Row="4"
+                          Grid.Column="1"
+                          ItemsSource="{Binding LearningRateOptions}"
+                          SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="5" Text="Momentum" />
+                <ComboBox Grid.Row="5"
+                          Grid.Column="1"
+                          ItemsSource="{Binding MomentumOptions}"
+                          SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="6" Text="Learning steps" />
+                <ComboBox Grid.Row="6"
+                          Grid.Column="1"
+                          ItemsSource="{Binding EpochOptions}"
+                          SelectedItem="{Binding SelectedEpochs, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="7" Text="Weight range" />
+                <ComboBox Grid.Row="7"
+                          Grid.Column="1"
+                          ItemsSource="{Binding RangeOptions}"
+                          SelectedItem="{Binding SelectedRange, Mode=TwoWay}" />
+
+                <TextBlock Grid.Row="8" Text="Error threshold" />
+                <TextBox Grid.Row="8"
+                         Grid.Column="1"
+                         Text="{Binding ErrorThreshold, Mode=TwoWay}" />
+            </Grid>
+
+            <StackPanel Grid.Column="1"
+                        Spacing="10">
+                <CheckBox Content="Input bias"
+                          IsChecked="{Binding UseInputBias, Mode=TwoWay}" />
+                <CheckBox Content="Hidden bias"
+                          IsChecked="{Binding UseHiddenBias, Mode=TwoWay}" />
+                <CheckBox Content="Batch update"
+                          IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
+                <CheckBox Content="X-entropy"
+                          IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
+                <Border Background="#F3F3F3"
+                        BorderBrush="#C8C8C8"
+                        BorderThickness="1"
+                        Padding="8"
+                        Margin="0,12,0,0">
+                    <TextBlock Text="{Binding StatusText}"
+                               Foreground="#A33C2F"
+                               TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10">
+            <Button Content="OK" Width="90" Click="Ok_Click" />
+            <Button Content="Apply" Width="90" Click="Apply_Click" />
+            <Button Content="Cancel" Width="90" Click="Cancel_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

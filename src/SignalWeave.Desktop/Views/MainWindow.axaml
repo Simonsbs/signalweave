@@ -42,6 +42,10 @@
               Margin="0,0,0,8"
               Background="#ECECEC">
             <MenuItem Header="_Network">
+                <MenuItem Header="_Configure Network..." Click="ConfigureNetwork_Click" />
+                <MenuItem Header="_Load Network..." Click="LoadNetwork_Click" />
+                <MenuItem Header="_Save Network..." Click="SaveNetwork_Click" />
+                <Separator />
                 <MenuItem Header="_Load XOR Demo" Command="{Binding LoadXorDemoCommand}" />
                 <MenuItem Header="Load _SRN Demo" Command="{Binding LoadSrnDemoCommand}" />
                 <Separator />
@@ -50,9 +54,13 @@
             </MenuItem>
             <MenuItem Header="_Weights">
                 <MenuItem Header="_Show Current Weights" Command="{Binding ShowWeightsCommand}" />
+                <MenuItem Header="_Load Weights..." Click="LoadWeights_Click" />
+                <MenuItem Header="_Save Weights..." Click="SaveWeights_Click" />
             </MenuItem>
             <MenuItem Header="_Patterns">
                 <MenuItem Header="_Show Patterns and Outputs" Command="{Binding ShowPatternsCommand}" />
+                <MenuItem Header="_Load Patterns..." Click="LoadPatterns_Click" />
+                <Separator />
                 <MenuItem Header="_Test One" Command="{Binding TestOneCommand}" />
                 <MenuItem Header="Test _All" Command="{Binding TestAllCommand}" />
             </MenuItem>

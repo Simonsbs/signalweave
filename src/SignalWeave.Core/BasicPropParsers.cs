@@ -303,3 +303,34 @@ public static class PatternSetParser
             .ToArray();
     }
 }
+
+public static class BasicPropNetworkConfigWriter
+{
+    public static string Write(NetworkDefinition definition)
+    {
+        definition.Validate();
+
+        return string.Join(
+            Environment.NewLine,
+            $"name = {definition.Name}",
+            $"network = {(definition.NetworkKind == NetworkKind.SimpleRecurrent ? "srn" : "feedforward")}",
+            $"inputs = {definition.InputUnits.ToString(CultureInfo.InvariantCulture)}",
+            $"hidden = {definition.HiddenUnits.ToString(CultureInfo.InvariantCulture)}",
+            $"outputs = {definition.OutputUnits.ToString(CultureInfo.InvariantCulture)}",
+            $"inputBias = {FormatBool(definition.UseInputBias)}",
+            $"hiddenBias = {FormatBool(definition.UseHiddenBias)}",
+            $"learningRate = {definition.LearningRate.ToString("0.###", CultureInfo.InvariantCulture)}",
+            $"momentum = {definition.Momentum.ToString("0.###", CultureInfo.InvariantCulture)}",
+            $"randomWeightRange = {definition.RandomWeightRange.ToString("0.###", CultureInfo.InvariantCulture)}",
+            $"sigmoidPrimeOffset = {definition.SigmoidPrimeOffset.ToString("0.###", CultureInfo.InvariantCulture)}",
+            $"maxEpochs = {definition.MaxEpochs.ToString(CultureInfo.InvariantCulture)}",
+            $"errorThreshold = {definition.ErrorThreshold.ToString("0.######", CultureInfo.InvariantCulture)}",
+            $"update = {(definition.UpdateMode == UpdateMode.Batch ? "batch" : "pattern")}",
+            $"cost = {(definition.CostFunction == CostFunction.CrossEntropy ? "crossentropy" : "sse")}");
+    }
+
+    private static string FormatBool(bool value)
+    {
+        return value ? "true" : "false";
+    }
+}

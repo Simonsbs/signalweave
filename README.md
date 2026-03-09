@@ -28,6 +28,8 @@ Implemented now:
 - weight save/load
 - output and hidden-state hierarchical clustering
 - desktop workbench with a BasicProp-style control panel, live network view, editor tabs, testing, clustering, and weight inspection
+- dedicated desktop network-configuration dialog with feed-forward and SRN modes
+- native desktop file workflows for network save/load, pattern load, and weight save/load
 - utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
 
 Still to build for full feature parity:
@@ -62,6 +64,7 @@ dotnet run --project src/SignalWeave.Desktop
 The desktop app ships with built-in XOR and SRN demos and now exposes a BasicProp-like workflow surface:
 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
+- desktop dialogs for configuring networks and loading/saving SignalWeave files
 - right-side training/test control panel with BasicProp defaults
 - live network diagram colored by weight sign and magnitude
 - console/config/pattern/weight tabs
