@@ -151,5 +151,6 @@ From `SpecStub` and config code:
 - Leading-`reset` behavior is now covered by a probe-backed regression fixture in SignalWeave rather than only by a decompile note.
 - SRN hidden-bias lifecycle is now covered by a probe-backed training fixture that crosses a reset boundary with repeated inputs.
 - SignalWeave now separates SRN coherent trace parity from BasicProp-reported `testAll()` aggregate error parity because the JAR does not expose one perfectly coherent source for both.
+- SignalWeave now matches BasicProp's `Test one` controller path by treating it as a direct one-pattern evaluation on the current visible SRN state rather than as a projection from `Test all`.
 - Golden parity tests should not rely on BasicProp random initialization.
   - Instead, set explicit starting weights or capture saved initial weights.

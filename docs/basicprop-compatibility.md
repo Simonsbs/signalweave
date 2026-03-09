@@ -43,6 +43,7 @@ Source basis used for this implementation:
 - Probe-backed SRN edge-case fixture for the ignored leading-`reset` marker behavior
 - Probe-backed SRN training fixture for the hidden-bias lifecycle across reset boundaries
 - BasicProp-style reported SRN `testAll()` average error is now tracked separately from the coherent reset-aware trace used for outputs and hidden states
+- `Test one` now follows BasicProp's direct `testOnePattern(...)` path instead of deriving the selected pattern from a full `Test all` pass
 - BasicProp-style desktop shell with:
   - menu structure
   - dedicated network configuration dialog

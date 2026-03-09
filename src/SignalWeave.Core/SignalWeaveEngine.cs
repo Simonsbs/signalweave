@@ -122,8 +122,42 @@ public sealed class SignalWeaveEngine
 
     public TestResult TestOne(PatternSet patternSet, int index)
     {
-        var run = TestAll(patternSet);
-        return run.Results[index];
+        patternSet.ValidateAgainst(_definition, requireTargets: false);
+
+        if (index < 0 || index >= patternSet.Examples.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        var example = patternSet.Examples[index];
+        var context = _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? (_visibleHiddenContext is null ? new double[_definition.HiddenUnits] : (double[])_visibleHiddenContext.Clone())
+            : Array.Empty<double>();
+        var hiddenBiasValue = _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? _visibleHiddenBiasValue
+            : 1.0;
+        var step = Forward(example.Inputs, context, hiddenBiasValue);
+
+        if (_definition.NetworkKind == NetworkKind.SimpleRecurrent)
+        {
+            if (example.ResetsContextAfter)
+            {
+                _visibleHiddenContext = new double[_definition.HiddenUnits];
+                _visibleHiddenBiasValue = 0.0;
+            }
+            else
+            {
+                _visibleHiddenContext = (double[])step.FinalHidden.Clone();
+            }
+        }
+
+        var error = 0.0;
+        if (example.Targets is not null)
+        {
+            error = ComputeTsq(CalculateSquaredError(step.Outputs, example.Targets));
+        }
+
+        return new TestResult(index, example.Label, example.Inputs, step.Outputs, step.HiddenActivations, example.Targets, error);
     }
 
     public ClusterNode ClusterOutputs(PatternSet patternSet)

@@ -49,6 +49,7 @@ Current checked-in SRN probes:
 - `examples/srn-forward.bppr`
 - `examples/srn-hidden-bias-lifecycle.bppr`
 - `examples/srn-leading-reset.bppr`
+- `examples/srn-test-one.bppr`
 - `examples/srn-train-sequential.bppr`
 - `examples/srn-train-batch.bppr`
 
@@ -65,6 +66,7 @@ Header fields:
 - `batchUpdate=false`
 - `crossEntropy=false`
 - `sequentialUpdate=false` for SRN only
+- `testOneIndex=<n>` to emit the direct `testOnePattern(...)` output for a selected pattern without changing the main `testAll()` capture
 
 Pattern block:
 

@@ -76,38 +76,22 @@ public final class BasicPropProbe {
         Experiment experiment = Experiment.parse(probeFile);
         new Controller();
 
-        NetSpec spec = createSpec(experiment);
+        RuntimeSnapshot runtime = createRuntime(experiment);
+        NetSpec spec = runtime.spec;
         Controller.spec = spec;
-        Controller.net = createNetwork(spec, experiment.type);
-        Controller.spec.batchUpdate = experiment.batchUpdate;
-        Controller.spec.crossEntropy = experiment.crossEntropy;
+        Controller.net = runtime.network;
 
-        if (spec instanceof SrnSpec srnSpec) {
-            srnSpec.sequentialUpdate = experiment.sequentialUpdate;
-        }
+        TestOneSnapshot testOneSnapshot = experiment.testOneIndex == null
+                ? null
+                : captureTestOne(experiment);
 
-        PatternConfig patternConfig = buildPatternConfig(experiment);
-        Controller.net.setPatterns(patternConfig);
-
-        if (!experiment.weights.isEmpty()) {
-            applyFeedForwardWeights(spec, experiment);
-        }
-
-        if (spec instanceof SrnSpec srnSpec && experiment.recurrentWeights != null) {
-            applyRecurrentWeights(srnSpec, experiment.recurrentWeights);
-        }
-
-        if (experiment.steps > 0) {
-            Controller.net.train(spec, experiment.steps, experiment.learningRate, experiment.momentum, false);
-        }
-
-        double testAllError = Controller.net.testAll(spec);
-        double[][] outputs = Controller.net.getOutputsAsList();
+        double testAllError = runtime.network.testAll(spec);
+        double[][] outputs = runtime.network.getOutputsAsList();
         double[][] hiddenActivations;
         TraceSnapshot traceSnapshot = captureTrace(spec, experiment);
 
         try {
-            hiddenActivations = Controller.net.getHiddenActs();
+            hiddenActivations = runtime.network.getHiddenActs();
         } catch (RuntimeException exception) {
             hiddenActivations = null;
         }
@@ -124,6 +108,9 @@ public final class BasicPropProbe {
         writeJsonField(builder, "batchUpdate", experiment.batchUpdate, 1, true);
         writeJsonField(builder, "crossEntropy", experiment.crossEntropy, 1, true);
         writeJsonField(builder, "cyclesCompleted", spec.getCycles(), 1, true);
+        writeJsonField(builder, "testOneIndex", experiment.testOneIndex, 1, true);
+        writeJsonField(builder, "testOneOutput", testOneSnapshot == null ? null : testOneSnapshot.output, 1, true);
+        writeJsonField(builder, "testOneHiddenActivations", testOneSnapshot == null ? null : testOneSnapshot.hiddenActivations, 1, true);
         writeJsonField(builder, "testAllError", testAllError, 1, true);
         writeJsonField(builder, "outputs", outputs, 1, true);
         writeJsonField(builder, "hiddenActivations", hiddenActivations, 1, true);
@@ -138,6 +125,54 @@ public final class BasicPropProbe {
 
         builder.append("}\n");
         System.out.print(builder);
+    }
+
+    private static RuntimeSnapshot createRuntime(Experiment experiment) {
+        NetSpec spec = createSpec(experiment);
+        spec.batchUpdate = experiment.batchUpdate;
+        spec.crossEntropy = experiment.crossEntropy;
+
+        if (spec instanceof SrnSpec srnSpec) {
+            srnSpec.sequentialUpdate = experiment.sequentialUpdate;
+        }
+
+        Network network = createNetwork(spec, experiment.type);
+        network.setPatterns(buildPatternConfig(experiment));
+
+        if (!experiment.weights.isEmpty()) {
+            applyFeedForwardWeights(spec, experiment);
+        }
+
+        if (spec instanceof SrnSpec srnSpec && experiment.recurrentWeights != null) {
+            applyRecurrentWeights(srnSpec, experiment.recurrentWeights);
+        }
+
+        if (experiment.steps > 0) {
+            Controller.spec = spec;
+            Controller.net = network;
+            network.train(spec, experiment.steps, experiment.learningRate, experiment.momentum, false);
+        }
+
+        return new RuntimeSnapshot(spec, network);
+    }
+
+    private static TestOneSnapshot captureTestOne(Experiment experiment) {
+        RuntimeSnapshot runtime = createRuntime(experiment);
+        PatternLine pattern = experiment.patterns.get(experiment.testOneIndex);
+        double[] output = runtime.network.testOnePattern(runtime.spec, pattern.inputs);
+        double[] hiddenActivations = runtime.spec.getNumLayers() == 3
+                ? captureHidden(runtime.spec)
+                : null;
+        return new TestOneSnapshot(output, hiddenActivations);
+    }
+
+    private static double[] captureHidden(NetSpec spec) {
+        double[] hidden = new double[spec.getNumUnits(1)];
+        for (int index = 0; index < hidden.length; index++) {
+            hidden[index] = spec.getUnitValue(1, index + 1);
+        }
+
+        return hidden;
     }
 
     private static TraceSnapshot captureTrace(NetSpec spec, Experiment experiment) {
@@ -392,6 +427,7 @@ public final class BasicPropProbe {
         private boolean batchUpdate;
         private boolean crossEntropy;
         private boolean sequentialUpdate;
+        private Integer testOneIndex;
         private final List<PatternLine> patterns = new ArrayList<>();
         private final List<double[][]> weights = new ArrayList<>();
         private double[][] recurrentWeights;
@@ -483,6 +519,7 @@ public final class BasicPropProbe {
                 case "batchupdate" -> experiment.batchUpdate = Boolean.parseBoolean(value);
                 case "crossentropy" -> experiment.crossEntropy = Boolean.parseBoolean(value);
                 case "sequentialupdate" -> experiment.sequentialUpdate = Boolean.parseBoolean(value);
+                case "testoneindex" -> experiment.testOneIndex = Integer.parseInt(value);
                 default -> throw new IllegalArgumentException("Unknown header key: " + key);
             }
         }
@@ -555,6 +592,12 @@ public final class BasicPropProbe {
     }
 
     private record TraceSnapshot(double error, double[][] outputs, double[][] hiddenActivations) {
+    }
+
+    private record TestOneSnapshot(double[] output, double[] hiddenActivations) {
+    }
+
+    private record RuntimeSnapshot(NetSpec spec, Network network) {
     }
 
     private enum Section {

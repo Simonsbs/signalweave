@@ -1002,6 +1002,71 @@ public class SignalWeaveEngineTests
         AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
     }
 
+    [Fact]
+    public void MatchesBasicPropProbeForSrnTestOne()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = SRN test one parity
+            network = srn
+            inputs = 1
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            c: 1 => 0
+            d: 0 => 1
+            reset
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.4, 0.7 },
+                { 0.2, -0.3 }
+            },
+            new double[,]
+            {
+                { -0.5 },
+                { 0.8 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.6, 0.1 },
+                { -0.2, 0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var result = engine.TestOne(patterns, 2);
+        var golden = LoadTestOneFixture("srn-test-one.json");
+
+        Assert.Equal(golden.Index, result.Index);
+        Assert.Equal(golden.Output.Length, result.Outputs.Length);
+        for (var output = 0; output < golden.Output.Length; output++)
+        {
+            Assert.Equal(golden.Output[output], result.Outputs[output], 12);
+        }
+
+        Assert.Equal(golden.HiddenActivations.Length, result.HiddenActivations.Length);
+        for (var hidden = 0; hidden < golden.HiddenActivations.Length; hidden++)
+        {
+            Assert.Equal(golden.HiddenActivations[hidden], result.HiddenActivations[hidden], 12);
+        }
+    }
+
     private static BasicPropGoldenFixture LoadGoldenFixture(string fileName)
     {
         var path = Path.GetFullPath(Path.Combine(
@@ -1020,6 +1085,26 @@ public class SignalWeaveEngineTests
                 PropertyNameCaseInsensitive = true
             })
             ?? throw new InvalidOperationException($"Failed to load golden fixture '{fileName}'.");
+    }
+
+    private static BasicPropTestOneFixture LoadTestOneFixture(string fileName)
+    {
+        var path = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "Fixtures",
+            "BasicProp",
+            fileName));
+
+        return JsonSerializer.Deserialize<BasicPropTestOneFixture>(
+            File.ReadAllText(path),
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            })
+            ?? throw new InvalidOperationException($"Failed to load test-one fixture '{fileName}'.");
     }
 
     private static void AssertRunMatchesGolden(RunResult run, BasicPropGoldenFixture golden)
@@ -1077,5 +1162,12 @@ public class SignalWeaveEngineTests
         public double[][]? HiddenHidden { get; set; }
         public double[][]? HiddenOutput { get; set; }
         public double[][]? RecurrentHidden { get; set; }
+    }
+
+    private sealed class BasicPropTestOneFixture
+    {
+        public int Index { get; set; }
+        public double[] Output { get; set; } = [];
+        public double[] HiddenActivations { get; set; } = [];
     }
 }

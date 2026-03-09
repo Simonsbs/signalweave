@@ -20,7 +20,7 @@ Status legend:
 - `[in-progress]` SRN sequential training parity
 - `[done]` SRN hidden-state reset parity
 - `[done]` SRN hidden-bias lifecycle parity
-- `[in-progress]` per-pattern output parity
+- `[done]` per-pattern output parity
 - `[done]` test-all aggregate error parity
 - `[done]` saved-weight parity fixtures
 - `[in-progress]` JAR-backed golden parity suite
