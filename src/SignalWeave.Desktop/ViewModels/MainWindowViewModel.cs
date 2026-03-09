@@ -1457,7 +1457,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var patterns = run.Results.Select(result =>
         {
-            var selectorLabel = $"[{result.Index}]: {FormatVector(result.Inputs)} => {(result.Targets is null ? "-" : FormatVector(result.Targets))}";
+            var selectorLabel = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
             return new PatternPlotEntry(
                 result.Index,
                 selectorLabel,
@@ -1467,7 +1467,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 BuildPatternChartBars("Inputs", result.Inputs, "#2F9C42", -1.1, 1.1));
         }).ToArray();
 
-        return new PatternPlotSession($"{_definition!.Name} - Pattern Plot", patterns);
+        return new PatternPlotSession("Show Patterns and Outputs", patterns);
     }
 
     public PlotWindowSnapshot CreateTimeSeriesPlotSnapshot()

@@ -11,12 +11,12 @@ public partial class PatternPlotWindowViewModel : ViewModelBase
 
     public PatternPlotWindowViewModel()
         : this(new PatternPlotSession(
-            "Pattern Plot",
+            "Show Patterns and Outputs",
             new[]
             {
                 new PatternPlotEntry(
                     0,
-                    "[0]: 0.000 1.000 => 1.000",
+                    "[0]: 0,1    >>>1",
                     "pattern-1",
                     new[] { new PatternChartBar("Outputs", "unit 1", 52, 18, 22, 74, "#D6453D", 1, "0.900") },
                     new[] { new PatternChartBar("Targets", "unit 1", 52, 10, 22, 82, "#2C67C7", 1, "1.000") },
@@ -40,7 +40,7 @@ public partial class PatternPlotWindowViewModel : ViewModelBase
     public ObservableCollection<PatternChartBar> InputBars { get; } = [];
 
     [ObservableProperty]
-    private string _windowTitle = "Pattern Plot";
+    private string _windowTitle = "Show Patterns and Outputs";
 
     [ObservableProperty]
     private string _selectedPattern = string.Empty;

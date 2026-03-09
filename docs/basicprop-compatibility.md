@@ -62,6 +62,7 @@ Source basis used for this implementation:
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
+  - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - hidden activation export
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
 

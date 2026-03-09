@@ -93,6 +93,22 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void FormatsPatternSelectorLikeBasicPropPatternHolder()
+    {
+        var text = BasicPropDisplayFormatter.FormatPatternSelector(0, new[] { 0.0, 1.0 }, new[] { 1.0 });
+
+        Assert.Equal("[0]: 0,1    >>>1", text);
+    }
+
+    [Fact]
+    public void FormatsPatternSelectorWithoutTargetsLikeBasicPropPatternHolder()
+    {
+        var text = BasicPropDisplayFormatter.FormatPatternSelector(3, new[] { -0.25, 1.5 }, null);
+
+        Assert.Equal("[3]: -0.25,1.5    >>>", text);
+    }
+
+    [Fact]
     public void TrainsAndFunctionToLowError()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""
