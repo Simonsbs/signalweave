@@ -126,7 +126,9 @@ From `basicProp.SimControl`:
 - `SimControl.fillPatterns()` populates individual patterns only when `numberOfPatterns < 24`.
 - At `24` or more patterns:
   - the combo box shows only the pattern filename
-  - `Test one` is disabled
+- A live BasicProp 1.3 controller check shows:
+  - at exactly `24` patterns, `Test one` remains enabled even though the combo box has collapsed to the filename
+  - above `24` patterns, `Test one` is disabled
 
 ## Configuration constraints
 

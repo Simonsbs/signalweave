@@ -263,7 +263,7 @@ public partial class MainWindowViewModel : ViewModelBase
             EnsureContext(resetWeights: false);
             if (!CanTestOne)
             {
-                Inform("Test one is only available when fewer than 24 patterns are loaded.");
+                Inform("Test one is only available when more than 24 patterns are loaded.");
                 return;
             }
 
@@ -509,7 +509,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         PatternOptions.Add(_patternListCaption);
         SelectedPattern = PatternOptions[0];
-        CanTestOne = false;
+        CanTestOne = patternSet.Examples.Count is > 0 and <= 24;
     }
 
     private void UpdateWeightLayerOptions(WeightSet weights)

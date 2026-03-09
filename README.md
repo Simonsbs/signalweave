@@ -80,7 +80,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - console/config/pattern/weight tabs
 - BasicProp-style training console wording (`Training steps` / `Training finished`)
 - BasicProp-style `Test All` / `Test One` console output wording and menu gating
-- test-one gating that follows the original `< 24 patterns` behavior
+- test-one gating that follows the original controller behavior: enabled through `24` patterns, then disabled above that while the combo collapses to the pattern-source name
 - pattern loading bound to the currently configured network state rather than an editor reparse
 - network saving bound to the currently loaded configured network state rather than an editor reparse
 - feed-forward-only `Batch Update` behavior in the desktop control panel
