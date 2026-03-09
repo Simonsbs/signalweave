@@ -580,6 +580,53 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void MatchesBasicPropProbeForFeedForwardStopRule()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF stop-rule parity
+            network = feedforward
+            inputs = 1
+            hidden = 1
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 50
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 5.0 },
+                { 5.0 }
+            },
+            new double[,]
+            {
+                { 5.0 },
+                { 5.0 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var result = engine.Train(patterns, 50);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff3-stop-rule.json");
+
+        Assert.Equal(golden.CyclesCompleted, result.History.Count);
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
     public void MatchesBasicPropProbeForFixedWeightSrnForwardPass()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""
@@ -815,6 +862,7 @@ public class SignalWeaveEngineTests
 
     private sealed class BasicPropGoldenFixture
     {
+        public int? CyclesCompleted { get; set; }
         public double AverageError { get; set; }
         public double[][] Outputs { get; set; } = [];
         public double[][]? HiddenActivations { get; set; }

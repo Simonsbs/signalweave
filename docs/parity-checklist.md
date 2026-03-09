@@ -16,7 +16,7 @@ Status legend:
 - `[in-progress]` feed-forward batch update parity
 - `[done]` feed-forward cross-entropy parity
 - `[done]` feed-forward momentum parity
-- `[in-progress]` feed-forward stop-rule parity
+- `[done]` feed-forward stop-rule parity
 - `[in-progress]` SRN sequential training parity
 - `[in-progress]` SRN hidden-state reset parity
 - `[in-progress]` SRN hidden-bias lifecycle parity

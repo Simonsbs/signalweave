@@ -189,12 +189,19 @@ public sealed class SignalWeaveEngine
             }
 
             var currentTsq = ComputeTsq(CalculateSquaredError(forward.Outputs, example.Targets!));
-            history.Add(new TrainingPoint(step, currentTsq));
 
-            if (currentTsq <= _definition.ErrorThreshold || ShouldStopEarly(history, examples.Count))
+            if (currentTsq <= _definition.ErrorThreshold)
+            {
+                history.Add(new TrainingPoint(step, currentTsq));
+                break;
+            }
+
+            if (ShouldStopEarly(history, examples.Count))
             {
                 break;
             }
+
+            history.Add(new TrainingPoint(step, currentTsq));
         }
 
         _lastTrainedPatternIndex = lastPatternIndex;
@@ -470,12 +477,19 @@ public sealed class SignalWeaveEngine
             }
 
             var currentTsq = ComputeTsq(gradient.SequenceGradient.TotalSquaredError);
-            history.Add(new TrainingPoint(step, currentTsq));
 
-            if (currentTsq <= _definition.ErrorThreshold || ShouldStopEarly(history, examples.Count))
+            if (currentTsq <= _definition.ErrorThreshold)
+            {
+                history.Add(new TrainingPoint(step, currentTsq));
+                break;
+            }
+
+            if (ShouldStopEarly(history, examples.Count))
             {
                 break;
             }
+
+            history.Add(new TrainingPoint(step, currentTsq));
 
             stepIndex++;
         }

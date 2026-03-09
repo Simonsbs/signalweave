@@ -1,0 +1,18 @@
+name=FF stop-rule parity
+type=FeedForward
+layers=1,1,1
+biases=true,true,false
+learningRate=0.3
+momentum=0.8
+steps=50
+batchUpdate=false
+crossEntropy=false
+
+patterns:
+1 => 1
+
+weights 0:
+5,5
+
+weights 1:
+5,5
