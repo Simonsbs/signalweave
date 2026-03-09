@@ -60,6 +60,7 @@ Source basis used for this implementation:
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
+  - cumulative time-series `Add plot` behavior with `InputN`, `TargetN`, and `OutputN` selectors, plus the BasicProp-sized 600x300 frame
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)

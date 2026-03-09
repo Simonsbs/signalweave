@@ -7,8 +7,8 @@
         mc:Ignorable="d"
         x:Class="SignalWeave.Desktop.Views.TimeSeriesPlotWindow"
         x:DataType="vm:TimeSeriesPlotWindowViewModel"
-        Width="620"
-        Height="430"
+        Width="600"
+        Height="300"
         Background="#E1E1E1"
         Title="{Binding WindowTitle}">
 
@@ -42,14 +42,10 @@
               Margin="0,8,0,8"
               ColumnDefinitions="Auto,*"
               RowDefinitions="Auto,*">
-            <TextBlock Grid.ColumnSpan="2"
-                       FontWeight="SemiBold"
-                       Text="{Binding Summary}" />
-
             <StackPanel Grid.Row="1"
                         Spacing="54"
                         VerticalAlignment="Center"
-                        Margin="0,16,8,24">
+                        Margin="0,8,8,24">
                 <TextBlock Text="{Binding YAxisTopLabel}" />
                 <TextBlock Text="{Binding YAxisMidLabel}" />
                 <TextBlock Text="{Binding YAxisBottomLabel}" />
@@ -60,7 +56,7 @@
                     Background="#F8F8F8"
                     BorderBrush="#AAB4C0"
                     BorderThickness="1"
-                    Padding="8">
+                    Padding="6">
                 <Grid RowDefinitions="*,Auto,Auto">
                     <Canvas Width="340"
                             Height="240"
@@ -86,26 +82,39 @@
                                      EndPoint="24,115"
                                      Stroke="#5A5A5A"
                                      StrokeThickness="1.2" />
-                        <shapes:Polyline Points="{Binding PlotPoints}"
-                                         Stroke="#4E7396"
-                                         StrokeThickness="2" />
-                        <ItemsControl ItemsSource="{Binding Markers}">
+                        <ItemsControl ItemsSource="{Binding ActivePlots}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <Canvas />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:PlotMarkerItem">
-                                    <shapes:Ellipse Width="{Binding Width}"
-                                                    Height="{Binding Height}"
-                                                    Fill="{Binding Fill}"
-                                                    Canvas.Left="{Binding X}"
-                                                    Canvas.Top="{Binding Y}">
-                                        <ToolTip.Tip>
-                                            <TextBlock Text="{Binding Label}" />
-                                        </ToolTip.Tip>
-                                    </shapes:Ellipse>
+                                <DataTemplate x:DataType="vm:TimeSeriesPlotSeriesItem">
+                                    <Canvas>
+                                        <shapes:Polyline Points="{Binding Points}"
+                                                         Stroke="{Binding Stroke}"
+                                                         StrokeThickness="2" />
+                                        <ItemsControl ItemsSource="{Binding Markers}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <Canvas />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:PlotMarkerItem">
+                                                    <shapes:Ellipse Width="{Binding Width}"
+                                                                    Height="{Binding Height}"
+                                                                    Fill="{Binding Fill}"
+                                                                    Canvas.Left="{Binding X}"
+                                                                    Canvas.Top="{Binding Y}">
+                                                        <ToolTip.Tip>
+                                                            <TextBlock Text="{Binding Label}" />
+                                                        </ToolTip.Tip>
+                                                    </shapes:Ellipse>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Canvas>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -135,6 +144,6 @@
                    VerticalAlignment="Center"
                    HorizontalAlignment="Left"
                    Margin="12,0,0,0"
-                   Text="Time Series Plot" />
+                   Text="{Binding Summary}" />
     </Grid>
 </Window>

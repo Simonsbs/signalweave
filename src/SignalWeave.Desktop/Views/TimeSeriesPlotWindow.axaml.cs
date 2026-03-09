@@ -11,24 +11,25 @@ public partial class TimeSeriesPlotWindow : Window
             new[]
             {
                 new TimeSeriesPlotOption(
-                    "Output 1",
-                    "Output 1",
-                    "Time series plot of output unit 1 across pattern order.",
-                    "20,210 170,90 320,40",
-                    new[]
-                    {
-                        new PlotMarkerItem(20, 210, 6, 6, "#4E7396", "pattern-1"),
-                        new PlotMarkerItem(170, 90, 6, 6, "#4E7396", "pattern-2"),
-                        new PlotMarkerItem(320, 40, 6, 6, "#4E7396", "pattern-3")
-                    })
+                    "Input1",
+                    "Input1",
+                    "Time series plot of input unit 1.",
+                    new[] { 0.0, 1.0, 0.0 },
+                    "#2F9C42"),
+                new TimeSeriesPlotOption(
+                    "Target1",
+                    "Target1",
+                    "Time series plot of target unit 1.",
+                    new[] { 0.0, 1.0, 1.0 },
+                    "#2C67C7"),
+                new TimeSeriesPlotOption(
+                    "Output1",
+                    "Output1",
+                    "Time series plot of output unit 1.",
+                    new[] { 0.1, 0.8, 0.9 },
+                    "#D6453D")
             },
-            "1.000",
-            "0.500",
-            "0.000",
-            "1",
-            "2",
-            "3",
-            "Pattern order"))
+            3))
     {
     }
 
