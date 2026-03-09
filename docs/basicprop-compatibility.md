@@ -114,7 +114,7 @@ Source basis used for this implementation:
   - `Configure Network...` now opens from the loaded network definition rather than reparsing the editor first
   - `Network Configuration -> Apply` now updates the live desktop network without closing the dialog, matching the original workflow more closely
   - network configuration sliders, bias column, and centered action buttons now follow the BasicProp dialog proportions more closely
-  - popup weight display now uses numeric layer entries plus `Rec` for SRN recurrent weights, a matrix-sized Hinton-style frame, BasicProp-style target-row/source-column orientation, a compact left-aligned bottom control strip, and live `Refresh` behavior against the current engine weights
+  - popup weight display now uses numeric layer entries plus `Rec` for SRN recurrent weights, a matrix-sized Hinton-style frame, BasicProp-style target-row/source-column orientation, a compact left-aligned bottom control strip, live `Refresh` behavior against the current engine weights, and screenshot-backed visual verification against the BasicProp reference window
 
 ## Remaining parity work
 

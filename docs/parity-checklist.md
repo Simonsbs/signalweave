@@ -67,7 +67,7 @@ Status legend:
 - `[done]` separate FF and SRN weight-load workflows
 - `[done]` layer switching
 - `[done]` refresh behavior
-- `[todo]` screenshot-verified visual parity
+- `[done]` screenshot-verified visual parity
 
 ## Patterns workflows
 
