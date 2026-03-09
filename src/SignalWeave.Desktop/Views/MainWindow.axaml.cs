@@ -119,6 +119,7 @@ public partial class MainWindow : Window
         try
         {
             var window = new NetworkConfigWindow(ViewModel.GetLoadedDefinition());
+            window.DefinitionApplied += definition => ViewModel.ApplyConfiguredNetwork(definition);
             var applied = await window.ShowDialog<bool>(this);
             if (applied && window.ResultDefinition is not null)
             {

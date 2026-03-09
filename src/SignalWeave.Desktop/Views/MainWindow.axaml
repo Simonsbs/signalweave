@@ -21,25 +21,34 @@
 
     <Window.Styles>
         <Style Selector="Border.group">
-            <Setter Property="BorderBrush" Value="#A6B7C9" />
+            <Setter Property="BorderBrush" Value="#B8C7D6" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Background" Value="#EAEAEA" />
-            <Setter Property="Padding" Value="6" />
+            <Setter Property="Background" Value="#E6E6E6" />
+            <Setter Property="Padding" Value="4" />
             <Setter Property="CornerRadius" Value="0" />
         </Style>
         <Style Selector="TextBox.editor">
             <Setter Property="FontFamily" Value="Courier New" />
-            <Setter Property="Background" Value="#F6F6F6" />
-            <Setter Property="BorderBrush" Value="#AAB3BE" />
+            <Setter Property="Background" Value="#F2F2F2" />
+            <Setter Property="BorderBrush" Value="#B8C7D6" />
         </Style>
         <Style Selector="Button.panel">
             <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Background" Value="#DCE4EC" />
+            <Setter Property="BorderBrush" Value="#9FB4C9" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="TextBlock.group-header">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#3A3A3A" />
+            <Setter Property="Margin" Value="0,0,0,4" />
         </Style>
     </Window.Styles>
 
-    <DockPanel Margin="8">
+    <DockPanel Margin="6">
         <Menu DockPanel.Dock="Top"
-              Margin="0,0,0,8"
+              Margin="0,0,0,4"
               Background="#ECECEC">
             <MenuItem Header="_Network">
                 <MenuItem Header="_Configure Network..." Click="ConfigureNetwork_Click" />
@@ -48,8 +57,6 @@
                 <Separator />
                 <MenuItem Header="_Load XOR Demo" Command="{Binding LoadXorDemoCommand}" />
                 <MenuItem Header="Load _SRN Demo" Command="{Binding LoadSrnDemoCommand}" />
-                <Separator />
-                <MenuItem Header="_Parse Editors" Command="{Binding ParseEditorCommand}" />
                 <MenuItem Header="_Reset Network" Command="{Binding ResetNetworkCommand}" />
             </MenuItem>
             <MenuItem Header="_Weights">
@@ -81,38 +88,32 @@
             </MenuItem>
         </Menu>
 
-        <Grid ColumnDefinitions="*,300"
-              RowDefinitions="*,250">
-            <Border Grid.Row="0"
-                    Classes="group"
-                    Margin="0,0,8,8">
-                <Grid RowDefinitions="Auto,*,Auto">
-                    <TextBlock Text="Network"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Foreground="#3A3A3A"
-                               Margin="0,0,0,4" />
+        <Grid RowDefinitions="*,170"
+              RowSpacing="8">
+            <Grid ColumnDefinitions="*,258"
+                  ColumnSpacing="8">
+                <Border Classes="group">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Classes="group-header"
+                                   Text="Network" />
+                        <Border Grid.Row="1"
+                                Background="#F2F2F2"
+                                BorderBrush="#B8C7D6"
+                                BorderThickness="1"
+                                Padding="6">
+                            <Grid RowDefinitions="*,Auto">
+                                <Canvas x:Name="NetworkDiagramCanvas"
+                                        Width="610"
+                                        Height="360"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
 
-                    <Border Grid.Row="1"
-                            Background="#F5F5F5"
-                            BorderBrush="#AAB4C0"
-                            BorderThickness="1"
-                            Padding="6">
-                        <Grid RowDefinitions="*,Auto">
-                            <Canvas x:Name="NetworkDiagramCanvas"
-                                    Width="680"
-                                    Height="430"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center" />
-
-                            <StackPanel Grid.Row="1"
-                                        Margin="0,8,0,0"
-                                        Spacing="6"
-                                        HorizontalAlignment="Center">
-                                <StackPanel Spacing="4"
+                                <StackPanel Grid.Row="1"
+                                            Margin="0,8,0,0"
+                                            Spacing="4"
                                             HorizontalAlignment="Center">
-                                    <Grid ColumnDefinitions="Auto,50,50,50,50,Auto"
-                                          ColumnSpacing="10"
+                                    <Grid ColumnDefinitions="Auto,44,44,44,44,Auto"
+                                          ColumnSpacing="8"
                                           HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding WeightLegendLeftLabel}" />
                                         <TextBlock Grid.Column="1"
@@ -128,31 +129,31 @@
                                                    HorizontalAlignment="Center"
                                                    Text="{Binding WeightLegendRightLabel}" />
                                     </Grid>
-                                    <Canvas Width="260"
-                                            Height="28"
+                                    <Canvas Width="250"
+                                            Height="24"
                                             HorizontalAlignment="Center">
-                                        <shapes:Line StartPoint="30,12"
-                                                     EndPoint="230,12"
+                                        <shapes:Line StartPoint="25,11"
+                                                     EndPoint="225,11"
                                                      Stroke="#7A7A7A"
                                                      StrokeThickness="2" />
-                                        <shapes:Line StartPoint="30,4"
-                                                     EndPoint="30,20"
+                                        <shapes:Line StartPoint="25,3"
+                                                     EndPoint="25,19"
                                                      Stroke="#FF2020"
                                                      StrokeThickness="4" />
-                                        <shapes:Line StartPoint="80,6"
-                                                     EndPoint="80,18"
+                                        <shapes:Line StartPoint="75,5"
+                                                     EndPoint="75,17"
                                                      Stroke="#7A7A7A"
                                                      StrokeThickness="2" />
-                                        <shapes:Line StartPoint="130,2"
-                                                     EndPoint="130,22"
+                                        <shapes:Line StartPoint="125,1"
+                                                     EndPoint="125,21"
                                                      Stroke="#595959"
                                                      StrokeThickness="2" />
-                                        <shapes:Line StartPoint="180,6"
-                                                     EndPoint="180,18"
+                                        <shapes:Line StartPoint="175,5"
+                                                     EndPoint="175,17"
                                                      Stroke="#7A7A7A"
                                                      StrokeThickness="2" />
-                                        <shapes:Line StartPoint="230,4"
-                                                     EndPoint="230,20"
+                                        <shapes:Line StartPoint="225,3"
+                                                     EndPoint="225,19"
                                                      Stroke="#1FCB1F"
                                                      StrokeThickness="4" />
                                     </Canvas>
@@ -160,311 +161,139 @@
                                                HorizontalAlignment="Center"
                                                Foreground="#676767" />
                                 </StackPanel>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <TabControl Grid.Row="2"
-                                SelectedIndex="{Binding EditorTabIndex, Mode=TwoWay}"
-                                Margin="0,8,0,0">
-                        <TabItem Header="Console">
-                                <TextBox Classes="editor"
-                                     Text="{Binding ConsoleText}"
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     Height="168" />
-                        </TabItem>
-                        <TabItem Header="Config">
-                            <TextBox Classes="editor"
-                                     Text="{Binding ConfigText, Mode=TwoWay}"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     Height="168" />
-                        </TabItem>
-                        <TabItem Header="Patterns">
-                            <TextBox Classes="editor"
-                                     Text="{Binding PatternText, Mode=TwoWay}"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     Height="168" />
-                        </TabItem>
-                        <TabItem Header="Weights">
-                            <TextBox Classes="editor"
-                                     Text="{Binding WeightsText}"
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="Wrap"
-                                     Height="168" />
-                        </TabItem>
-                    </TabControl>
-                </Grid>
-            </Border>
-
-            <Border Grid.Column="1"
-                    Grid.Row="0"
-                    Classes="group"
-                    Margin="0,0,0,8">
-                <Grid RowDefinitions="Auto,*"
-                      RowSpacing="8">
-                    <TextBlock Text="Control panel"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Foreground="#3A3A3A" />
-
-                    <ScrollViewer Grid.Row="1"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <StackPanel Spacing="8"
-                                    Margin="0,0,4,0">
-                            <Grid ColumnDefinitions="*,120"
-                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                                  RowSpacing="8"
-                                  ColumnSpacing="8">
-                                <TextBlock Text="Learning rate" />
-                                <ComboBox Grid.Column="1"
-                                          ItemsSource="{Binding LearningRateOptions}"
-                                          SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
-
-                                <TextBlock Grid.Row="1" Text="Momentum" />
-                                <ComboBox Grid.Row="1"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding MomentumOptions}"
-                                          SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
-
-                                <TextBlock Grid.Row="2" Text="Learning steps" />
-                                <ComboBox Grid.Row="2"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding LearningStepOptions}"
-                                          SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}" />
-
-                                <TextBlock Grid.Row="3" Text="Weight range" />
-                                <ComboBox Grid.Row="3"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding WeightRangeOptions}"
-                                          SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
-
-                                <CheckBox Grid.Row="4"
-                                          Content="Batch Update"
-                                          IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
-                                <CheckBox Grid.Row="4"
-                                          Grid.Column="1"
-                                          Content="X-entropy"
-                                          IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
-
-                                <Button Grid.Row="5"
-                                        Classes="panel"
-                                        Content="Reset"
-                                        Command="{Binding ResetNetworkCommand}" />
-                                <Button Grid.Row="5"
-                                        Grid.Column="1"
-                                        Classes="panel"
-                                        Content="{Binding TrainButtonLabel}"
-                                        Command="{Binding TrainCommand}" />
-
-                                <TextBlock Grid.Row="6" Text="Progress" />
-                                <Grid Grid.Row="6"
-                                      Grid.Column="1">
-                                    <ProgressBar Minimum="0"
-                                                 Maximum="{Binding ProgressMaximum}"
-                                                 Value="{Binding ProgressValue}"
-                                                 Height="28"
-                                                 Foreground="#5E7FA3"
-                                                 Background="#E9EEF2"
-                                                 BorderBrush="#9FB0C0"
-                                                 BorderThickness="1" />
-                                    <TextBlock Text="{Binding ProgressLabel}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Foreground="#2F4964"
-                                               FontWeight="SemiBold" />
-                                </Grid>
-
-                                <TextBlock Grid.Row="7" Text="Pattern" />
-                                <ComboBox Grid.Row="7"
-                                          Grid.Column="1"
-                                          ItemsSource="{Binding PatternOptions}"
-                                          SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
-
-                                <Button Grid.Row="8"
-                                        Grid.ColumnSpan="2"
-                                        Classes="panel"
-                                        Content="Test one"
-                                        Command="{Binding TestOneCommand}"
-                                        IsEnabled="{Binding CanTestOne}" />
-                                <Button Grid.Row="9"
-                                        Grid.ColumnSpan="2"
-                                        Classes="panel"
-                                        Content="Test all"
-                                        Command="{Binding TestAllCommand}" />
                             </Grid>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
-            </Border>
+                        </Border>
+                    </Grid>
+                </Border>
 
-            <Border Grid.Row="1"
-                    Grid.ColumnSpan="2"
-                    Classes="group">
-                <Grid ColumnDefinitions="*,310"
-                      ColumnSpacing="10">
-                    <StackPanel Spacing="6">
-                        <TextBlock Text="Results and utilities"
-                                   FontSize="14"
-                                   FontWeight="SemiBold"
-                                   Foreground="#3A3A3A" />
-                        <TabControl SelectedIndex="{Binding ResultsTabIndex, Mode=TwoWay}"
-                                    Height="200">
-                            <TabItem Header="Overview">
-                                <TextBox Classes="editor"
-                                         Text="{Binding AnalysisText}"
-                                         IsReadOnly="True"
-                                         AcceptsReturn="True"
-                                         TextWrapping="Wrap" />
-                            </TabItem>
-                            <TabItem Header="Weight Map">
-                                <Grid RowDefinitions="Auto,*,Auto"
-                                      RowSpacing="6">
-                                    <TextBlock Text="{Binding WeightMapSummary}"
-                                               Foreground="#5A5A5A" />
-                                    <ScrollViewer Grid.Row="1"
-                                                  HorizontalScrollBarVisibility="Auto"
-                                                  VerticalScrollBarVisibility="Auto">
-                                        <Canvas Width="480"
-                                                Height="360"
-                                                Background="#D6D6D6">
-                                            <ItemsControl ItemsSource="{Binding WeightGlyphs}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <Canvas />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="vm:WeightGlyphItem">
-                                                        <Canvas>
-                                                            <Border Width="{Binding CellWidth}"
-                                                                    Height="{Binding CellHeight}"
-                                                                    Background="{Binding CellFill}"
-                                                                    Canvas.Left="{Binding X}"
-                                                                    Canvas.Top="{Binding Y}" />
-                                                            <shapes:Ellipse Width="{Binding EllipseWidth}"
-                                                                            Height="{Binding EllipseHeight}"
-                                                                            Fill="{Binding Fill}"
-                                                                            Canvas.Left="{Binding EllipseX}"
-                                                                            Canvas.Top="{Binding EllipseY}">
-                                                                <ToolTip.Tip>
-                                                                    <TextBlock Text="{Binding Tooltip}" />
-                                                                </ToolTip.Tip>
-                                                            </shapes:Ellipse>
-                                                        </Canvas>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </Canvas>
-                                    </ScrollViewer>
-                                    <DockPanel Grid.Row="2"
-                                               Margin="0,4,0,0">
-                                        <TextBlock VerticalAlignment="Center"
-                                                   Text="Weight layer:" />
-                                        <ComboBox Width="150"
-                                                  Margin="8,0,0,0"
-                                                  ItemsSource="{Binding WeightLayerOptions}"
-                                                  SelectedItem="{Binding SelectedWeightLayer, Mode=TwoWay}" />
-                                        <Button Margin="10,0,0,0"
-                                                Content="Refresh"
-                                                Command="{Binding RefreshWeightMapCommand}" />
-                                    </DockPanel>
-                                </Grid>
-                            </TabItem>
-                            <TabItem Header="Patterns and Outputs">
-                                <Grid RowDefinitions="Auto,*"
-                                      RowSpacing="6">
-                                    <TextBlock Text="{Binding PatternOutputSummary}"
-                                               Foreground="#5A5A5A" />
-                                    <ScrollViewer Grid.Row="1">
-                                        <StackPanel Spacing="4">
-                                            <Grid ColumnDefinitions="36,120,90,90,90,*"
-                                                  Margin="0,0,0,2">
-                                                <TextBlock FontWeight="Bold" Text="#" />
-                                                <TextBlock Grid.Column="1" FontWeight="Bold" Text="Pattern" />
-                                                <TextBlock Grid.Column="2" FontWeight="Bold" Text="Inputs" />
-                                                <TextBlock Grid.Column="3" FontWeight="Bold" Text="Targets" />
-                                                <TextBlock Grid.Column="4" FontWeight="Bold" Text="Outputs" />
-                                                <TextBlock Grid.Column="5" FontWeight="Bold" Text="Error" />
-                                            </Grid>
-                                            <ItemsControl ItemsSource="{Binding PatternOutputRows}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="vm:PatternOutputRow">
-                                                        <Grid ColumnDefinitions="36,120,90,90,90,*"
-                                                              Margin="0,0,0,4">
-                                                            <TextBlock Text="{Binding Index}" />
-                                                            <TextBlock Grid.Column="1" Text="{Binding Label}" />
-                                                            <TextBlock Grid.Column="2" Text="{Binding Inputs}" />
-                                                            <TextBlock Grid.Column="3" Text="{Binding Targets}" />
-                                                            <TextBlock Grid.Column="4" Text="{Binding Outputs}" />
-                                                            <TextBlock Grid.Column="5" Text="{Binding Error}" />
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </ScrollViewer>
-                                </Grid>
-                            </TabItem>
-                            <TabItem Header="Utility Plot">
-                                <Grid RowDefinitions="Auto,*"
-                                      RowSpacing="6">
-                                    <TextBlock Text="{Binding UtilityPlotSummary}"
-                                               Foreground="#5A5A5A" />
-                                    <Border Grid.Row="1"
-                                            Background="#F7F7F7"
-                                            BorderBrush="#AAB4C0"
-                                            BorderThickness="1"
-                                            Padding="8">
-                                        <Canvas Width="240"
-                                                Height="110"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center">
-                                            <shapes:Polyline Points="{Binding UtilityPlotPoints}"
-                                                             Stroke="#B24C3D"
-                                                             StrokeThickness="2" />
-                                            <ItemsControl ItemsSource="{Binding UtilityPlotMarkers}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate>
-                                                        <Canvas />
-                                                    </ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="vm:PlotMarkerItem">
-                                                        <shapes:Ellipse Width="{Binding Width}"
-                                                                        Height="{Binding Height}"
-                                                                        Fill="{Binding Fill}"
-                                                                        Canvas.Left="{Binding X}"
-                                                                        Canvas.Top="{Binding Y}">
-                                                            <ToolTip.Tip>
-                                                                <TextBlock Text="{Binding Label}" />
-                                                            </ToolTip.Tip>
-                                                        </shapes:Ellipse>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </Canvas>
-                                    </Border>
-                                </Grid>
-                            </TabItem>
-                        </TabControl>
-                    </StackPanel>
+                <Border Grid.Column="1"
+                        Classes="group">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Classes="group-header"
+                                   Text="Control panel" />
 
-                    <Grid Grid.Column="1"
-                          RowDefinitions="Auto,*,Auto"
-                          RowSpacing="6">
-                        <TextBlock Text="Error progress"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="#3A3A3A" />
+                        <Grid Grid.Row="1"
+                              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                              ColumnDefinitions="*,90"
+                              RowSpacing="8"
+                              ColumnSpacing="8"
+                              Margin="2,2,2,0">
+                            <TextBlock Text="Learning rate"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Grid.Column="1"
+                                      ItemsSource="{Binding LearningRateOptions}"
+                                      SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
+
+                            <TextBlock Grid.Row="1"
+                                       Text="Momentum"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="1"
+                                      Grid.Column="1"
+                                      ItemsSource="{Binding MomentumOptions}"
+                                      SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
+
+                            <TextBlock Grid.Row="2"
+                                       Text="Learning steps"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="2"
+                                      Grid.Column="1"
+                                      ItemsSource="{Binding LearningStepOptions}"
+                                      SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}" />
+
+                            <TextBlock Grid.Row="3"
+                                       Text="Weight range"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="3"
+                                      Grid.Column="1"
+                                      ItemsSource="{Binding WeightRangeOptions}"
+                                      SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
+
+                            <CheckBox Grid.Row="4"
+                                      Content="Batch Update"
+                                      IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
+                            <CheckBox Grid.Row="4"
+                                      Grid.Column="1"
+                                      Content="X-entropy"
+                                      IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
+
+                            <Button Grid.Row="5"
+                                    Classes="panel"
+                                    Content="Reset"
+                                    Command="{Binding ResetNetworkCommand}" />
+                            <Button Grid.Row="5"
+                                    Grid.Column="1"
+                                    Classes="panel"
+                                    Content="{Binding TrainButtonLabel}"
+                                    Command="{Binding TrainCommand}" />
+
+                            <TextBlock Grid.Row="6"
+                                       Text="Progress"
+                                       VerticalAlignment="Center" />
+                            <Grid Grid.Row="6"
+                                  Grid.Column="1">
+                                <ProgressBar Minimum="0"
+                                             Maximum="{Binding ProgressMaximum}"
+                                             Value="{Binding ProgressValue}"
+                                             Height="24"
+                                             Foreground="#6689AF"
+                                             Background="#EDF1F5"
+                                             BorderBrush="#9FB0C0"
+                                             BorderThickness="1" />
+                                <TextBlock Text="{Binding ProgressLabel}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="#5E7FA3"
+                                           FontWeight="SemiBold" />
+                            </Grid>
+
+                            <TextBlock Grid.Row="7"
+                                       Text="Pattern"
+                                       VerticalAlignment="Center" />
+                            <ComboBox Grid.Row="7"
+                                      Grid.Column="1"
+                                      ItemsSource="{Binding PatternOptions}"
+                                      SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
+
+                            <Button Grid.Row="8"
+                                    Grid.ColumnSpan="2"
+                                    Classes="panel"
+                                    Content="Test one"
+                                    Command="{Binding TestOneCommand}"
+                                    IsEnabled="{Binding CanTestOne}" />
+                            <Button Grid.Row="9"
+                                    Grid.ColumnSpan="2"
+                                    Classes="panel"
+                                    Content="Test all"
+                                    Command="{Binding TestAllCommand}" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Grid Grid.Row="1"
+                  ColumnDefinitions="*,258"
+                  ColumnSpacing="8">
+                <Border Classes="group">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Classes="group-header"
+                                   Text="Console" />
+                        <TextBox Grid.Row="1"
+                                 Classes="editor"
+                                 Text="{Binding ConsoleText}"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap" />
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Classes="group">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Classes="group-header"
+                                   Text="Error progress" />
                         <Border Grid.Row="1"
                                 Background="#F7F7F7"
-                                BorderBrush="#AAB4C0"
+                                BorderBrush="#B8C7D6"
                                 BorderThickness="1"
                                 Padding="8">
                             <Grid RowDefinitions="Auto,*"
@@ -516,16 +345,9 @@
                                 </Canvas>
                             </Grid>
                         </Border>
-                        <TextBox Grid.Row="2"
-                                 Classes="editor"
-                                 Text="{Binding HistoryText}"
-                                 IsReadOnly="True"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 Height="60" />
                     </Grid>
-                </Grid>
-            </Border>
+                </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

@@ -77,9 +77,9 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
 - progress state now follows cumulative completed training cycles more closely across repeated `Train` runs
 - right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
+- screenshot-verified four-panel main shell matching the original BasicProp layout more closely: `Network`, `Control panel`, `Console`, and `Error progress`
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
 - 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
-- console/config/pattern/weight tabs
 - BasicProp-style training console wording (`Training steps` / `Training finished`)
 - BasicProp-style `Test All` / `Test One` console output wording and menu gating
 - test-one gating that follows the original controller behavior: enabled through `24` patterns, then disabled above that while the combo collapses to the pattern-source name
@@ -91,7 +91,6 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `Batch Update` behavior in the desktop control panel: still visible/enabled on the surface, but automatically cleared for SRNs in the applied runtime
 - BasicProp-style pattern selector text in the main control panel
 - cycle-based progress-bar behavior that no longer invents a separate `Loaded weights` state or use the selected learning-step count as the idle maximum
-- utility tabs for weight maps, pattern/output tables, and plots
 - weight legend and error plot styling that tracks the original BasicProp layout more closely
 - modal `Invalid value` dialogs plus BasicProp-style note routing into the detached messages window
 - BasicProp-style note prefix formatting (`Note:`) in controller-driven desktop feedback
@@ -99,6 +98,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `No can do!` modal feedback when train/test actions are attempted with zero loaded patterns
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
+- network configuration `Apply` now updates the live desktop state without closing the dialog
 - utility-window launches stay quiet in the main console, matching BasicProp more closely
 - in-place analysis/refresh actions also stay quiet unless they actually produce user-facing output or a note
 - reset and hidden-activation export no longer emit synthetic console lines

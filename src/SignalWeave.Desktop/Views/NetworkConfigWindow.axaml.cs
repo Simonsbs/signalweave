@@ -26,6 +26,7 @@ public partial class NetworkConfigWindow : Window
     }
 
     public NetworkDefinition? ResultDefinition { get; private set; }
+    public event Action<NetworkDefinition>? DefinitionApplied;
 
     private NetworkConfigDialogViewModel ViewModel => (NetworkConfigDialogViewModel)DataContext!;
 
@@ -36,7 +37,7 @@ public partial class NetworkConfigWindow : Window
 
     private void Apply_Click(object? sender, RoutedEventArgs e)
     {
-        TryApplyAndClose();
+        TryApplyWithoutClose();
     }
 
     private void Cancel_Click(object? sender, RoutedEventArgs e)
@@ -51,6 +52,20 @@ public partial class NetworkConfigWindow : Window
             ResultDefinition = ViewModel.BuildDefinition();
             ViewModel.StatusText = string.Empty;
             Close(true);
+        }
+        catch (Exception exception)
+        {
+            ViewModel.StatusText = exception.Message;
+        }
+    }
+
+    private void TryApplyWithoutClose()
+    {
+        try
+        {
+            ResultDefinition = ViewModel.BuildDefinition();
+            ViewModel.StatusText = string.Empty;
+            DefinitionApplied?.Invoke(ResultDefinition);
         }
         catch (Exception exception)
         {
