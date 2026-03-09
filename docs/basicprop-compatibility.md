@@ -51,7 +51,7 @@ Source basis used for this implementation:
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - test-one/test-all interaction
   - current weight inspection
-  - live network diagram with 2-layer, 3-layer, 4-layer, and SRN-aware weight routing
+  - screenshot-verified live network diagram with 2-layer, 3-layer, 4-layer, and SRN-aware weight routing
   - weight-map visualization with Hinton-style emphasis
   - 2-layer and 4-layer-aware weight-layer switching in the desktop and popup weight views
   - pattern/output inspection
@@ -71,6 +71,7 @@ Source basis used for this implementation:
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: note-style message output for uninitialized patterns and modal feedback for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
+  - screenshot-driven cleanup of the main window and configuration dialog to remove SignalWeave-specific chrome and move closer to the BasicProp 1.3 layout
 
 ## Remaining parity work
 

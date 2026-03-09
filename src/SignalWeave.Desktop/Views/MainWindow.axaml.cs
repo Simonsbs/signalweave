@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using SignalWeave.Core;
 using SignalWeave.Desktop.ViewModels;
@@ -32,6 +36,8 @@ public partial class MainWindow : Window
         if (_attachedViewModel is not null)
         {
             _attachedViewModel.FeedbackDialogRequested -= HandleFeedbackDialogRequested;
+            _attachedViewModel.DiagramNodes.CollectionChanged -= HandleDiagramCollectionChanged;
+            _attachedViewModel.DiagramEdges.CollectionChanged -= HandleDiagramCollectionChanged;
         }
 
         _attachedViewModel = viewModel;
@@ -39,13 +45,73 @@ public partial class MainWindow : Window
         if (_attachedViewModel is not null)
         {
             _attachedViewModel.FeedbackDialogRequested += HandleFeedbackDialogRequested;
+            _attachedViewModel.DiagramNodes.CollectionChanged += HandleDiagramCollectionChanged;
+            _attachedViewModel.DiagramEdges.CollectionChanged += HandleDiagramCollectionChanged;
         }
+
+        RenderDiagram();
     }
 
     private async void HandleFeedbackDialogRequested(object? sender, FeedbackDialogRequestEventArgs e)
     {
         var window = new FeedbackDialogWindow(e.Title, e.Message);
         await window.ShowDialog(this);
+    }
+
+    private void HandleDiagramCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        RenderDiagram();
+    }
+
+    private void RenderDiagram()
+    {
+        if (NetworkDiagramCanvas is null)
+        {
+            return;
+        }
+
+        NetworkDiagramCanvas.Children.Clear();
+
+        if (_attachedViewModel is null)
+        {
+            return;
+        }
+
+        foreach (var edge in _attachedViewModel.DiagramEdges)
+        {
+            NetworkDiagramCanvas.Children.Add(new Line
+            {
+                StartPoint = Point.Parse(edge.StartPoint),
+                EndPoint = Point.Parse(edge.EndPoint),
+                Stroke = Brush.Parse(edge.Stroke),
+                StrokeThickness = edge.Thickness
+            });
+        }
+
+        foreach (var node in _attachedViewModel.DiagramNodes)
+        {
+            var border = new Border
+            {
+                Width = node.Width,
+                Height = node.Height,
+                Background = Brush.Parse(node.Fill),
+                BorderBrush = Brush.Parse(node.Stroke),
+                BorderThickness = new Thickness(1.2),
+                Child = new TextBlock
+                {
+                    Text = node.Label,
+                    TextAlignment = TextAlignment.Center,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = Brush.Parse("#4A4A4A")
+                }
+            };
+
+            Canvas.SetLeft(border, node.X);
+            Canvas.SetTop(border, node.Y);
+            NetworkDiagramCanvas.Children.Add(border);
+        }
     }
 
     private async void ConfigureNetwork_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -80,7 +146,7 @@ public partial class MainWindow : Window
             }
 
             var text = await ReadAllTextAsync(file);
-            ViewModel.LoadNetworkText(text, Path.GetFileNameWithoutExtension(file.Name));
+            ViewModel.LoadNetworkText(text, System.IO.Path.GetFileNameWithoutExtension(file.Name));
         });
     }
 
@@ -122,7 +188,7 @@ public partial class MainWindow : Window
             }
 
             var text = await ReadAllTextAsync(file);
-            ViewModel.LoadPatternText(text, Path.GetFileNameWithoutExtension(file.Name));
+            ViewModel.LoadPatternText(text, System.IO.Path.GetFileNameWithoutExtension(file.Name));
         });
     }
 
