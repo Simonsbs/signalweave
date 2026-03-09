@@ -56,6 +56,7 @@ Source basis used for this implementation:
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating
   - test-one/test-all interaction
+  - note output now renders with proper `Note: ...` spacing in the desktop console instead of collapsing directly into the message text
   - pattern loading now uses the current configured network state instead of reparsing the editor surface
   - pattern-loading parse/validation failures now collapse to the original `Failed to load patterns` note instead of leaking raw parser exceptions into the desktop console
   - network saving now uses the loaded configured network state instead of reparsing the editor surface

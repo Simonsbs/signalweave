@@ -104,6 +104,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - modal `Invalid value` dialogs plus BasicProp-style note routing into the detached messages window
 - BasicProp-style note prefix formatting (`Note:`) in controller-driven desktop feedback
 - note-style controller feedback now appends to the desktop console instead of replacing the current console text
+- note-style controller feedback now renders with proper `Note: ...` spacing in the main console
 - BasicProp-style `No can do!` modal feedback when train/test actions are attempted with zero loaded patterns
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
@@ -117,6 +118,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - reset and hidden-activation export no longer emit synthetic console lines
 - a detached message-log window under `Help`, mirroring the original BasicProp message-frame workflow
 - hidden-activation export from the desktop app through a save dialog using BasicProp-like raw `.dat` rows
+- screenshot-driven main-shell cleanup now trims some wasted network-pane space while keeping the existing diagram visible
 
 ## Release automation
 

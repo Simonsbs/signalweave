@@ -1863,7 +1863,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void Inform(string message)
     {
-        var note = $"Note:{message}";
+        var note = $"Note: {message}";
         _suppressMessageMirror = true;
         ConsoleText = string.IsNullOrWhiteSpace(ConsoleText)
             ? note

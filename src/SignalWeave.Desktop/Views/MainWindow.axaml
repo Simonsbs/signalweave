@@ -94,8 +94,8 @@
                                 Padding="6">
                             <Grid RowDefinitions="*,Auto">
                                 <Canvas x:Name="NetworkDiagramCanvas"
-                                        Width="610"
-                                        Height="360"
+                                        Width="560"
+                                        Height="320"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center" />
 
