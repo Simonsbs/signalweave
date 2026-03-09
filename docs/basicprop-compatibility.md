@@ -80,6 +80,7 @@ Source basis used for this implementation:
   - projected 3D and time-series utility plots
   - weight legend and axis-based error progress plot
   - progress bar state with `Untrained` and cycle-count display
+  - per-step training progress now updates the desktop progress bar value/string during active learning instead of only jumping before and after the run
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - startup now mirrors BasicProp more closely: a default feed-forward network is loaded with no patterns, and the initial desktop note prompts the user to load patterns before running simulations

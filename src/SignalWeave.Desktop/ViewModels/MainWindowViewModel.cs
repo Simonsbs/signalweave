@@ -241,15 +241,22 @@ public partial class MainWindowViewModel : ViewModelBase
             var engine = _engine!;
             var patternSet = _patternSet!;
             var steps = GetLearningStepsValue();
+            var startingCycles = engine.CompletedCycles;
             ProgressMaximum = Math.Max(engine.CompletedCycles + steps, 1);
             ProgressValue = engine.CompletedCycles;
             ProgressLabel = engine.CompletedCycles == 0
                 ? "Untrained"
                 : engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
+            var progress = new Progress<TrainingPoint>(point =>
+            {
+                var completedCycles = startingCycles + point.Epoch;
+                ProgressValue = completedCycles;
+                ProgressLabel = completedCycles.ToString(CultureInfo.InvariantCulture);
+            });
 
             await WithBusyControllerAsync(ControllerActivity.Learning, async () =>
             {
-                var result = await Task.Run(() => engine.Train(patternSet, steps));
+                var result = await Task.Run(() => engine.Train(patternSet, steps, progress));
                 _lastRun = result.FinalRun;
 
                 SetTrainedState(engine.CompletedCycles);

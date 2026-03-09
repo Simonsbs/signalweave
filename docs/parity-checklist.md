@@ -51,7 +51,7 @@ Status legend:
 - `[in-progress]` main workbench shell
 - `[in-progress]` control panel defaults
 - `[done]` `Train` / `continue` state
-- `[in-progress]` progress bar state
+- `[done]` progress bar state
 - `[in-progress]` pattern combo `< 24` handling
 - `[todo]` full `SimControl.checkControls()` parity
 - `[todo]` BasicProp-identical network drawing

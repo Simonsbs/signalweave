@@ -46,7 +46,7 @@ public sealed class SignalWeaveEngine
         CompletedCycles = Math.Max(cycles, 0);
     }
 
-    public TrainResult Train(PatternSet patternSet, int? maxEpochs = null)
+    public TrainResult Train(PatternSet patternSet, int? maxEpochs = null, IProgress<TrainingPoint>? progress = null)
     {
         patternSet.ValidateAgainst(_definition, requireTargets: true);
 
@@ -55,11 +55,11 @@ public sealed class SignalWeaveEngine
 
         if (_definition.NetworkKind == NetworkKind.FeedForward)
         {
-            TrainFeedForward(patternSet, steps, history);
+            TrainFeedForward(patternSet, steps, history, progress);
         }
         else
         {
-            TrainSimpleRecurrent(patternSet, steps, history);
+            TrainSimpleRecurrent(patternSet, steps, history, progress);
         }
 
         CompletedCycles += history.Count;
@@ -193,7 +193,7 @@ public sealed class SignalWeaveEngine
             : GetFeedForwardExportHiddenActivations(patternSet);
     }
 
-    private void TrainSimpleRecurrent(PatternSet patternSet, int steps, List<TrainingPoint> history)
+    private void TrainSimpleRecurrent(PatternSet patternSet, int steps, List<TrainingPoint> history, IProgress<TrainingPoint>? progress)
     {
         var examples = patternSet.Examples;
         var useSequentialUpdate = patternSet.HasResetMarkers;
@@ -264,7 +264,9 @@ public sealed class SignalWeaveEngine
 
             if (currentTsq <= _definition.ErrorThreshold)
             {
-                history.Add(new TrainingPoint(step, currentTsq));
+                var point = new TrainingPoint(step, currentTsq);
+                history.Add(point);
+                progress?.Report(point);
                 break;
             }
 
@@ -273,7 +275,9 @@ public sealed class SignalWeaveEngine
                 break;
             }
 
-            history.Add(new TrainingPoint(step, currentTsq));
+            var trainingPoint = new TrainingPoint(step, currentTsq);
+            history.Add(trainingPoint);
+            progress?.Report(trainingPoint);
         }
 
         _lastTrainedPatternIndex = lastPatternIndex;
@@ -528,7 +532,7 @@ public sealed class SignalWeaveEngine
         return hiddenDelta;
     }
 
-    private void TrainFeedForward(PatternSet patternSet, int steps, List<TrainingPoint> history)
+    private void TrainFeedForward(PatternSet patternSet, int steps, List<TrainingPoint> history, IProgress<TrainingPoint>? progress)
     {
         var examples = patternSet.Examples;
         var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
@@ -583,7 +587,9 @@ public sealed class SignalWeaveEngine
 
             if (currentTsq <= _definition.ErrorThreshold)
             {
-                history.Add(new TrainingPoint(step, currentTsq));
+                var point = new TrainingPoint(step, currentTsq);
+                history.Add(point);
+                progress?.Report(point);
                 break;
             }
 
@@ -592,7 +598,9 @@ public sealed class SignalWeaveEngine
                 break;
             }
 
-            history.Add(new TrainingPoint(step, currentTsq));
+            var trainingPoint = new TrainingPoint(step, currentTsq);
+            history.Add(trainingPoint);
+            progress?.Report(trainingPoint);
 
             stepIndex++;
         }
