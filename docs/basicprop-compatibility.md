@@ -43,9 +43,10 @@ Source basis used for this implementation:
   - test-one/test-all interaction
   - current weight inspection
   - live network diagram
-  - weight-map visualization
+  - weight-map visualization with Hinton-style emphasis
   - pattern/output inspection
   - projected 3D and time-series utility plots
+  - weight legend and axis-based error progress plot
   - hidden activation export
 
 ## Remaining parity work

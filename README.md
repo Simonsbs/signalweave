@@ -31,6 +31,7 @@ Implemented now:
 - dedicated desktop network-configuration dialog with feed-forward and SRN modes
 - native desktop file workflows for network save/load, pattern load, and weight save/load
 - utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
+- BasicProp-style visual touches including weight-value legend, Hinton-like weight cells, and axis-based error plotting
 
 Still to build for full feature parity:
 
@@ -70,6 +71,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - console/config/pattern/weight tabs
 - test-one gating that follows the original `< 24 patterns` behavior
 - utility tabs for weight maps, pattern/output tables, and plots
+- weight legend and error plot styling that tracks the original BasicProp layout more closely
 - hidden-activation export to CSV from the desktop app
 
 ## Samples

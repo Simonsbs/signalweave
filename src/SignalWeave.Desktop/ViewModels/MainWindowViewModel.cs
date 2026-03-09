@@ -121,6 +121,27 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _utilityPlotSummary = "No utility plot prepared.";
 
+    [ObservableProperty]
+    private string _weightLegendLeftLabel = "<< -1";
+
+    [ObservableProperty]
+    private string _weightLegendMidLeftLabel = "-0.5";
+
+    [ObservableProperty]
+    private string _weightLegendZeroLabel = "0";
+
+    [ObservableProperty]
+    private string _weightLegendMidRightLabel = "0.5";
+
+    [ObservableProperty]
+    private string _weightLegendRightLabel = "1 >>";
+
+    [ObservableProperty]
+    private string _errorPlotTopLabel = "1.000";
+
+    [ObservableProperty]
+    private string _errorPlotBottomRightLabel = "5000";
+
     [RelayCommand]
     private void LoadXorDemo()
     {
@@ -155,6 +176,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ProgressLabel = "Untrained";
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
+            UpdateErrorPlotScale([]);
             AnalysisText = "Weights were reset using the selected range.";
             PatternOutputRows.Clear();
             PatternOutputSummary = "No pattern outputs calculated yet.";
@@ -178,6 +200,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ProgressLabel = $"{result.History.Count} cycles";
             HistoryText = BuildHistoryText(result.History);
             ErrorProgressPoints = BuildErrorPolyline(result.History);
+            UpdateErrorPlotScale(result.History);
             WeightsText = BuildWeightsText(result.Weights);
             RefreshDiagram();
             RebuildWeightMap();
@@ -341,6 +364,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ProgressLabel = "Untrained";
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
+            UpdateErrorPlotScale([]);
             AnalysisText = $"{_definition!.ToSummary()}{Environment.NewLine}{_patternSet!.ToSummary()}";
             RebuildWeightMap();
             ConsoleText = consoleMessage;
@@ -467,6 +491,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (_definition is null || _engine is null)
         {
+            UpdateWeightLegend(1.0);
             return;
         }
 
@@ -482,6 +507,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var hiddenYs = BuildLane(_definition.HiddenUnits, 90, 300);
         var outputYs = BuildLane(_definition.OutputUnits, 160, 240);
         var maxWeight = CalculateMaxWeight(_engine.Weights);
+        UpdateWeightLegend(maxWeight);
 
         var inputBiasY = inputYs.Length == 0 ? 200 : (inputYs[0] + inputYs[^1]) / 2;
         var hiddenBiasY = hiddenYs.Length == 0 ? 200 : (hiddenYs[0] + hiddenYs[^1]) / 2;
@@ -631,7 +657,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var rows = matrix.GetLength(0);
         var columns = matrix.GetLength(1);
         var maxValue = Flatten(matrix).Select(Math.Abs).DefaultIfEmpty(1.0).Max();
-        const double cellSize = 118;
+        const double cellSize = 156;
 
         for (var row = 0; row < rows; row++)
         {
@@ -639,12 +665,18 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 var weight = matrix[row, column];
                 var normalized = Math.Abs(weight) / Math.Max(0.000001, maxValue);
-                var size = 18 + (normalized * 82);
+                var size = 16 + (normalized * 118);
+                var cellFill = ((row + column) % 2 == 0) ? "#C8C8C8" : "#D0D0D0";
+                var cellX = column * cellSize;
+                var cellY = row * cellSize;
                 WeightGlyphs.Add(new WeightGlyphItem(
-                    column * cellSize,
-                    row * cellSize,
+                    cellX,
+                    cellY,
                     cellSize - 6,
                     cellSize - 6,
+                    cellFill,
+                    cellX + ((cellSize - 6 - size) / 2),
+                    cellY + ((cellSize - 6 - size) / 2),
                     size,
                     size,
                     weight >= 0 ? "#020202" : "#FF1616",
@@ -653,6 +685,18 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
+    }
+
+    [RelayCommand]
+    private void RefreshWeightMap()
+    {
+        RunSafe(() =>
+        {
+            EnsureContext(resetWeights: false);
+            RebuildWeightMap();
+            ResultsTabIndex = 1;
+            ConsoleText = "Refreshed weight map.";
+        });
     }
 
     private void BuildTimeSeriesPlot(RunResult run)
@@ -790,11 +834,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (history.Count == 0)
         {
-            return "0,132 240,132";
+            return "24,8 250,8";
         }
 
-        const double width = 240;
-        const double height = 132;
+        const double left = 24;
+        const double top = 8;
+        const double width = 226;
+        const double height = 108;
         var maxX = Math.Max(1, history.Count - 1);
         var maxY = Math.Max(0.01, history.Max(point => point.AverageError));
 
@@ -802,10 +848,58 @@ public partial class MainWindowViewModel : ViewModelBase
             " ",
             history.Select(point =>
             {
-                var x = (point.Epoch - 1) * width / maxX;
-                var y = height - ((point.AverageError / maxY) * height);
+                var x = left + ((point.Epoch - 1) * width / maxX);
+                var y = top + (height - ((point.AverageError / maxY) * height));
                 return $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
             }));
+    }
+
+    private void UpdateErrorPlotScale(IReadOnlyList<TrainingPoint> history)
+    {
+        ErrorPlotBottomRightLabel = SelectedLearningSteps;
+        ErrorPlotTopLabel = history.Count == 0
+            ? "1.000"
+            : history.Max(point => point.AverageError).ToString("0.000", CultureInfo.InvariantCulture);
+    }
+
+    private void UpdateWeightLegend(double maxWeight)
+    {
+        var rounded = RoundLegendValue(maxWeight);
+        WeightLegendLeftLabel = $"<< -{rounded.ToString("0.##", CultureInfo.InvariantCulture)}";
+        WeightLegendMidLeftLabel = (-rounded / 2).ToString("0.##", CultureInfo.InvariantCulture);
+        WeightLegendZeroLabel = "0";
+        WeightLegendMidRightLabel = (rounded / 2).ToString("0.##", CultureInfo.InvariantCulture);
+        WeightLegendRightLabel = $"{rounded.ToString("0.##", CultureInfo.InvariantCulture)} >>";
+    }
+
+    private static double RoundLegendValue(double value)
+    {
+        if (value <= 0.25)
+        {
+            return 0.25;
+        }
+
+        if (value <= 0.5)
+        {
+            return 0.5;
+        }
+
+        if (value <= 1.0)
+        {
+            return 1.0;
+        }
+
+        if (value <= 2.0)
+        {
+            return 2.0;
+        }
+
+        if (value <= 5.0)
+        {
+            return 5.0;
+        }
+
+        return Math.Ceiling(value);
     }
 
     private static string BuildSinglePatternResult(TestResult result)
@@ -1132,6 +1226,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
 public sealed record DiagramNodeItem(double X, double Y, double Width, double Height, string Label, string Fill, string Stroke);
 public sealed record DiagramEdgeItem(string StartPoint, string EndPoint, string Stroke, double Thickness, bool IsRecurrent);
-public sealed record WeightGlyphItem(double X, double Y, double CellWidth, double CellHeight, double EllipseWidth, double EllipseHeight, string Fill, string Tooltip);
+public sealed record WeightGlyphItem(double X, double Y, double CellWidth, double CellHeight, string CellFill, double EllipseX, double EllipseY, double EllipseWidth, double EllipseHeight, string Fill, string Tooltip);
 public sealed record PatternOutputRow(int Index, string Label, string Inputs, string Targets, string Outputs, string Error);
 public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);
