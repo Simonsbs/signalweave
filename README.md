@@ -81,6 +81,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - test-one gating that follows the original `< 24 patterns` behavior
 - utility tabs for weight maps, pattern/output tables, and plots
 - weight legend and error plot styling that tracks the original BasicProp layout more closely
+- modal `Invalid value` dialogs plus BasicProp-style note routing into the detached messages window
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
 - a detached message-log window under `Help`, mirroring the original BasicProp message-frame workflow
 - hidden-activation export to CSV from the desktop app

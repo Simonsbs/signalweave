@@ -56,8 +56,8 @@ Status legend:
 - `[todo]` full `SimControl.checkControls()` parity
 - `[todo]` BasicProp-identical network drawing
 - `[in-progress]` detached message window
-- `[todo]` modal invalid-value dialogs
-- `[todo]` modal missing-pattern dialogs
+- `[done]` modal invalid-value dialogs
+- `[done]` `SimControl.checkPatternsAvailable()` note/modal routing
 - `[in-progress]` error-progress chart
 
 ## Weights workflows

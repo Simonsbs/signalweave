@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.FeedbackDialogWindow"
+        x:DataType="vm:FeedbackDialogViewModel"
+        Width="360"
+        Height="170"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:FeedbackDialogViewModel />
+    </Design.DataContext>
+
+    <Border Margin="10"
+            Padding="12"
+            Background="#F4F4F4"
+            BorderBrush="#B8C0CA"
+            BorderThickness="1">
+        <Grid RowDefinitions="*,Auto">
+            <TextBlock Text="{Binding Message}"
+                       TextWrapping="Wrap"
+                       VerticalAlignment="Center"
+                       Foreground="#2D2D2D" />
+
+            <Button Grid.Row="1"
+                    Width="84"
+                    Margin="0,14,0,0"
+                    HorizontalAlignment="Center"
+                    Command="{Binding CloseCommand}"
+                    Content="OK" />
+        </Grid>
+    </Border>
+</Window>

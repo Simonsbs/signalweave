@@ -10,14 +10,43 @@ namespace SignalWeave.Desktop.Views;
 
 public partial class MainWindow : Window
 {
+    private MainWindowViewModel? _attachedViewModel;
     private MessageWindow? _messageWindow;
 
     public MainWindow()
     {
         InitializeComponent();
+        DataContextChanged += HandleDataContextChanged;
+        AttachViewModel(DataContext as MainWindowViewModel);
     }
 
     private MainWindowViewModel ViewModel => (MainWindowViewModel)DataContext!;
+
+    private void HandleDataContextChanged(object? sender, EventArgs e)
+    {
+        AttachViewModel(DataContext as MainWindowViewModel);
+    }
+
+    private void AttachViewModel(MainWindowViewModel? viewModel)
+    {
+        if (_attachedViewModel is not null)
+        {
+            _attachedViewModel.FeedbackDialogRequested -= HandleFeedbackDialogRequested;
+        }
+
+        _attachedViewModel = viewModel;
+
+        if (_attachedViewModel is not null)
+        {
+            _attachedViewModel.FeedbackDialogRequested += HandleFeedbackDialogRequested;
+        }
+    }
+
+    private async void HandleFeedbackDialogRequested(object? sender, FeedbackDialogRequestEventArgs e)
+    {
+        var window = new FeedbackDialogWindow(e.Title, e.Message);
+        await window.ShowDialog(this);
+    }
 
     private async void ConfigureNetwork_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {

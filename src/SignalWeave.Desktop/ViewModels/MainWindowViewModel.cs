@@ -13,6 +13,9 @@ namespace SignalWeave.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private const string InvalidValueDialogTitle = "Invalid value";
+    private const string MissingPatternsDialogMessage = "No training patterns have been provided!\nWhere are my patterns?";
+    private const string PatternsNotInitializedNote = "SimControl.checkPatternsAvailable: Patterns have not been initialized";
     private readonly string[] _learningRateOptions = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0", "5.0"];
     private readonly string[] _momentumOptions = ["0", "0.2", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"];
     private readonly string[] _learningStepOptions = ["100", "200", "500", "1000", "2000", "5000", "10000", "20000", "50000", "100000"];
@@ -47,6 +50,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<PatternOutputRow> PatternOutputRows { get; } = [];
     public ObservableCollection<PlotMarkerItem> UtilityPlotMarkers { get; } = [];
     public MessageWindowViewModel MessageWindow { get; }
+    public event EventHandler<FeedbackDialogRequestEventArgs>? FeedbackDialogRequested;
 
     [ObservableProperty]
     private string _sampleTitle = "XOR demo";
@@ -204,6 +208,7 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights: false);
+            EnsurePatternsAvailable();
             var steps = GetLearningStepsValue();
             var result = _engine!.Train(_patternSet!, steps);
             _lastRun = result.FinalRun;
@@ -232,6 +237,7 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights: false);
+            EnsurePatternsAvailable();
             var run = _engine!.TestAll(_patternSet!);
             _lastRun = run;
             ConsoleText = $"Test all completed for {_definition!.Name}.{Environment.NewLine}Average error: {run.AverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
@@ -252,9 +258,11 @@ public partial class MainWindowViewModel : ViewModelBase
             EnsureContext(resetWeights: false);
             if (!CanTestOne)
             {
-                throw new InvalidOperationException("Test one is only available when fewer than 24 patterns are loaded.");
+                Inform("Test one is only available when fewer than 24 patterns are loaded.");
+                return;
             }
 
+            EnsurePatternsAvailable();
             var patternIndex = PatternOptions.IndexOf(SelectedPattern);
             if (patternIndex < 0)
             {
@@ -1317,6 +1325,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private RunResult EnsureRun()
     {
+        EnsurePatternsAvailable();
         _lastRun ??= _engine!.TestAll(_patternSet!);
         return _lastRun;
     }
@@ -1336,6 +1345,14 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             action();
+        }
+        catch (BasicPropModalException exception)
+        {
+            FeedbackDialogRequested?.Invoke(this, new FeedbackDialogRequestEventArgs(exception.Title, exception.Message));
+        }
+        catch (BasicPropNoteException exception)
+        {
+            Inform(exception.Message);
         }
         catch (Exception exception)
         {
@@ -1643,7 +1660,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return steps;
         }
 
-        throw new InvalidOperationException("An invalid value for the learning steps was given!");
+        throw new BasicPropModalException(InvalidValueDialogTitle, "An invalid value for the learning steps was given!");
     }
 
     private int GetLearningStepsValueOrDefault()
@@ -1660,7 +1677,34 @@ public partial class MainWindowViewModel : ViewModelBase
             return parsed;
         }
 
-        throw new InvalidOperationException(message);
+        throw new BasicPropModalException(InvalidValueDialogTitle, message);
+    }
+
+    private void EnsurePatternsAvailable()
+    {
+        if (_patternSet is null)
+        {
+            throw new BasicPropNoteException(PatternsNotInitializedNote);
+        }
+
+        if (_patternSet.Examples.Count == 0)
+        {
+            throw new BasicPropModalException(InvalidValueDialogTitle, MissingPatternsDialogMessage);
+        }
+    }
+
+    private void Inform(string message)
+    {
+        ConsoleText = $"Note: {message}";
+    }
+
+    private sealed class BasicPropModalException(string title, string message) : InvalidOperationException(message)
+    {
+        public string Title { get; } = title;
+    }
+
+    private sealed class BasicPropNoteException(string message) : InvalidOperationException(message)
+    {
     }
 
     private static string Slugify(string value)

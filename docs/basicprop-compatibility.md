@@ -48,6 +48,7 @@ Source basis used for this implementation:
   - desktop save/load workflows for networks and weights, plus pattern loading
   - control panel defaults
   - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
+  - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - test-one/test-all interaction
   - current weight inspection
   - live network diagram with 2-layer, 3-layer, 4-layer, and SRN-aware weight routing
@@ -68,6 +69,7 @@ Source basis used for this implementation:
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
+  - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: note-style message output for uninitialized patterns and modal feedback for zero loaded patterns
 
 ## Remaining parity work
 
