@@ -453,9 +453,11 @@ public partial class MainWindowViewModel : ViewModelBase
             NetworkKind = definition.NetworkKind,
             InputUnits = definition.InputUnits,
             HiddenUnits = definition.HiddenUnits,
+            SecondHiddenUnits = definition.SecondHiddenUnits,
             OutputUnits = definition.OutputUnits,
             UseInputBias = definition.UseInputBias,
             UseHiddenBias = definition.UseHiddenBias,
+            UseSecondHiddenBias = definition.UseSecondHiddenBias,
             LearningRate = GetLearningRateValue(),
             Momentum = GetMomentumValue(),
             RandomWeightRange = ParseWeightRange(SelectedWeightRange),
@@ -492,8 +494,18 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var current = SelectedWeightLayer;
         WeightLayerOptions.Clear();
-        WeightLayerOptions.Add("Input -> Hidden");
-        WeightLayerOptions.Add("Hidden -> Output");
+
+        if (weights.HiddenHidden is not null)
+        {
+            WeightLayerOptions.Add("Input -> Hidden1");
+            WeightLayerOptions.Add("Hidden1 -> Hidden2");
+            WeightLayerOptions.Add("Hidden2 -> Output");
+        }
+        else
+        {
+            WeightLayerOptions.Add("Input -> Hidden");
+            WeightLayerOptions.Add("Hidden -> Output");
+        }
 
         if (weights.RecurrentHidden is not null)
         {
@@ -515,30 +527,44 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         const double inputX = 130;
-        const double hiddenX = 350;
-        const double outputX = 570;
+        const double hiddenX = 280;
+        const double hidden2X = 430;
+        const double outputX = 580;
         const double nodeWidth = 76;
         const double nodeHeight = 42;
         const double biasWidth = 64;
         const double biasHeight = 56;
+        const double inputBiasX = 30;
+        const double hiddenBiasX = 180;
+        const double secondHiddenBiasX = 330;
 
         var inputYs = BuildLane(_definition.InputUnits, 120, 350);
         var hiddenYs = BuildLane(_definition.HiddenUnits, 90, 300);
+        var secondHiddenYs = _definition.HasSecondHiddenLayer
+            ? BuildLane(_definition.SecondHiddenUnits, 90, 300)
+            : [];
         var outputYs = BuildLane(_definition.OutputUnits, 160, 240);
         var maxWeight = CalculateMaxWeight(_engine.Weights);
         UpdateWeightLegend(maxWeight);
 
         var inputBiasY = inputYs.Length == 0 ? 200 : (inputYs[0] + inputYs[^1]) / 2;
         var hiddenBiasY = hiddenYs.Length == 0 ? 200 : (hiddenYs[0] + hiddenYs[^1]) / 2;
+        var secondHiddenBiasY = secondHiddenYs.Length == 0 ? 200 : (secondHiddenYs[0] + secondHiddenYs[^1]) / 2;
 
         if (_definition.UseInputBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(30, inputBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(new DiagramNodeItem(inputBiasX, inputBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
         }
 
         if (_definition.UseHiddenBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(250, hiddenBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            var biasNodeY = _definition.HasSecondHiddenLayer ? secondHiddenBiasY : hiddenBiasY;
+            DiagramNodes.Add(new DiagramNodeItem(hiddenBiasX, biasNodeY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+        }
+
+        if (_definition.HasSecondHiddenLayer && _definition.UseSecondHiddenBias)
+        {
+            DiagramNodes.Add(new DiagramNodeItem(secondHiddenBiasX, secondHiddenBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
         }
 
         for (var index = 0; index < _definition.InputUnits; index++)
@@ -548,7 +574,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         for (var index = 0; index < _definition.HiddenUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(hiddenX, hiddenYs[index], nodeWidth, nodeHeight, $"H{index + 1}", "#F4F4F2", "#585858"));
+            var label = _definition.HasSecondHiddenLayer ? $"H1-{index + 1}" : $"H{index + 1}";
+            DiagramNodes.Add(new DiagramNodeItem(hiddenX, hiddenYs[index], nodeWidth, nodeHeight, label, "#F4F4F2", "#585858"));
+        }
+
+        if (_definition.HasSecondHiddenLayer)
+        {
+            for (var index = 0; index < _definition.SecondHiddenUnits; index++)
+            {
+                DiagramNodes.Add(new DiagramNodeItem(hidden2X, secondHiddenYs[index], nodeWidth, nodeHeight, $"H2-{index + 1}", "#F4F4F2", "#585858"));
+            }
         }
 
         for (var index = 0; index < _definition.OutputUnits; index++)
@@ -558,7 +593,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
         {
-            var x1 = source < _definition.InputUnits ? inputX + nodeWidth : 30 + biasWidth;
+            var x1 = source < _definition.InputUnits ? inputX + nodeWidth : inputBiasX + biasWidth;
             var y1 = source < _definition.InputUnits
                 ? inputYs[source] + (nodeHeight / 2)
                 : inputBiasY;
@@ -575,12 +610,40 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         }
 
+        if (_engine.Weights.HiddenHidden is not null)
+        {
+            for (var source = 0; source < _engine.Weights.HiddenHidden.GetLength(0); source++)
+            {
+                var x1 = source < _definition.HiddenUnits ? hiddenX + nodeWidth : hiddenBiasX + biasWidth;
+                var y1 = source < _definition.HiddenUnits
+                    ? hiddenYs[source] + (nodeHeight / 2)
+                    : secondHiddenBiasY;
+
+                for (var target = 0; target < _engine.Weights.HiddenHidden.GetLength(1); target++)
+                {
+                    var weight = _engine.Weights.HiddenHidden[source, target];
+                    DiagramEdges.Add(new DiagramEdgeItem(
+                        ToPoint(x1, y1),
+                        ToPoint(hidden2X, secondHiddenYs[target] + (nodeHeight / 2)),
+                        WeightColor(weight),
+                        WeightThickness(weight, maxWeight),
+                        false));
+                }
+            }
+        }
+
+        var outputSourceCount = _definition.HasSecondHiddenLayer ? _definition.SecondHiddenUnits : _definition.HiddenUnits;
+        var outputSourceX = _definition.HasSecondHiddenLayer ? hidden2X : hiddenX;
+        var outputSourceYs = _definition.HasSecondHiddenLayer ? secondHiddenYs : hiddenYs;
+        var outputBiasX = _definition.HasSecondHiddenLayer ? secondHiddenBiasX : hiddenBiasX;
+        var outputBiasY = _definition.HasSecondHiddenLayer ? secondHiddenBiasY : hiddenBiasY;
+
         for (var source = 0; source < _engine.Weights.HiddenOutput.GetLength(0); source++)
         {
-            var x1 = source < _definition.HiddenUnits ? hiddenX + nodeWidth : 250 + biasWidth;
-            var y1 = source < _definition.HiddenUnits
-                ? hiddenYs[source] + (nodeHeight / 2)
-                : hiddenBiasY;
+            var x1 = source < outputSourceCount ? outputSourceX + nodeWidth : outputBiasX + biasWidth;
+            var y1 = source < outputSourceCount
+                ? outputSourceYs[source] + (nodeHeight / 2)
+                : outputBiasY;
 
             for (var target = 0; target < _engine.Weights.HiddenOutput.GetLength(1); target++)
             {
@@ -618,9 +681,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var updateText = definition.UpdateMode == UpdateMode.Batch ? "Batch update" : "Pattern update";
         var costText = definition.CostFunction == CostFunction.CrossEntropy ? "Cross-entropy" : "Sum squared error";
+        var topology = definition.HasSecondHiddenLayer
+            ? $"{definition.InputUnits}-{definition.HiddenUnits}-{definition.SecondHiddenUnits}-{definition.OutputUnits}"
+            : $"{definition.InputUnits}-{definition.HiddenUnits}-{definition.OutputUnits}";
         return
             $"{definition.Name}{Environment.NewLine}" +
-            $"{definition.NetworkKind} | {definition.InputUnits}-{definition.HiddenUnits}-{definition.OutputUnits}{Environment.NewLine}" +
+            $"{definition.NetworkKind} | {topology}{Environment.NewLine}" +
             $"{updateText} | {costText}{Environment.NewLine}" +
             $"{patternSet.ToSummary()}";
     }
@@ -865,11 +931,23 @@ public partial class MainWindowViewModel : ViewModelBase
     private static string BuildWeightsText(WeightSet weights)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Input -> Hidden");
+        builder.AppendLine(weights.HiddenHidden is null ? "Input -> Hidden" : "Input -> Hidden1");
         builder.AppendLine(FormatMatrix(weights.InputHidden));
         builder.AppendLine();
-        builder.AppendLine("Hidden -> Output");
-        builder.AppendLine(FormatMatrix(weights.HiddenOutput));
+
+        if (weights.HiddenHidden is not null)
+        {
+            builder.AppendLine("Hidden1 -> Hidden2");
+            builder.AppendLine(FormatMatrix(weights.HiddenHidden));
+            builder.AppendLine();
+            builder.AppendLine("Hidden2 -> Output");
+            builder.AppendLine(FormatMatrix(weights.HiddenOutput));
+        }
+        else
+        {
+            builder.AppendLine("Hidden -> Output");
+            builder.AppendLine(FormatMatrix(weights.HiddenOutput));
+        }
 
         if (weights.RecurrentHidden is not null)
         {
@@ -1001,9 +1079,11 @@ public partial class MainWindowViewModel : ViewModelBase
             definition.NetworkKind,
             definition.InputUnits,
             definition.HiddenUnits,
+            definition.SecondHiddenUnits,
             definition.OutputUnits,
             definition.UseInputBias,
             definition.UseHiddenBias,
+            definition.UseSecondHiddenBias,
             definition.LearningRate.ToString("R", CultureInfo.InvariantCulture),
             definition.Momentum.ToString("R", CultureInfo.InvariantCulture),
             definition.RandomWeightRange.ToString("R", CultureInfo.InvariantCulture),
@@ -1016,22 +1096,38 @@ public partial class MainWindowViewModel : ViewModelBase
     private static bool CanReuseWeights(NetworkDefinition definition, WeightSet weights)
     {
         var inputRows = definition.InputUnits + (definition.UseInputBias ? 1 : 0);
-        var hiddenRows = definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0);
 
         if (weights.InputHidden.GetLength(0) != inputRows || weights.InputHidden.GetLength(1) != definition.HiddenUnits)
         {
             return false;
         }
 
-        if (weights.HiddenOutput.GetLength(0) != hiddenRows || weights.HiddenOutput.GetLength(1) != definition.OutputUnits)
+        if (definition.HasSecondHiddenLayer)
+        {
+            var hiddenRows = definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0);
+            var secondHiddenRows = definition.SecondHiddenUnits + (definition.UseSecondHiddenBias ? 1 : 0);
+
+            return weights.HiddenHidden is not null &&
+                   weights.HiddenHidden.GetLength(0) == hiddenRows &&
+                   weights.HiddenHidden.GetLength(1) == definition.SecondHiddenUnits &&
+                   weights.HiddenOutput.GetLength(0) == secondHiddenRows &&
+                   weights.HiddenOutput.GetLength(1) == definition.OutputUnits &&
+                   weights.RecurrentHidden is null;
+        }
+
+        var outputRows = definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0);
+        if (weights.HiddenHidden is not null ||
+            weights.HiddenOutput.GetLength(0) != outputRows ||
+            weights.HiddenOutput.GetLength(1) != definition.OutputUnits)
         {
             return false;
         }
 
-        return definition.NetworkKind != NetworkKind.SimpleRecurrent ||
-               (weights.RecurrentHidden is not null &&
-                weights.RecurrentHidden.GetLength(0) == definition.HiddenUnits &&
-                weights.RecurrentHidden.GetLength(1) == definition.HiddenUnits);
+        return definition.NetworkKind != NetworkKind.SimpleRecurrent
+            ? weights.RecurrentHidden is null
+            : weights.RecurrentHidden is not null &&
+              weights.RecurrentHidden.GetLength(0) == definition.HiddenUnits &&
+              weights.RecurrentHidden.GetLength(1) == definition.HiddenUnits;
     }
 
     private static double[] BuildLane(int count, double start, double end)
@@ -1048,6 +1144,11 @@ public partial class MainWindowViewModel : ViewModelBase
     private static double CalculateMaxWeight(WeightSet weights)
     {
         var values = Flatten(weights.InputHidden).Concat(Flatten(weights.HiddenOutput));
+        if (weights.HiddenHidden is not null)
+        {
+            values = values.Concat(Flatten(weights.HiddenHidden));
+        }
+
         if (weights.RecurrentHidden is not null)
         {
             values = values.Concat(Flatten(weights.RecurrentHidden));
@@ -1060,8 +1161,11 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         return SelectedWeightLayer switch
         {
+            "Hidden1 -> Hidden2" when weights.HiddenHidden is not null => (weights.HiddenHidden, "Hidden1 -> Hidden2"),
+            "Hidden2 -> Output" when weights.HiddenHidden is not null => (weights.HiddenOutput, "Hidden2 -> Output"),
             "Hidden -> Output" => (weights.HiddenOutput, "Hidden -> Output"),
             "Hidden -> Hidden" when weights.RecurrentHidden is not null => (weights.RecurrentHidden, "Hidden -> Hidden"),
+            "Input -> Hidden1" when weights.HiddenHidden is not null => (weights.InputHidden, "Input -> Hidden1"),
             _ => (weights.InputHidden, "Input -> Hidden")
         };
     }

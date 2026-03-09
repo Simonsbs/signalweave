@@ -40,13 +40,15 @@ Source basis used for this implementation:
   - menu structure
   - dedicated network configuration dialog
   - distinct feed-forward and SRN tab content in the configuration dialog, instead of one merged form
+  - working 4-layer feed-forward apply path in the desktop dialog
   - desktop save/load workflows for networks and weights, plus pattern loading
   - control panel defaults
   - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
   - test-one/test-all interaction
   - current weight inspection
-  - live network diagram
+  - live network diagram with 3-layer, 4-layer, and SRN-aware weight routing
   - weight-map visualization with Hinton-style emphasis
+  - 4-layer-aware weight-layer switching in the desktop and popup weight views
   - pattern/output inspection
   - projected 3D and time-series utility plots
   - weight legend and axis-based error progress plot
@@ -61,6 +63,7 @@ Source basis used for this implementation:
 
 ## Remaining parity work
 
+- Add BasicProp's 2-layer feed-forward topology
 - Match BasicProp 1.3 engine behavior exactly from the runnable JAR
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely

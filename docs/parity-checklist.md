@@ -9,6 +9,7 @@ Status legend:
 
 ## Engine
 
+- `[todo]` feed-forward 2-layer execution
 - `[done]` feed-forward 3-layer execution exists
 - `[done]` feed-forward 4-layer execution exists in the core
 - `[in-progress]` feed-forward online training parity
@@ -26,17 +27,18 @@ Status legend:
 
 ## Topologies
 
+- `[todo]` feed-forward 2-layer topology
 - `[done]` feed-forward 3-layer topology
-- `[in-progress]` feed-forward 4-layer topology
+- `[done]` feed-forward 4-layer topology
 - `[done]` SRN topology
-- `[in-progress]` 4-layer topology support in persistence
-- `[todo]` 4-layer topology support in diagrams and utilities
+- `[done]` 4-layer topology support in persistence
+- `[in-progress]` 4-layer topology support in diagrams and utilities
 
 ## Network configuration dialog
 
 - `[in-progress]` feed-forward tab structure
 - `[in-progress]` SRN tab structure
-- `[blocked]` feed-forward 4-layer apply path in the desktop dialog
+- `[done]` feed-forward 4-layer apply path in the desktop dialog
 - `[in-progress]` layer-count slider behavior
 - `[in-progress]` layer bias toggles
 - `[done]` separate topology dialog from main control-panel training settings

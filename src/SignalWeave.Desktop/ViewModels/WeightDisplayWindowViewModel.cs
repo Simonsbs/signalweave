@@ -112,6 +112,14 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
 
     private static IEnumerable<WeightLayerOption> BuildLayerOptions(WeightSet weights)
     {
+        if (weights.HiddenHidden is not null)
+        {
+            yield return new WeightLayerOption("1", "Input -> Hidden1", value => value.InputHidden);
+            yield return new WeightLayerOption("2", "Hidden1 -> Hidden2", value => value.HiddenHidden!);
+            yield return new WeightLayerOption("3", "Hidden2 -> Output", value => value.HiddenOutput);
+            yield break;
+        }
+
         yield return new WeightLayerOption("1", "Input -> Hidden", value => value.InputHidden);
         yield return new WeightLayerOption("2", "Hidden -> Output", value => value.HiddenOutput);
 

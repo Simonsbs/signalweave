@@ -149,7 +149,7 @@
                                     Maximum="10"
                                     TickFrequency="1"
                                     IsSnapToTickEnabled="True"
-                                    Value="{Binding HiddenUnitsValue, Mode=TwoWay}" />
+                                    Value="{Binding SecondHiddenUnitsValue, Mode=TwoWay}" />
                             <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
                                 <TextBlock Text="1" />
                                 <TextBlock Grid.Column="2"
@@ -164,7 +164,8 @@
                                   Grid.Column="2"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
-                                  IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}" />
+                                  IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}"
+                                  IsChecked="{Binding UseSecondHiddenBias, Mode=TwoWay}" />
 
                         <TextBlock Grid.Row="4"
                                    Classes="config-label"

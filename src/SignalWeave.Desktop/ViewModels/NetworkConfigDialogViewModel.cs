@@ -29,9 +29,11 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
         InputUnitsValue = definition.InputUnits;
         HiddenUnitsValue = definition.HiddenUnits;
         OutputUnitsValue = definition.OutputUnits;
-        FeedForwardLayersValue = 3;
+        SecondHiddenUnitsValue = definition.SecondHiddenUnits > 0 ? definition.SecondHiddenUnits : definition.HiddenUnits;
+        FeedForwardLayersValue = definition.NetworkKind == NetworkKind.FeedForward ? definition.TotalLayerCount : 3;
         UseInputBias = definition.UseInputBias;
         UseHiddenBias = definition.UseHiddenBias;
+        UseSecondHiddenBias = definition.UseSecondHiddenBias;
         UpdateFeedForwardStatus();
     }
 
@@ -51,6 +53,9 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
     private double _hiddenUnitsValue = 3;
 
     [ObservableProperty]
+    private double _secondHiddenUnitsValue = 3;
+
+    [ObservableProperty]
     private double _outputUnitsValue = 1;
 
     [ObservableProperty]
@@ -60,30 +65,38 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
     private bool _useHiddenBias = true;
 
     [ObservableProperty]
+    private bool _useSecondHiddenBias = true;
+
+    [ObservableProperty]
     private string _statusText = string.Empty;
 
     public int FeedForwardLayersDisplay => (int)Math.Round(FeedForwardLayersValue, MidpointRounding.AwayFromZero);
     public int InputUnitsDisplay => (int)Math.Round(InputUnitsValue, MidpointRounding.AwayFromZero);
     public int HiddenUnitsDisplay => (int)Math.Round(HiddenUnitsValue, MidpointRounding.AwayFromZero);
+    public int SecondHiddenUnitsDisplay => (int)Math.Round(SecondHiddenUnitsValue, MidpointRounding.AwayFromZero);
     public int OutputUnitsDisplay => (int)Math.Round(OutputUnitsValue, MidpointRounding.AwayFromZero);
     public bool IsFeedForwardSecondLayerEnabled => FeedForwardLayersDisplay >= 4;
 
     public NetworkDefinition BuildDefinition()
     {
-        if (SelectedTabIndex == 0 && FeedForwardLayersDisplay != 3)
+        if (SelectedTabIndex == 0 && FeedForwardLayersDisplay < 3)
         {
-            throw new InvalidOperationException("SignalWeave currently supports the 3-layer feed-forward configuration path only.");
+            throw new InvalidOperationException("SignalWeave does not support 2-layer feed-forward networks yet.");
         }
 
+        var isSrn = SelectedTabIndex == 1;
+        var includeSecondHiddenLayer = !isSrn && FeedForwardLayersDisplay >= 4;
         var definition = new NetworkDefinition
         {
             Name = string.IsNullOrWhiteSpace(Name) ? "Untitled" : Name.Trim(),
-            NetworkKind = SelectedTabIndex == 1 ? NetworkKind.SimpleRecurrent : NetworkKind.FeedForward,
+            NetworkKind = isSrn ? NetworkKind.SimpleRecurrent : NetworkKind.FeedForward,
             InputUnits = InputUnitsDisplay,
             HiddenUnits = HiddenUnitsDisplay,
+            SecondHiddenUnits = includeSecondHiddenLayer ? SecondHiddenUnitsDisplay : 0,
             OutputUnits = OutputUnitsDisplay,
             UseInputBias = UseInputBias,
             UseHiddenBias = UseHiddenBias,
+            UseSecondHiddenBias = includeSecondHiddenLayer && UseSecondHiddenBias,
             LearningRate = _baseDefinition.LearningRate,
             Momentum = _baseDefinition.Momentum,
             RandomWeightRange = _baseDefinition.RandomWeightRange,
@@ -115,6 +128,11 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
         OnPropertyChanged(nameof(HiddenUnitsDisplay));
     }
 
+    partial void OnSecondHiddenUnitsValueChanged(double value)
+    {
+        OnPropertyChanged(nameof(SecondHiddenUnitsDisplay));
+    }
+
     partial void OnOutputUnitsValueChanged(double value)
     {
         OnPropertyChanged(nameof(OutputUnitsDisplay));
@@ -127,9 +145,9 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
 
     private void UpdateFeedForwardStatus()
     {
-        if (SelectedTabIndex == 0 && FeedForwardLayersDisplay != 3)
+        if (SelectedTabIndex == 0 && FeedForwardLayersDisplay < 3)
         {
-            StatusText = "Feed-forward configuration is tab-specific now, but only the 3-layer topology is currently implemented in SignalWeave.";
+            StatusText = "SignalWeave does not support 2-layer feed-forward networks yet.";
             return;
         }
 
