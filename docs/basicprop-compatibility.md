@@ -46,7 +46,7 @@ Source basis used for this implementation:
   - working 2-layer feed-forward apply path in the desktop dialog
   - working 4-layer feed-forward apply path in the desktop dialog
   - desktop save/load workflows for networks and weights, plus pattern loading
-  - control panel defaults
+  - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
   - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - test-one/test-all interaction
@@ -72,6 +72,7 @@ Source basis used for this implementation:
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: note-style message output for uninitialized patterns and modal feedback for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
   - screenshot-driven cleanup of the main window and configuration dialog to remove SignalWeave-specific chrome and move closer to the BasicProp 1.3 layout
+  - built-in XOR demo defaults aligned to the BasicProp reference control values (`0.3`, `0.8`, `5000`, `-1 - 1`)
 
 ## Remaining parity work
 

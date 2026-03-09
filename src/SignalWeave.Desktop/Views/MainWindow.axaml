@@ -81,7 +81,7 @@
             </MenuItem>
         </Menu>
 
-        <Grid ColumnDefinitions="*,290"
+        <Grid ColumnDefinitions="*,300"
               RowDefinitions="*,220">
             <Border Grid.Row="0"
                     Classes="group"
@@ -217,8 +217,8 @@
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Spacing="8"
                                     Margin="0,0,4,0">
-                            <Grid ColumnDefinitions="*,110"
-                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                            <Grid ColumnDefinitions="*,120"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                                   RowSpacing="8"
                                   ColumnSpacing="8">
                                 <TextBlock Text="Learning rate" />
@@ -245,26 +245,25 @@
                                           SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
 
                                 <CheckBox Grid.Row="4"
-                                          Grid.ColumnSpan="2"
                                           Content="Batch Update"
                                           IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
-                                <CheckBox Grid.Row="5"
-                                          Grid.ColumnSpan="2"
+                                <CheckBox Grid.Row="4"
+                                          Grid.Column="1"
                                           Content="X-entropy"
                                           IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
 
-                                <Button Grid.Row="6"
+                                <Button Grid.Row="5"
                                         Classes="panel"
                                         Content="Reset"
                                         Command="{Binding ResetNetworkCommand}" />
-                                <Button Grid.Row="6"
+                                <Button Grid.Row="5"
                                         Grid.Column="1"
                                         Classes="panel"
                                         Content="{Binding TrainButtonLabel}"
                                         Command="{Binding TrainCommand}" />
 
-                                <TextBlock Grid.Row="7" Text="Progress" />
-                                <Grid Grid.Row="7"
+                                <TextBlock Grid.Row="6" Text="Progress" />
+                                <Grid Grid.Row="6"
                                       Grid.Column="1">
                                     <ProgressBar Minimum="0"
                                                  Maximum="{Binding ProgressMaximum}"
@@ -281,28 +280,23 @@
                                                FontWeight="SemiBold" />
                                 </Grid>
 
-                                <TextBlock Grid.Row="8" Text="Pattern" />
-                                <ComboBox Grid.Row="8"
+                                <TextBlock Grid.Row="7" Text="Pattern" />
+                                <ComboBox Grid.Row="7"
                                           Grid.Column="1"
                                           ItemsSource="{Binding PatternOptions}"
                                           SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
 
-                                <Button Grid.Row="9"
+                                <Button Grid.Row="8"
                                         Grid.ColumnSpan="2"
                                         Classes="panel"
                                         Content="Test one"
                                         Command="{Binding TestOneCommand}"
                                         IsEnabled="{Binding CanTestOne}" />
-                                <Button Grid.Row="10"
+                                <Button Grid.Row="9"
                                         Grid.ColumnSpan="2"
                                         Classes="panel"
                                         Content="Test all"
                                         Command="{Binding TestAllCommand}" />
-                                <Button Grid.Row="11"
-                                        Grid.ColumnSpan="2"
-                                        Classes="panel"
-                                        Content="Show weights"
-                                        Command="{Binding ShowWeightsCommand}" />
                             </Grid>
                         </StackPanel>
                     </ScrollViewer>
@@ -312,7 +306,7 @@
             <Border Grid.Row="1"
                     Grid.ColumnSpan="2"
                     Classes="group">
-                <Grid ColumnDefinitions="*,300"
+                <Grid ColumnDefinitions="*,310"
                       ColumnSpacing="10">
                     <StackPanel Spacing="6">
                         <TextBlock Text="Results and utilities"
