@@ -294,7 +294,6 @@ public partial class MainWindowViewModel : ViewModelBase
             EditorTabIndex = 3;
             RebuildWeightMap();
             ResultsTabIndex = 1;
-            ConsoleText = "Showing current network weights.";
         });
     }
 
@@ -309,7 +308,6 @@ public partial class MainWindowViewModel : ViewModelBase
             AnalysisText = BuildPatternSummary();
             PatternOutputSummary = $"Showing {run.Results.Count} patterns with outputs.";
             ResultsTabIndex = 2;
-            ConsoleText = "Showing patterns and outputs.";
         });
     }
 
@@ -351,7 +349,6 @@ public partial class MainWindowViewModel : ViewModelBase
             var run = EnsureRun();
             BuildTimeSeriesPlot(run);
             ResultsTabIndex = 3;
-            ConsoleText = "Showing time series plot for output unit 1.";
         });
     }
 
@@ -364,7 +361,6 @@ public partial class MainWindowViewModel : ViewModelBase
             var run = EnsureRun();
             BuildScatterPlot(run);
             ResultsTabIndex = 3;
-            ConsoleText = "Showing projected 3D plot from hidden/output activations.";
         });
     }
 

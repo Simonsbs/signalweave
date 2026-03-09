@@ -259,7 +259,6 @@ public partial class MainWindow : Window
         await RunWithConsoleAsync(async () =>
         {
             var window = new WeightDisplayWindow(ViewModel.CreateWeightDisplaySession());
-            ViewModel.ConsoleText = "Showing current network weights.";
             await window.ShowDialog(this);
         });
     }
@@ -269,7 +268,6 @@ public partial class MainWindow : Window
         await RunWithConsoleAsync(async () =>
         {
             var window = new PatternPlotWindow(ViewModel.CreatePatternPlotSession());
-            ViewModel.ConsoleText = "Showing patterns and outputs.";
             await window.ShowDialog(this);
         });
     }
@@ -279,7 +277,6 @@ public partial class MainWindow : Window
         await RunWithConsoleAsync(async () =>
         {
             var window = new TimeSeriesPlotWindow(ViewModel.CreateTimeSeriesPlotSession());
-            ViewModel.ConsoleText = "Showing time series plot for output unit 1.";
             await window.ShowDialog(this);
         });
     }
@@ -289,7 +286,6 @@ public partial class MainWindow : Window
         await RunWithConsoleAsync(async () =>
         {
             var window = new SurfacePlotSetupWindow(ViewModel.CreateSurfacePlotSetupSession());
-            ViewModel.ConsoleText = "Showing plot setup window.";
             await window.ShowDialog(this);
         });
     }
@@ -309,7 +305,6 @@ public partial class MainWindow : Window
                 _messageWindow.Activate();
             }
 
-            ViewModel.ConsoleText = "Showing messages window.";
             return Task.CompletedTask;
         });
     }
