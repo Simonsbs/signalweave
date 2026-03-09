@@ -378,7 +378,7 @@ public partial class MainWindowViewModel : ViewModelBase
         });
     }
 
-    private void ParseEditorInternal(bool syncControlsFromEditor, bool resetWeights, string consoleMessage)
+    private void ParseEditorInternal(bool syncControlsFromEditor, bool resetWeights, string? consoleMessage)
     {
         RunSafe(() =>
         {
@@ -389,7 +389,10 @@ public partial class MainWindowViewModel : ViewModelBase
             UpdateErrorPlotScale([]);
             AnalysisText = $"{_definition!.ToSummary()}{Environment.NewLine}{_patternSet!.ToSummary()}";
             RebuildWeightMap();
-            ConsoleText = consoleMessage;
+            if (!string.IsNullOrWhiteSpace(consoleMessage))
+            {
+                ConsoleText = consoleMessage;
+            }
         });
     }
 
@@ -1422,7 +1425,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         ConfigText = text;
-        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: $"Loaded network from {sourceName ?? "file"}.");
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: null);
     }
 
     public void LoadPatternText(string text, string? sourceName = null)
@@ -1464,7 +1467,6 @@ public partial class MainWindowViewModel : ViewModelBase
         UtilityPlotPoints = "0,110 240,110";
         UtilityPlotSummary = "No utility plot prepared.";
         AnalysisText = $"{_definition.ToSummary()}{Environment.NewLine}{parsedPatterns.ToSummary()}";
-        ConsoleText = $"Loaded patterns from {sourceName ?? "file"}.";
     }
 
     public void ApplyConfiguredNetwork(NetworkDefinition definition)
@@ -1472,7 +1474,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SampleTitle = definition.Name;
         _patternListCaption = definition.Name;
         ConfigText = BasicPropNetworkConfigWriter.Write(definition);
-        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: $"Configured network '{definition.Name}'.");
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: null);
     }
 
     public void LoadWeights(WeightSet weights)
@@ -1495,7 +1497,6 @@ public partial class MainWindowViewModel : ViewModelBase
         RefreshDiagram();
         RebuildWeightMap();
         AnalysisText = "Weights loaded into the current network.";
-        ConsoleText = "Loaded weights from file.";
     }
 
     public bool CanLoadWeightsFromMenu(bool forSrn)

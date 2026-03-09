@@ -169,7 +169,6 @@ public partial class MainWindow : Window
             }
 
             await WriteAllTextAsync(file, text);
-            ViewModel.ConsoleText = $"Saved network to {file.TryGetLocalPath() ?? file.Path.AbsoluteUri}";
         });
     }
 
@@ -225,7 +224,6 @@ public partial class MainWindow : Window
                 ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected weight file.");
             var weights = WeightSetSerializer.LoadFile(path);
             ViewModel.LoadWeights(weights);
-            ViewModel.ConsoleText = $"Loaded weights from {path}";
         });
     }
 
@@ -250,7 +248,6 @@ public partial class MainWindow : Window
             var path = file.TryGetLocalPath()
                 ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected weight file.");
             WeightSetSerializer.SaveFile(path, definition, weights);
-            ViewModel.ConsoleText = $"Saved weights to {path}";
         });
     }
 
