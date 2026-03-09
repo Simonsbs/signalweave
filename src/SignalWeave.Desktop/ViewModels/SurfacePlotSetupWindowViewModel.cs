@@ -67,7 +67,7 @@ public class SurfacePlotSetupWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(Summary));
     }
 
-    public PlotWindowSnapshot BuildPlotSnapshot()
+    public SurfacePlotSnapshot BuildPlotSnapshot()
     {
         if (_samples.Count == 0)
         {
@@ -81,6 +81,8 @@ public class SurfacePlotSetupWindowViewModel : ViewModelBase
         var xValues = _samples.Select(sample => sample.Inputs[xOption.InputIndex]).ToArray();
         var yValues = _samples.Select(sample => sample.Inputs[yOption.InputIndex]).ToArray();
         var zValues = _samples.Select(sample => ReadZValue(sample, zOption)).ToArray();
+        var uniqueX = xValues.Distinct().OrderBy(value => value).ToArray();
+        var uniqueY = yValues.Distinct().OrderBy(value => value).ToArray();
 
         var minX = xValues.Min();
         var maxX = xValues.Max();
@@ -89,35 +91,57 @@ public class SurfacePlotSetupWindowViewModel : ViewModelBase
         var minZ = zValues.Min();
         var maxZ = zValues.Max();
 
-        var markers = new List<PlotMarkerItem>();
-        for (var index = 0; index < _samples.Count; index++)
+        const double left = 40;
+        const double top = 20;
+        const double plotWidth = 420;
+        const double plotHeight = 300;
+        var cellWidth = plotWidth / Math.Max(1, uniqueX.Length);
+        var cellHeight = plotHeight / Math.Max(1, uniqueY.Length);
+        var cells = new List<SurfacePlotCell>();
+
+        for (var yIndex = 0; yIndex < uniqueY.Length; yIndex++)
         {
-            var plotX = 20 + Normalize(xValues[index], minX, maxX) * 300;
-            var plotY = 20 + (1 - Normalize(yValues[index], minY, maxY)) * 190;
-            var size = 8 + Normalize(zValues[index], minZ, maxZ) * 10;
-            var fill = HeatColor(Normalize(zValues[index], minZ, maxZ));
-            markers.Add(new PlotMarkerItem(
-                plotX - (size / 2),
-                plotY - (size / 2),
-                size,
-                size,
-                fill,
-                $"{_samples[index].Label} | {SelectedZ}={zValues[index].ToString("0.000", CultureInfo.InvariantCulture)}"));
+            var yValue = uniqueY[yIndex];
+            for (var xIndex = 0; xIndex < uniqueX.Length; xIndex++)
+            {
+                var xValue = uniqueX[xIndex];
+                var sample = _samples.FirstOrDefault(item =>
+                    Math.Abs(item.Inputs[xOption.InputIndex] - xValue) < 0.000001 &&
+                    Math.Abs(item.Inputs[yOption.InputIndex] - yValue) < 0.000001);
+                var zValue = sample is null ? 0.0 : ReadZValue(sample, zOption);
+                var normalized = Normalize(zValue, minZ, maxZ);
+                var canvasX = left + (xIndex * cellWidth);
+                var canvasY = top + ((uniqueY.Length - 1 - yIndex) * cellHeight);
+                cells.Add(new SurfacePlotCell(
+                    canvasX,
+                    canvasY,
+                    cellWidth,
+                    cellHeight,
+                    HeatColor(normalized),
+                    $"{xValue.ToString("0.###", CultureInfo.InvariantCulture)}, {yValue.ToString("0.###", CultureInfo.InvariantCulture)} | {SelectedZ}={zValue.ToString("0.###", CultureInfo.InvariantCulture)}",
+                    zValue.ToString("0.###", CultureInfo.InvariantCulture)));
+            }
         }
 
-        return new PlotWindowSnapshot(
-            $"{WindowTitle} - {SelectedZ}",
-            $"{SelectedX} vs {SelectedY} using {SelectedZ}",
-            string.Empty,
+        var zIndex = _zOptions
+            .Select((option, index) => new { option, index })
+            .First(item => item.option.Label == SelectedZ)
+            .index;
+        var zPrefix = zIndex % 2 == 0 ? "Target" : "Output";
+        var zNumber = (zIndex + 2) / 2;
+
+        return new SurfacePlotSnapshot(
+            "3D plot",
+            $"Input{xOption.InputIndex}",
+            $"Input{yOption.InputIndex}",
+            $"{zPrefix}{zNumber}",
             maxY.ToString("0.000", CultureInfo.InvariantCulture),
             ((minY + maxY) / 2).ToString("0.000", CultureInfo.InvariantCulture),
             minY.ToString("0.000", CultureInfo.InvariantCulture),
             minX.ToString("0.000", CultureInfo.InvariantCulture),
             ((minX + maxX) / 2).ToString("0.000", CultureInfo.InvariantCulture),
             maxX.ToString("0.000", CultureInfo.InvariantCulture),
-            SelectedX,
-            SelectedY,
-            markers);
+            cells);
     }
 
     private static double ReadZValue(SurfacePlotSample sample, SurfacePlotZOption option)

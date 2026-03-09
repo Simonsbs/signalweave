@@ -1,0 +1,123 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        xmlns:shapes="clr-namespace:Avalonia.Controls.Shapes;assembly=Avalonia.Controls"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.SurfacePlotWindow"
+        x:DataType="vm:SurfacePlotWindowViewModel"
+        Width="800"
+        Height="600"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:SurfacePlotWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="*,Auto"
+          Margin="10">
+        <Border Background="#F8F8F8"
+                BorderBrush="#AAB4C0"
+                BorderThickness="1"
+                Padding="8">
+            <Grid ColumnDefinitions="Auto,*"
+                  RowDefinitions="Auto,*,Auto">
+                <TextBlock Grid.ColumnSpan="2"
+                           FontWeight="SemiBold"
+                           Text="{Binding ZAxisTitle}" />
+
+                <StackPanel Grid.Row="1"
+                            Spacing="88"
+                            VerticalAlignment="Center"
+                            Margin="0,26,10,26">
+                    <TextBlock Text="{Binding YAxisTopLabel}" />
+                    <TextBlock Text="{Binding YAxisMidLabel}" />
+                    <TextBlock Text="{Binding YAxisBottomLabel}" />
+                </StackPanel>
+
+                <Canvas Grid.Row="1"
+                        Grid.Column="1"
+                        Width="500"
+                        Height="360"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                    <shapes:Line StartPoint="40,320"
+                                 EndPoint="460,320"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.5" />
+                    <shapes:Line StartPoint="40,20"
+                                 EndPoint="40,320"
+                                 Stroke="#5A5A5A"
+                                 StrokeThickness="1.5" />
+                    <ItemsControl ItemsSource="{Binding Cells}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SurfacePlotCell">
+                                <Canvas>
+                                    <Border Width="{Binding Width}"
+                                            Height="{Binding Height}"
+                                            Background="{Binding Fill}"
+                                            BorderBrush="#6A6A6A"
+                                            BorderThickness="1"
+                                            Canvas.Left="{Binding X}"
+                                            Canvas.Top="{Binding Y}">
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding Tooltip}" />
+                                        </ToolTip.Tip>
+                                    </Border>
+                                    <TextBlock Canvas.Left="{Binding X}"
+                                               Canvas.Top="{Binding Y}"
+                                               Width="{Binding Width}"
+                                               TextAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,34,0,0"
+                                               Text="{Binding ValueLabel}" />
+                                </Canvas>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Canvas>
+
+                <Grid Grid.Row="2"
+                      Grid.Column="1"
+                      ColumnDefinitions="Auto,*,Auto"
+                      Margin="40,4,40,0">
+                    <TextBlock Text="{Binding XAxisLeftLabel}" />
+                    <TextBlock Grid.Column="1"
+                               HorizontalAlignment="Center"
+                               Text="{Binding XAxisMidLabel}" />
+                    <TextBlock Grid.Column="2"
+                               HorizontalAlignment="Right"
+                               Text="{Binding XAxisRightLabel}" />
+                </Grid>
+
+                <TextBlock Grid.Row="2"
+                           Grid.Column="1"
+                           Margin="0,22,0,0"
+                           HorizontalAlignment="Center"
+                           Text="{Binding XAxisTitle}" />
+
+                <TextBlock Grid.Column="0"
+                           Margin="0,0,8,0"
+                           VerticalAlignment="Center"
+                           Text="{Binding YAxisTitle}">
+                    <TextBlock.RenderTransform>
+                        <RotateTransform Angle="-90" />
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <Button Grid.Row="1"
+                HorizontalAlignment="Right"
+                Margin="0,8,0,0"
+                Content="Dismiss"
+                Click="Dismiss_Click" />
+    </Grid>
+</Window>

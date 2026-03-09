@@ -62,6 +62,7 @@ Source basis used for this implementation:
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
   - cumulative time-series `Add plot` behavior with `InputN`, `TargetN`, and `OutputN` selectors, plus the BasicProp-sized 600x300 frame
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
+  - dedicated `3D plot` result window using BasicProp-style unique-X/unique-Y grid semantics from `TargetN` or `OutputN`
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing

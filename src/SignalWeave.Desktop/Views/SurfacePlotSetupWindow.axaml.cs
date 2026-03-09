@@ -39,7 +39,7 @@ public partial class SurfacePlotSetupWindow : Window
     private void ShowPlot_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         ViewModel.UpdateSummary();
-        var window = new UtilityPlotWindow(ViewModel.BuildPlotSnapshot());
+        var window = new SurfacePlotWindow(ViewModel.BuildPlotSnapshot());
         window.Show();
     }
 

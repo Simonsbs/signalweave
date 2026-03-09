@@ -1806,6 +1806,19 @@ public sealed record SurfacePlotSetupSession(
     IReadOnlyList<SurfacePlotAxisOption> AxisOptions,
     IReadOnlyList<SurfacePlotZOption> ZOptions,
     IReadOnlyList<SurfacePlotSample> Samples);
+public sealed record SurfacePlotCell(double X, double Y, double Width, double Height, string Fill, string Tooltip, string ValueLabel);
+public sealed record SurfacePlotSnapshot(
+    string Title,
+    string XAxisTitle,
+    string YAxisTitle,
+    string ZAxisTitle,
+    string YAxisTopLabel,
+    string YAxisMidLabel,
+    string YAxisBottomLabel,
+    string XAxisLeftLabel,
+    string XAxisMidLabel,
+    string XAxisRightLabel,
+    IReadOnlyList<SurfacePlotCell> Cells);
 public sealed record PatternChartBar(
     string ChartTitle,
     string CategoryLabel,
