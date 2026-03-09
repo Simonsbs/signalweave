@@ -1681,15 +1681,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedLearningStepsChanged(string value)
     {
-        if (ProgressValue == 0 && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var cycles) && cycles > 0)
-        {
-            ProgressMaximum = cycles;
-        }
     }
 
     private void SetUntrainedState()
     {
-        ProgressMaximum = Math.Max(1, GetLearningStepsValueOrDefault());
+        ProgressMaximum = 1;
         ProgressValue = 0;
         ProgressLabel = "Untrained";
         TrainButtonLabel = "Train";
