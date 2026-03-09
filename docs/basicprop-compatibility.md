@@ -55,6 +55,7 @@ Source basis used for this implementation:
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
   - hidden activation export
+  - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
 
 ## Remaining parity work
 

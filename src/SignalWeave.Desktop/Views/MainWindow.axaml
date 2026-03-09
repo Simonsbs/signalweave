@@ -73,6 +73,9 @@
                 <MenuItem Header="Cluster _Hidden States" Command="{Binding ClusterHiddenCommand}" />
             </MenuItem>
             <MenuItem Header="_Help">
+                <MenuItem Header="_Messages" Click="ShowMessageWindow_Click" />
+                <MenuItem Header="_Clear Messages" Command="{Binding MessageWindow.ClearCommand}" />
+                <Separator />
                 <MenuItem Header="_Compatibility Profile" Command="{Binding ShowCompatibilityCommand}" />
             </MenuItem>
         </Menu>

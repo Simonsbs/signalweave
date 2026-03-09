@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.MessageWindow"
+        x:DataType="vm:MessageWindowViewModel"
+        Width="600"
+        Height="400"
+        MinWidth="420"
+        MinHeight="260"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:MessageWindowViewModel />
+    </Design.DataContext>
+
+    <Border Margin="8"
+            Background="#F4F4F4"
+            BorderBrush="#B8C0CA"
+            BorderThickness="1">
+        <TextBox Margin="0"
+                 Padding="8"
+                 FontFamily="Courier New"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 Text="{Binding MessageLogText}" />
+    </Border>
+</Window>

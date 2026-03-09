@@ -10,6 +10,8 @@ namespace SignalWeave.Desktop.Views;
 
 public partial class MainWindow : Window
 {
+    private MessageWindow? _messageWindow;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -179,6 +181,26 @@ public partial class MainWindow : Window
             var window = new SurfacePlotSetupWindow(ViewModel.CreateSurfacePlotSetupSession());
             ViewModel.ConsoleText = "Showing plot setup window.";
             await window.ShowDialog(this);
+        });
+    }
+
+    private async void ShowMessageWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(() =>
+        {
+            if (_messageWindow is null)
+            {
+                _messageWindow = new MessageWindow(ViewModel.MessageWindow);
+                _messageWindow.Closed += (_, _) => _messageWindow = null;
+                _messageWindow.Show(this);
+            }
+            else
+            {
+                _messageWindow.Activate();
+            }
+
+            ViewModel.ConsoleText = "Showing messages window.";
+            return Task.CompletedTask;
         });
     }
 

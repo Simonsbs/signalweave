@@ -30,6 +30,7 @@ public partial class MainWindowViewModel : ViewModelBase
         MomentumOptions = new ReadOnlyCollection<string>(_momentumOptions);
         LearningStepOptions = new ReadOnlyCollection<string>(_learningStepOptions);
         WeightRangeOptions = new ReadOnlyCollection<string>(_weightRangeOptions);
+        MessageWindow = new MessageWindowViewModel();
 
         ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: "Loaded XOR demo.");
     }
@@ -45,6 +46,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<WeightGlyphItem> WeightGlyphs { get; } = [];
     public ObservableCollection<PatternOutputRow> PatternOutputRows { get; } = [];
     public ObservableCollection<PlotMarkerItem> UtilityPlotMarkers { get; } = [];
+    public MessageWindowViewModel MessageWindow { get; }
 
     [ObservableProperty]
     private string _sampleTitle = "XOR demo";
@@ -423,6 +425,14 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         RebuildWeightMap();
+    }
+
+    partial void OnConsoleTextChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            MessageWindow.WriteLine(value);
+        }
     }
 
     private void SyncControlsFromDefinition(NetworkDefinition definition)
