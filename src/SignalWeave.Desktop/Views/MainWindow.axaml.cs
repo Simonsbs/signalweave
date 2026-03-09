@@ -154,7 +154,7 @@ public partial class MainWindow : Window
     {
         await RunWithConsoleAsync(async () =>
         {
-            var definition = ViewModel.GetCurrentDefinition();
+            var definition = ViewModel.GetLoadedDefinition();
             var text = BasicPropNetworkConfigWriter.Write(definition);
             var file = await PickSaveFileAsync(
                 "Save Network",

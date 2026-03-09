@@ -82,6 +82,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `Test All` / `Test One` console output wording and menu gating
 - test-one gating that follows the original `< 24 patterns` behavior
 - pattern loading bound to the currently configured network state rather than an editor reparse
+- network saving bound to the currently loaded configured network state rather than an editor reparse
 - utility tabs for weight maps, pattern/output tables, and plots
 - weight legend and error plot styling that tracks the original BasicProp layout more closely
 - modal `Invalid value` dialogs plus BasicProp-style note routing into the detached messages window
