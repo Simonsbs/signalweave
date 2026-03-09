@@ -38,6 +38,7 @@ Source basis used for this implementation:
 - BasicProp-style desktop shell with:
   - menu structure
   - dedicated network configuration dialog
+  - distinct feed-forward and SRN tab content in the configuration dialog, instead of one merged form
   - desktop save/load workflows for networks and weights, plus pattern loading
   - control panel defaults
   - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
