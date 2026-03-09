@@ -103,7 +103,7 @@ Status legend:
 - `[in-progress]` macOS build validation
 - `[in-progress]` packaged desktop binaries
 - `[in-progress]` GitHub release workflow
-- `[todo]` final parity sign-off script
+- `[done]` final parity sign-off script
 
 ## Release gate
 

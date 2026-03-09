@@ -105,6 +105,7 @@ Source basis used for this implementation:
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely
 - Finish cross-platform release validation from real CI runs and ship the packaged desktop bundles
+- Keep the local sign-off path in sync with the release gate through `scripts/parity-signoff.sh`
 
 ## Scope decision
 
