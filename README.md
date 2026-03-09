@@ -112,6 +112,16 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - a detached message-log window under `Help`, mirroring the original BasicProp message-frame workflow
 - hidden-activation export from the desktop app through a save dialog using BasicProp-like raw `.dat` rows
 
+## Release automation
+
+- `.github/workflows/ci.yml` runs restore, release build, and core tests on Linux, Windows, and macOS.
+- `.github/workflows/release.yml` publishes self-contained desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`, uploads them as workflow artifacts, and attaches them to GitHub releases for `v*` tags.
+- local Linux publish example:
+
+```bash
+dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r linux-x64 --self-contained true -o artifacts/signalweave-desktop-linux-x64
+```
+
 ## Samples
 
 The `samples/` directory contains starter network and pattern files:

@@ -104,6 +104,7 @@ Source basis used for this implementation:
 - Continue resolving the remaining SRN parity edges around BasicProp's inconsistent helper buffers, using the reset-aware probe trace instead of raw `getHiddenActs()`
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely
+- Finish cross-platform release validation from real CI runs and ship the packaged desktop bundles
 
 ## Scope decision
 
