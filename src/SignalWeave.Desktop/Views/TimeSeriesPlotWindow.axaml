@@ -1,0 +1,140 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        xmlns:shapes="clr-namespace:Avalonia.Controls.Shapes;assembly=Avalonia.Controls"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.TimeSeriesPlotWindow"
+        x:DataType="vm:TimeSeriesPlotWindowViewModel"
+        Width="620"
+        Height="430"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:TimeSeriesPlotWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          Margin="10">
+        <Border Background="#E7E7E7"
+                BorderBrush="#B8C0CA"
+                BorderThickness="1"
+                Padding="8">
+            <DockPanel>
+                <TextBlock VerticalAlignment="Center"
+                           Text="Output" />
+                <ComboBox Width="110"
+                          Margin="8,0,0,0"
+                          ItemsSource="{Binding OutputOptions}"
+                          SelectedItem="{Binding SelectedOutput, Mode=TwoWay}" />
+                <Button Margin="10,0,0,0"
+                        Content="Add plot"
+                        Command="{Binding AddPlotCommand}" />
+                <Button DockPanel.Dock="Right"
+                        Content="Dismiss"
+                        Click="Dismiss_Click" />
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1"
+              Margin="0,8,0,8"
+              ColumnDefinitions="Auto,*"
+              RowDefinitions="Auto,*">
+            <TextBlock Grid.ColumnSpan="2"
+                       FontWeight="SemiBold"
+                       Text="{Binding Summary}" />
+
+            <StackPanel Grid.Row="1"
+                        Spacing="54"
+                        VerticalAlignment="Center"
+                        Margin="0,16,8,24">
+                <TextBlock Text="{Binding YAxisTopLabel}" />
+                <TextBlock Text="{Binding YAxisMidLabel}" />
+                <TextBlock Text="{Binding YAxisBottomLabel}" />
+            </StackPanel>
+
+            <Border Grid.Row="1"
+                    Grid.Column="1"
+                    Background="#F8F8F8"
+                    BorderBrush="#AAB4C0"
+                    BorderThickness="1"
+                    Padding="8">
+                <Grid RowDefinitions="*,Auto,Auto">
+                    <Canvas Width="340"
+                            Height="240"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <shapes:Line StartPoint="20,210"
+                                     EndPoint="320,210"
+                                     Stroke="#5A5A5A"
+                                     StrokeThickness="1.5" />
+                        <shapes:Line StartPoint="20,20"
+                                     EndPoint="20,210"
+                                     Stroke="#5A5A5A"
+                                     StrokeThickness="1.5" />
+                        <shapes:Line StartPoint="120,206"
+                                     EndPoint="120,214"
+                                     Stroke="#5A5A5A"
+                                     StrokeThickness="1.2" />
+                        <shapes:Line StartPoint="220,206"
+                                     EndPoint="220,214"
+                                     Stroke="#5A5A5A"
+                                     StrokeThickness="1.2" />
+                        <shapes:Line StartPoint="16,115"
+                                     EndPoint="24,115"
+                                     Stroke="#5A5A5A"
+                                     StrokeThickness="1.2" />
+                        <shapes:Polyline Points="{Binding PlotPoints}"
+                                         Stroke="#4E7396"
+                                         StrokeThickness="2" />
+                        <ItemsControl ItemsSource="{Binding Markers}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PlotMarkerItem">
+                                    <shapes:Ellipse Width="{Binding Width}"
+                                                    Height="{Binding Height}"
+                                                    Fill="{Binding Fill}"
+                                                    Canvas.Left="{Binding X}"
+                                                    Canvas.Top="{Binding Y}">
+                                        <ToolTip.Tip>
+                                            <TextBlock Text="{Binding Label}" />
+                                        </ToolTip.Tip>
+                                    </shapes:Ellipse>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Canvas>
+
+                    <Grid Grid.Row="1"
+                          ColumnDefinitions="Auto,*,Auto"
+                          Margin="18,4,20,0">
+                        <TextBlock Text="{Binding XAxisLeftLabel}" />
+                        <TextBlock Grid.Column="1"
+                                   HorizontalAlignment="Center"
+                                   Text="{Binding XAxisMidLabel}" />
+                        <TextBlock Grid.Column="2"
+                                   HorizontalAlignment="Right"
+                                   Text="{Binding XAxisRightLabel}" />
+                    </Grid>
+
+                    <TextBlock Grid.Row="2"
+                               Margin="0,4,0,0"
+                               HorizontalAlignment="Center"
+                               Text="{Binding XAxisTitle}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <TextBlock Grid.Row="2"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Left"
+                   Margin="12,0,0,0"
+                   Text="Time Series Plot" />
+    </Grid>
+</Window>

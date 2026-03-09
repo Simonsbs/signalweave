@@ -34,6 +34,7 @@ Implemented now:
 - BasicProp-style visual touches including weight-value legend, Hinton-like weight cells, and axis-based error plotting
 - dedicated secondary windows for weights, patterns/outputs, and plot utilities from the top-level menus
 - popup utility windows with BasicProp-style layer controls and axis labels
+- dedicated JAR-aligned time-series plot window with `Output`, `Add plot`, and `Dismiss` controls
 
 Still to build for full feature parity:
 

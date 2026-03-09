@@ -166,7 +166,7 @@ public partial class MainWindow : Window
     {
         await RunWithConsoleAsync(async () =>
         {
-            var window = new UtilityPlotWindow(ViewModel.CreateTimeSeriesPlotSnapshot());
+            var window = new TimeSeriesPlotWindow(ViewModel.CreateTimeSeriesPlotSession());
             ViewModel.ConsoleText = "Showing time series plot for output unit 1.";
             await window.ShowDialog(this);
         });

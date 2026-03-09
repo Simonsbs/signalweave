@@ -49,6 +49,7 @@ Source basis used for this implementation:
   - weight legend and axis-based error progress plot
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
+  - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
   - hidden activation export
 
 ## Remaining parity work

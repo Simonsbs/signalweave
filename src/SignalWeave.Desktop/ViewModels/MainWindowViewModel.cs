@@ -701,35 +701,79 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void BuildTimeSeriesPlot(RunResult run)
     {
-        UtilityPlotMarkers.Clear();
+        BuildTimeSeriesPlot(run, 0, scaleForPopup: false);
+    }
 
+    private TimeSeriesPlotOption BuildTimeSeriesSeries(RunResult run, int outputIndex)
+    {
+        return BuildTimeSeriesPlot(run, outputIndex, scaleForPopup: true);
+    }
+
+    private TimeSeriesPlotOption BuildTimeSeriesPlot(RunResult run, int outputIndex, bool scaleForPopup)
+    {
         if (run.Results.Count == 0)
         {
-            UtilityPlotPoints = "0,110 240,110";
-            UtilityPlotSummary = "No time series data available.";
-            return;
+            var emptyOption = new TimeSeriesPlotOption(
+                $"Output {outputIndex + 1}",
+                $"Output {outputIndex + 1}",
+                "No time series data available.",
+                scaleForPopup ? "20,210 320,210" : "0,110 240,110",
+                scaleForPopup
+                    ? Array.Empty<PlotMarkerItem>()
+                    : Array.Empty<PlotMarkerItem>());
+
+            if (!scaleForPopup)
+            {
+                UtilityPlotMarkers.Clear();
+                UtilityPlotPoints = emptyOption.Points;
+                UtilityPlotSummary = emptyOption.Summary;
+            }
+
+            return emptyOption;
         }
 
-        const double width = 240;
-        const double height = 110;
+        var markers = new List<PlotMarkerItem>();
+        var width = scaleForPopup ? 300.0 : 240.0;
+        var height = scaleForPopup ? 190.0 : 110.0;
+        var xOffset = scaleForPopup ? 20.0 : 0.0;
+        var yOffset = scaleForPopup ? 20.0 : 0.0;
         var maxX = Math.Max(1, run.Results.Count - 1);
-        UtilityPlotPoints = string.Join(
+        var points = string.Join(
             " ",
             run.Results.Select(result =>
             {
-                var x = result.Index * width / maxX;
-                var y = height - (result.Outputs[0] * height);
+                var x = xOffset + (result.Index * width / maxX);
+                var y = yOffset + (height - (result.Outputs[outputIndex] * height));
                 return $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
             }));
 
         foreach (var result in run.Results)
         {
-            var x = result.Index * width / maxX;
-            var y = height - (result.Outputs[0] * height);
-            UtilityPlotMarkers.Add(new PlotMarkerItem(x, y, 6, 6, "#4E7396", result.Label));
+            var x = xOffset + (result.Index * width / maxX);
+            var y = yOffset + (height - (result.Outputs[outputIndex] * height));
+            markers.Add(new PlotMarkerItem(x, y, 6, 6, "#4E7396", result.Label));
         }
 
-        UtilityPlotSummary = "Time series plot of output unit 1 across pattern order.";
+        var option = new TimeSeriesPlotOption(
+            $"Output {outputIndex + 1}",
+            $"Output {outputIndex + 1}",
+            $"Time series plot of output unit {outputIndex + 1} across pattern order.",
+            points,
+            markers);
+
+        if (!scaleForPopup)
+        {
+            UtilityPlotMarkers.Clear();
+            foreach (var marker in markers)
+            {
+                UtilityPlotMarkers.Add(marker);
+            }
+
+            UtilityPlotPoints = option.Points;
+            UtilityPlotSummary = option.Summary;
+        }
+
+        return option;
     }
 
     private void BuildScatterPlot(RunResult run)
@@ -1242,6 +1286,27 @@ public partial class MainWindowViewModel : ViewModelBase
             "Output 1");
     }
 
+    public TimeSeriesPlotSession CreateTimeSeriesPlotSession()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+        var outputCount = run.Results.FirstOrDefault()?.Outputs.Length ?? 1;
+        var options = Enumerable.Range(0, outputCount)
+            .Select(index => BuildTimeSeriesSeries(run, index))
+            .ToArray();
+
+        return new TimeSeriesPlotSession(
+            $"{_definition!.Name} - Time Series Plot",
+            options,
+            "1.000",
+            "0.500",
+            "0.000",
+            "1",
+            ((Math.Max(1, run.Results.Count) + 1) / 2).ToString(CultureInfo.InvariantCulture),
+            Math.Max(1, run.Results.Count).ToString(CultureInfo.InvariantCulture),
+            "Pattern order");
+    }
+
     public PlotWindowSnapshot Create3DPlotSnapshot()
     {
         EnsureContext(resetWeights: false);
@@ -1359,8 +1424,19 @@ public sealed record DiagramEdgeItem(string StartPoint, string EndPoint, string 
 public sealed record WeightGlyphItem(double X, double Y, double CellWidth, double CellHeight, string CellFill, double EllipseX, double EllipseY, double EllipseWidth, double EllipseHeight, string Fill, string Tooltip);
 public sealed record PatternOutputRow(int Index, string Label, string Inputs, string Targets, string Outputs, string Error);
 public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);
+public sealed record TimeSeriesPlotOption(string Id, string Label, string Summary, string Points, IReadOnlyList<PlotMarkerItem> Markers);
 public sealed record WeightDisplaySession(string Title, WeightSet Weights);
 public sealed record PatternOutputsSnapshot(string Title, string Summary, IReadOnlyList<PatternOutputRow> Rows);
+public sealed record TimeSeriesPlotSession(
+    string Title,
+    IReadOnlyList<TimeSeriesPlotOption> Options,
+    string YAxisTopLabel,
+    string YAxisMidLabel,
+    string YAxisBottomLabel,
+    string XAxisLeftLabel,
+    string XAxisMidLabel,
+    string XAxisRightLabel,
+    string XAxisTitle);
 public sealed record PlotWindowSnapshot(
     string Title,
     string Summary,
