@@ -64,7 +64,7 @@ Status legend:
 
 - `[in-progress]` Hinton-style weight window
 - `[done]` SignalWeave-native weight persistence
-- `[todo]` separate FF and SRN weight-load workflows
+- `[done]` separate FF and SRN weight-load workflows
 - `[in-progress]` layer switching
 - `[in-progress]` refresh behavior
 - `[todo]` screenshot-verified visual parity

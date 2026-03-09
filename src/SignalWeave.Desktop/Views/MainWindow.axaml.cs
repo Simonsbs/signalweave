@@ -126,10 +126,25 @@ public partial class MainWindow : Window
         });
     }
 
-    private async void LoadWeights_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void LoadFeedForwardWeights_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await LoadWeightsAsync(forSrn: false);
+    }
+
+    private async void LoadSrnWeights_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await LoadWeightsAsync(forSrn: true);
+    }
+
+    private async Task LoadWeightsAsync(bool forSrn)
     {
         await RunWithConsoleAsync(async () =>
         {
+            if (!ViewModel.CanLoadWeightsFromMenu(forSrn))
+            {
+                return;
+            }
+
             var file = await PickOpenFileAsync(
                 "Load Weights",
                 new FilePickerFileType("SignalWeave weights") { Patterns = ["*.weights.json", "*.json"] },

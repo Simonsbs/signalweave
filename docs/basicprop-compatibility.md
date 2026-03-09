@@ -70,6 +70,7 @@ Source basis used for this implementation:
   - hidden activation export
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: note-style message output for uninitialized patterns and modal feedback for zero loaded patterns
+  - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
 
 ## Remaining parity work
 

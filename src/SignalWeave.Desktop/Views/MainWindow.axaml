@@ -53,9 +53,10 @@
                 <MenuItem Header="_Reset Network" Command="{Binding ResetNetworkCommand}" />
             </MenuItem>
             <MenuItem Header="_Weights">
-                <MenuItem Header="_Show Current Weights" Click="ShowWeightsWindow_Click" />
-                <MenuItem Header="_Load Weights..." Click="LoadWeights_Click" />
-                <MenuItem Header="_Save Weights..." Click="SaveWeights_Click" />
+                <MenuItem Header="_Show Weights" Click="ShowWeightsWindow_Click" />
+                <MenuItem Header="_Load Weights (FF)" Click="LoadFeedForwardWeights_Click" />
+                <MenuItem Header="Load Weights (_SRN)" Click="LoadSrnWeights_Click" />
+                <MenuItem Header="_Save Weights" Click="SaveWeights_Click" />
             </MenuItem>
             <MenuItem Header="_Patterns">
                 <MenuItem Header="_Show Patterns and Outputs" Click="ShowPatternsWindow_Click" />

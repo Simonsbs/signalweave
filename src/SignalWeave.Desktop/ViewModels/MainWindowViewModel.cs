@@ -16,6 +16,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private const string InvalidValueDialogTitle = "Invalid value";
     private const string MissingPatternsDialogMessage = "No training patterns have been provided!\nWhere are my patterns?";
     private const string PatternsNotInitializedNote = "SimControl.checkPatternsAvailable: Patterns have not been initialized";
+    private const string LoadWeightsSrnNote = "Please select Load Weights (SRN) instead";
+    private const string LoadWeightsFfNote = "Please select Load Weights (FF) instead";
     private readonly string[] _learningRateOptions = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0", "5.0"];
     private readonly string[] _momentumOptions = ["0", "0.2", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"];
     private readonly string[] _learningStepOptions = ["100", "200", "500", "1000", "2000", "5000", "10000", "20000", "50000", "100000"];
@@ -1445,6 +1447,25 @@ public partial class MainWindowViewModel : ViewModelBase
         RebuildWeightMap();
         AnalysisText = "Weights loaded into the current network.";
         ConsoleText = "Loaded weights from file.";
+    }
+
+    public bool CanLoadWeightsFromMenu(bool forSrn)
+    {
+        EnsureContext(resetWeights: false);
+
+        if (_definition!.NetworkKind == NetworkKind.SimpleRecurrent && !forSrn)
+        {
+            Inform(LoadWeightsSrnNote);
+            return false;
+        }
+
+        if (_definition.NetworkKind == NetworkKind.FeedForward && forSrn)
+        {
+            Inform(LoadWeightsFfNote);
+            return false;
+        }
+
+        return true;
     }
 
     public WeightDisplaySession CreateWeightDisplaySession()
