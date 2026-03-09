@@ -93,6 +93,20 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void LeadingResetMarkerIsIgnored()
+    {
+        var patterns = PatternSetParser.Parse("""
+            reset
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            """);
+
+        Assert.False(patterns.Examples[0].ResetsContextAfter);
+        Assert.True(patterns.Examples[1].ResetsContextAfter);
+    }
+
+    [Fact]
     public void FormatsPatternSelectorLikeBasicPropPatternHolder()
     {
         var text = BasicPropDisplayFormatter.FormatPatternSelector(0, new[] { 0.0, 1.0 }, new[] { 1.0 });
@@ -745,6 +759,64 @@ public class SignalWeaveEngineTests
         var engine = new SignalWeaveEngine(definition, weights);
         var run = engine.TestAll(patterns);
         var golden = LoadGoldenFixture("srn-forward.json");
+
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+        AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
+    }
+
+    [Fact]
+    public void MatchesBasicPropProbeForSrnLeadingResetBehavior()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = SRN leading reset parity
+            network = srn
+            inputs = 1
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            reset
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            c: 1 => 0
+            d: 0 => 1
+            reset
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.4, 0.7 },
+                { 0.2, -0.3 }
+            },
+            new double[,]
+            {
+                { -0.5 },
+                { 0.8 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.6, 0.1 },
+                { -0.2, 0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("srn-leading-reset.json");
 
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);

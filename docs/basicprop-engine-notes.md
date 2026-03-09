@@ -148,5 +148,6 @@ From `SpecStub` and config code:
 - Feed-forward online mode must support random pattern sampling.
 - SRN parity must preserve sequential progression and `lastTrainedIx`.
 - SRN parity must model BasicProp's non-standard hidden-bias lifecycle separately from feed-forward behavior.
+- Leading-`reset` behavior is now covered by a probe-backed regression fixture in SignalWeave rather than only by a decompile note.
 - Golden parity tests should not rely on BasicProp random initialization.
   - Instead, set explicit starting weights or capture saved initial weights.

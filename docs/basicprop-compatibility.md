@@ -40,6 +40,7 @@ Source basis used for this implementation:
 - Probe-backed SRN fixtures for forward outputs, sequential-training weights, and batch-training weights
 - Training fixtures now also assert completed-cycle parity alongside the saved weight matrices
 - Reset-aware SRN trace capture in the BasicProp probe so hidden activations can be compared from one consistent execution path
+- Probe-backed SRN edge-case fixture for the ignored leading-`reset` marker behavior
 - BasicProp-style desktop shell with:
   - menu structure
   - dedicated network configuration dialog

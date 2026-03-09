@@ -1,0 +1,26 @@
+name=SRN leading reset parity
+type=SRN
+layers=1,2,1
+biases=true,true,false
+learningRate=0.3
+momentum=0.8
+steps=0
+batchUpdate=false
+crossEntropy=false
+sequentialUpdate=true
+patterns:
+reset
+0 => 0
+1 => 1
+reset
+1 => 0
+0 => 1
+reset
+weights 0:
+0.2,0.4
+-0.3,0.7
+weights 1:
+0.1,-0.5,0.8
+recweights:
+0.6,-0.2
+0.1,0.4
