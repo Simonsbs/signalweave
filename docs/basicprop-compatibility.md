@@ -58,7 +58,8 @@ Source basis used for this implementation:
   - main network pane now renders unlabeled node boxes closer to the original BasicProp display instead of annotated editor-style node labels
   - BasicProp-style training console phrasing, control-value validation messages, and `continue` button text only while a training action is active
   - explicit desktop controller activity states now separate learning, `Test one`, and `Test all`, so the `Train` button no longer flips to `continue` during test actions
-  - train/test actions now drive a real busy-state control surface so learning/test buttons, control-panel combos, checkboxes, and pattern selection disable during active controller work more like `SimControl.checkControls()`
+  - train/test actions now drive a real busy-state control surface so learning/test buttons, control-panel combos, the Batch Update checkbox, and pattern selection disable during active controller work more like `SimControl.checkControls()`
+  - the `X-entropy` checkbox now stays enabled during controller activity, matching the BasicProp 1.3 control surface more closely
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating
   - test-one/test-all interaction

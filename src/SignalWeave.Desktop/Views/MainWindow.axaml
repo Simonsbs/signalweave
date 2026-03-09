@@ -219,7 +219,7 @@
                                       Grid.Column="1"
                                       Content="X-entropy"
                                       IsChecked="{Binding CrossEntropy, Mode=TwoWay}"
-                                      IsEnabled="{Binding CanAdjustControls}" />
+                                      IsEnabled="{Binding CanToggleCrossEntropy}" />
 
                             <Button Grid.Row="5"
                                     Classes="panel"

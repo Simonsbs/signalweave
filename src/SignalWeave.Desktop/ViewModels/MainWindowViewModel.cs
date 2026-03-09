@@ -176,6 +176,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool IsControllerIdle => _controllerActivityState == ControllerActivity.Idle;
     public bool CanAdjustControls => IsControllerIdle;
+    public bool CanToggleCrossEntropy => true;
     public bool CanRunReset => IsControllerIdle;
     public bool CanRunTrain => IsControllerIdle;
     public bool CanRunTestAll => IsControllerIdle;
@@ -1846,6 +1847,7 @@ public partial class MainWindowViewModel : ViewModelBase
         TrainButtonLabel = value == ControllerActivity.Learning ? "continue" : "Train";
         OnPropertyChanged(nameof(IsControllerIdle));
         OnPropertyChanged(nameof(CanAdjustControls));
+        OnPropertyChanged(nameof(CanToggleCrossEntropy));
         OnPropertyChanged(nameof(CanRunReset));
         OnPropertyChanged(nameof(CanRunTrain));
         OnPropertyChanged(nameof(CanRunTestAll));
