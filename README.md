@@ -70,3 +70,10 @@ The `samples/` directory contains starter network and pattern files:
 ## Compatibility note
 
 SignalWeave targets the BasicProp feature model described on `basicprop.wordpress.com` as of March 9, 2026. The original downloadable JAR and weight-format reference were not publicly reachable during implementation, so legacy binary-level compatibility is the remaining gap.
+
+## Delivery docs
+
+- `docs/basicprop-compatibility.md`: scope and compatibility basis
+- `docs/reference-assets.md`: local BasicProp reference bundle inventory
+- `docs/parity-checklist.md`: parity status by engine, UI, and utilities
+- `docs/e2e-backlog.md`: milestone backlog and implementation tasks
