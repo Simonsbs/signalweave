@@ -37,7 +37,7 @@ Source basis used for this implementation:
 - Weight persistence
 - Hierarchical clustering over outputs and hidden activations
 - Probe-backed golden regression fixtures for 2-layer, 3-layer, 3-layer batch, 3-layer cross-entropy, 3-layer momentum, stop-rule, and 4-layer feed-forward training
-- Probe-backed SRN fixtures for forward outputs, sequential-training weights, and batch-training weights
+- Probe-backed SRN fixtures for forward outputs, direct `Test one` output, sequential-training weights, batch-training weights, hidden-bias lifecycle, leading-`reset`, and reported aggregate error
 - Training fixtures now also assert completed-cycle parity alongside the saved weight matrices
 - Reset-aware SRN trace capture in the BasicProp probe so hidden activations can be compared from one consistent execution path
 - Probe-backed SRN edge-case fixture for the ignored leading-`reset` marker behavior
@@ -107,7 +107,6 @@ Source basis used for this implementation:
 ## Remaining parity work
 
 - Match BasicProp 1.3 engine behavior exactly from the runnable JAR
-- Extend the golden parity suite beyond the current feed-forward training fixtures and initial SRN training fixtures into broader FF and SRN coverage
 - Continue resolving the remaining SRN parity edges around BasicProp's inconsistent helper buffers, using the reset-aware probe trace instead of raw `getHiddenActs()`
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely
