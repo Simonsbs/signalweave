@@ -3,11 +3,13 @@ namespace SignalWeave.Core;
 public sealed class SignalWeaveEngine
 {
     private readonly NetworkDefinition _definition;
+    private readonly Random _patternRandom;
 
     public SignalWeaveEngine(NetworkDefinition definition, WeightSet? weights = null, int? seed = null)
     {
         _definition = definition;
         _definition.Validate();
+        _patternRandom = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         Weights = weights?.Clone() ?? WeightSet.CreateRandom(_definition, seed);
     }
 
@@ -17,65 +19,78 @@ public sealed class SignalWeaveEngine
     {
         patternSet.ValidateAgainst(_definition, requireTargets: true);
 
-        var epochs = maxEpochs ?? _definition.MaxEpochs;
-        var history = new List<TrainingPoint>(epochs);
+        var steps = maxEpochs ?? _definition.MaxEpochs;
+        var history = new List<TrainingPoint>(steps);
         var previousInputHiddenDelta = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
         var previousHiddenOutputDelta = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
         var previousRecurrentDelta = Weights.RecurrentHidden is null
             ? null
             : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
 
-        var sequences = patternSet.ToSequences();
-
-        for (var epoch = 1; epoch <= epochs; epoch++)
+        if (_definition.NetworkKind == NetworkKind.FeedForward)
         {
-            var totalError = 0.0;
-            var exampleCount = 0;
+            TrainFeedForward(
+                patternSet,
+                steps,
+                history,
+                previousInputHiddenDelta,
+                previousHiddenOutputDelta,
+                previousRecurrentDelta);
+        }
+        else
+        {
+            var sequences = patternSet.ToSequences();
 
-            var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
-            var batchHiddenOutput = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
-            var batchRecurrent = Weights.RecurrentHidden is null
-                ? null
-                : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
-
-            foreach (var sequence in sequences)
+            for (var step = 1; step <= steps; step++)
             {
-                var gradient = ComputeSequenceGradient(sequence);
-                totalError += gradient.TotalError;
-                exampleCount += gradient.LabeledExampleCount;
+                var totalSquaredError = 0.0;
+                var labeledExampleCount = 0;
+
+                var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
+                var batchHiddenOutput = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
+                var batchRecurrent = Weights.RecurrentHidden is null
+                    ? null
+                    : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
+
+                foreach (var sequence in sequences)
+                {
+                    var gradient = ComputeSequenceGradient(sequence);
+                    totalSquaredError += gradient.TotalSquaredError;
+                    labeledExampleCount += gradient.LabeledExampleCount;
+
+                    if (_definition.UpdateMode == UpdateMode.Batch)
+                    {
+                        AddInPlace(batchInputHidden, gradient.InputHiddenGradient);
+                        AddInPlace(batchHiddenOutput, gradient.HiddenOutputGradient);
+                        if (batchRecurrent is not null && gradient.RecurrentGradient is not null)
+                        {
+                            AddInPlace(batchRecurrent, gradient.RecurrentGradient);
+                        }
+                    }
+                    else
+                    {
+                        ApplyGradient(gradient, previousInputHiddenDelta, previousHiddenOutputDelta, previousRecurrentDelta, 1.0);
+                    }
+                }
 
                 if (_definition.UpdateMode == UpdateMode.Batch)
                 {
-                    AddInPlace(batchInputHidden, gradient.InputHiddenGradient);
-                    AddInPlace(batchHiddenOutput, gradient.HiddenOutputGradient);
-                    if (batchRecurrent is not null && gradient.RecurrentGradient is not null)
-                    {
-                        AddInPlace(batchRecurrent, gradient.RecurrentGradient);
-                    }
+                    var normalizer = Math.Max(1, labeledExampleCount);
+                    ApplyGradient(
+                        new SequenceGradient(batchInputHidden, batchHiddenOutput, batchRecurrent, totalSquaredError, labeledExampleCount),
+                        previousInputHiddenDelta,
+                        previousHiddenOutputDelta,
+                        previousRecurrentDelta,
+                        1.0 / normalizer);
                 }
-                else
+
+                var currentTsq = ComputeTsq(totalSquaredError);
+                history.Add(new TrainingPoint(step, currentTsq));
+
+                if (currentTsq <= _definition.ErrorThreshold || ShouldStopEarly(history, patternSet.Examples.Count))
                 {
-                    ApplyGradient(gradient, previousInputHiddenDelta, previousHiddenOutputDelta, previousRecurrentDelta, 1.0);
+                    break;
                 }
-            }
-
-            if (_definition.UpdateMode == UpdateMode.Batch)
-            {
-                var normalizer = Math.Max(1, exampleCount);
-                ApplyGradient(
-                    new SequenceGradient(batchInputHidden, batchHiddenOutput, batchRecurrent, totalError, exampleCount),
-                    previousInputHiddenDelta,
-                    previousHiddenOutputDelta,
-                    previousRecurrentDelta,
-                    1.0 / normalizer);
-            }
-
-            var averageError = exampleCount == 0 ? 0.0 : totalError / exampleCount;
-            history.Add(new TrainingPoint(epoch, averageError));
-
-            if (averageError <= _definition.ErrorThreshold)
-            {
-                break;
             }
         }
 
@@ -88,7 +103,7 @@ public sealed class SignalWeaveEngine
         patternSet.ValidateAgainst(_definition, requireTargets: false);
 
         var results = new List<TestResult>(patternSet.Examples.Count);
-        var totalError = 0.0;
+        var totalSquaredError = 0.0;
         var labeled = 0;
         var index = 0;
 
@@ -104,8 +119,9 @@ public sealed class SignalWeaveEngine
                 var error = 0.0;
                 if (example.Targets is not null)
                 {
-                    error = CalculateExampleError(step.Outputs, example.Targets);
-                    totalError += error;
+                    var squaredError = CalculateSquaredError(step.Outputs, example.Targets);
+                    error = ComputeTsq(squaredError);
+                    totalSquaredError += squaredError;
                     labeled++;
                 }
 
@@ -114,7 +130,7 @@ public sealed class SignalWeaveEngine
             }
         }
 
-        return new RunResult(results, labeled == 0 ? 0.0 : totalError / labeled);
+        return new RunResult(results, labeled == 0 ? 0.0 : Math.Sqrt(totalSquaredError / labeled));
     }
 
     public TestResult TestOne(PatternSet patternSet, int index)
@@ -140,7 +156,7 @@ public sealed class SignalWeaveEngine
         var steps = new ForwardStep[sequence.Count];
         var previousHiddenStates = new double[sequence.Count][];
         var context = new double[_definition.HiddenUnits];
-        var totalError = 0.0;
+        var totalSquaredError = 0.0;
         var labeledCount = 0;
 
         for (var index = 0; index < sequence.Count; index++)
@@ -151,7 +167,7 @@ public sealed class SignalWeaveEngine
 
             if (sequence[index].Targets is not null)
             {
-                totalError += CalculateExampleError(steps[index].Outputs, sequence[index].Targets!);
+                totalSquaredError += CalculateSquaredError(steps[index].Outputs, sequence[index].Targets!);
                 labeledCount++;
             }
         }
@@ -214,7 +230,7 @@ public sealed class SignalWeaveEngine
             nextHiddenDelta = hiddenDelta;
         }
 
-        return new SequenceGradient(inputHiddenGradient, hiddenOutputGradient, recurrentGradient, totalError, labeledCount);
+        return new SequenceGradient(inputHiddenGradient, hiddenOutputGradient, recurrentGradient, totalSquaredError, labeledCount);
     }
 
     private ForwardStep Forward(double[] inputs, double[] context)
@@ -264,21 +280,101 @@ public sealed class SignalWeaveEngine
         }
     }
 
-    private double CalculateExampleError(double[] outputs, double[] targets)
+    private void TrainFeedForward(
+        PatternSet patternSet,
+        int steps,
+        List<TrainingPoint> history,
+        double[,] previousInputHiddenDelta,
+        double[,] previousHiddenOutputDelta,
+        double[,]? previousRecurrentDelta)
+    {
+        var examples = patternSet.Examples;
+        var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
+        var batchHiddenOutput = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
+        var stepIndex = 0;
+
+        for (var step = 1; step <= steps; step++)
+        {
+            var example = _definition.UpdateMode == UpdateMode.Batch
+                ? examples[stepIndex % examples.Count]
+                : examples[_patternRandom.Next(examples.Count)];
+
+            var gradient = ComputeSequenceGradient([example]);
+
+            if (_definition.UpdateMode == UpdateMode.Batch)
+            {
+                AddInPlace(batchInputHidden, gradient.InputHiddenGradient);
+                AddInPlace(batchHiddenOutput, gradient.HiddenOutputGradient);
+
+                if ((stepIndex + 1) % examples.Count == 0)
+                {
+                    ApplyGradient(
+                        new SequenceGradient(batchInputHidden, batchHiddenOutput, null, gradient.TotalSquaredError, gradient.LabeledExampleCount),
+                        previousInputHiddenDelta,
+                        previousHiddenOutputDelta,
+                        previousRecurrentDelta,
+                        1.0);
+                    Array.Clear(batchInputHidden, 0, batchInputHidden.Length);
+                    Array.Clear(batchHiddenOutput, 0, batchHiddenOutput.Length);
+                }
+            }
+            else
+            {
+                ApplyGradient(gradient, previousInputHiddenDelta, previousHiddenOutputDelta, previousRecurrentDelta, 1.0);
+            }
+
+            var currentTsq = ComputeTsq(gradient.TotalSquaredError);
+            history.Add(new TrainingPoint(step, currentTsq));
+
+            if (currentTsq <= _definition.ErrorThreshold || ShouldStopEarly(history, examples.Count))
+            {
+                break;
+            }
+
+            stepIndex++;
+        }
+    }
+
+    private double CalculateSquaredError(double[] outputs, double[] targets)
     {
         var total = 0.0;
 
         for (var index = 0; index < outputs.Length; index++)
         {
-            var output = Math.Clamp(outputs[index], 1e-6, 1.0 - 1e-6);
             var target = targets[index];
-
-            total += _definition.CostFunction == CostFunction.CrossEntropy
-                ? -(target * Math.Log(output) + ((1.0 - target) * Math.Log(1.0 - output)))
-                : 0.5 * Math.Pow(target - output, 2);
+            total += Math.Pow(target - outputs[index], 2);
         }
 
-        return total / outputs.Length;
+        return total;
+    }
+
+    private bool ShouldStopEarly(IReadOnlyList<TrainingPoint> history, int patternCount)
+    {
+        var window = patternCount * 10;
+        if (history.Count < window)
+        {
+            return false;
+        }
+
+        var rollingMax = 0.0;
+        for (var index = history.Count - window; index < history.Count; index++)
+        {
+            rollingMax = Math.Max(rollingMax, history[index].AverageError);
+        }
+
+        return rollingMax < GetPrematureStopThreshold();
+    }
+
+    private double GetPrematureStopThreshold()
+    {
+        return _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? 0.01 * _definition.OutputUnits
+            : Math.Sqrt(0.01) * _definition.OutputUnits;
+    }
+
+    private static double ComputeTsq(double squaredError)
+    {
+        return Math.Sqrt(squaredError);
     }
 
     private double[] AppendBias(double[] values, bool includeBias)
@@ -349,7 +445,7 @@ public sealed class SignalWeaveEngine
 
     private double SigmoidDerivative(double activatedValue)
     {
-        return (activatedValue * (1.0 - activatedValue)) + _definition.SigmoidPrimeOffset;
+        return activatedValue * (1.0 - activatedValue);
     }
 
     private sealed record ForwardStep(
@@ -362,7 +458,7 @@ public sealed class SignalWeaveEngine
         double[,] InputHiddenGradient,
         double[,] HiddenOutputGradient,
         double[,]? RecurrentGradient,
-        double TotalError,
+        double TotalSquaredError,
         int LabeledExampleCount);
 }
 
