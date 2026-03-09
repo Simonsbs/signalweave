@@ -90,6 +90,8 @@ Source basis used for this implementation:
   - built-in XOR demo defaults aligned to the BasicProp reference control values (`0.3`, `0.8`, `5000`, `-1 - 1`) when loaded from the menu
   - `Configure Network...` now opens from the loaded network definition rather than reparsing the editor first
   - `Network Configuration -> Apply` now updates the live desktop network without closing the dialog, matching the original workflow more closely
+  - network configuration sliders, bias column, and centered action buttons now follow the BasicProp dialog proportions more closely
+  - popup weight display now uses a larger Hinton-style frame with a compact left-aligned bottom control strip closer to the original window
 
 ## Remaining parity work
 

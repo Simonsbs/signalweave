@@ -7,9 +7,9 @@
         mc:Ignorable="d"
         x:Class="SignalWeave.Desktop.Views.WeightDisplayWindow"
         x:DataType="vm:WeightDisplayWindowViewModel"
-        Width="980"
-        Height="660"
-        Background="#D3D3D3"
+        Width="1366"
+        Height="768"
+        Background="#D5D5D5"
         Title="{Binding WindowTitle}">
 
     <Design.DataContext>
@@ -20,9 +20,9 @@
           Margin="0">
         <ScrollViewer HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
-            <Canvas Width="936"
-                    Height="520"
-                    Background="#D3D3D3">
+            <Canvas Width="1360"
+                    Height="680"
+                    Background="#D5D5D5">
                 <ItemsControl ItemsSource="{Binding WeightGlyphs}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -57,21 +57,18 @@
                 Background="#E3E3E3"
                 BorderBrush="#B4B4B4"
                 BorderThickness="1,1,0,0"
-                Padding="10,8">
+                Padding="8,8">
             <DockPanel>
                 <TextBlock VerticalAlignment="Center"
                            Text="Weight layer:" />
-                <ComboBox Width="72"
-                          Margin="8,0,0,0"
+                <ComboBox Width="38"
+                          Margin="6,0,0,0"
                           ItemsSource="{Binding WeightLayerOptions}"
                           SelectedItem="{Binding SelectedWeightLayer, Mode=TwoWay}" />
-                <Button Margin="12,0,0,0"
+                <Button Margin="10,0,0,0"
                         Content="Refresh"
                         Command="{Binding RefreshCommand}" />
-                <TextBlock Margin="16,3,0,0"
-                           Foreground="#4C4C4C"
-                           Text="{Binding SelectedLayerDescription}" />
-                <Button DockPanel.Dock="Right"
+                <Button Margin="10,0,0,0"
                         Content="Dismiss"
                         Click="Dismiss_Click" />
             </DockPanel>

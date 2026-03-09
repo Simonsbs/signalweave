@@ -49,9 +49,6 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _weightMapSummary = "No weights loaded.";
 
-    [ObservableProperty]
-    private string _selectedLayerDescription = "Input -> Output";
-
     partial void OnSelectedWeightLayerChanged(string value)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -106,7 +103,6 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
         }
 
         WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
-        SelectedLayerDescription = layerTitle;
         WindowTitle = $"{BaseTitle} ({layer.Id}: {layerTitle})";
     }
 
