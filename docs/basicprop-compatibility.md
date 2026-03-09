@@ -62,6 +62,7 @@ Source basis used for this implementation:
   - explicit desktop controller activity states now separate learning, `Test one`, and `Test all`, so the `Train` button no longer flips to `continue` during test actions
   - train/test actions now drive a real busy-state control surface so learning/test buttons, control-panel combos, the Batch Update checkbox, and pattern selection disable during active controller work more like `SimControl.checkControls()`
   - the `X-entropy` checkbox now stays enabled during controller activity, matching the BasicProp 1.3 control surface more closely
+  - direct `SimControl.checkControls()` decompile verification now matches the desktop gating model for the main controller-managed labels, combos, buttons, and the `< 24` / `> 24` `Test one` enablement rule
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating
   - test-one/test-all interaction

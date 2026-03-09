@@ -91,6 +91,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - explicit controller activity states now keep `Train` / `continue` aligned with BasicProp, so test actions no longer flip the train button to `continue`
 - train/test actions now enter a real busy state so the control-panel labels, combos, Batch Update checkbox, pattern selector, and run buttons disable during active controller work more like BasicProp’s `SimControl.checkControls()`
 - the `X-entropy` checkbox now stays enabled during controller activity, matching the BasicProp 1.3 control surface more closely
+- `SimControl.checkControls()` has now been checked directly against the BasicProp JAR decompile for the controller-managed enable/disable set and `Test one` threshold behavior
 - screenshot-verified four-panel main shell matching the original BasicProp layout more closely: `Network`, `Control panel`, `Console`, and `Error progress`
 - visible top-level menus now match the BasicProp 1.3 shell more closely, with only the original `Network`, `Weights`, `Patterns`, `Utilities`, and single-item `Help` surface
 - the four-panel main desktop workbench is now treated as complete parity surface; remaining gaps there are fidelity items, not missing shell workflow

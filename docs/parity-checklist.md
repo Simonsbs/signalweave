@@ -53,7 +53,7 @@ Status legend:
 - `[done]` `Train` / `continue` state
 - `[done]` progress bar state
 - `[done]` pattern combo `< 24` handling
-- `[todo]` full `SimControl.checkControls()` parity
+- `[done]` full `SimControl.checkControls()` parity
 - `[todo]` BasicProp-identical network drawing
 - `[done]` detached message window
 - `[done]` modal invalid-value dialogs
