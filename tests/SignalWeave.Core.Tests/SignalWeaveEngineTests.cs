@@ -673,6 +673,56 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void MatchesBasicPropProbeForOnlineMultiStepThreeLayerFeedForwardTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 3-layer online multi-step parity
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 5
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1,0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2, 0.5 },
+                { -0.3, 0.6 },
+                { 0.1, -0.4 }
+            },
+            new double[,]
+            {
+                { -0.8 },
+                { 0.9 },
+                { 0.7 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var result = engine.Train(patterns, 5);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff3-train-online-multistep.json");
+
+        Assert.Equal(5, result.History.Count);
+        Assert.Equal(golden.CyclesCompleted, engine.CompletedCycles);
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
     public void MatchesBasicPropProbeForFeedForwardStopRule()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""

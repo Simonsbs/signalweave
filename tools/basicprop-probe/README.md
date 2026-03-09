@@ -41,6 +41,7 @@ Current checked-in feed-forward training probes:
 - `examples/ff3-train-batch.bppr`
 - `examples/ff3-train-cross-entropy.bppr`
 - `examples/ff3-train-momentum.bppr`
+- `examples/ff3-train-online-multistep.bppr`
 - `examples/ff3-stop-rule.bppr`
 - `examples/ff4-train-single.bppr`
 

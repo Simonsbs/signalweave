@@ -12,7 +12,7 @@ Status legend:
 - `[done]` feed-forward 2-layer execution
 - `[done]` feed-forward 3-layer execution exists
 - `[done]` feed-forward 4-layer execution exists in the core
-- `[in-progress]` feed-forward online training parity
+- `[done]` feed-forward online training parity
 - `[done]` feed-forward batch update parity
 - `[done]` feed-forward cross-entropy parity
 - `[done]` feed-forward momentum parity

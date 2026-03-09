@@ -41,6 +41,7 @@ Implemented now:
 - dedicated JAR-aligned `PatternPlot` window with per-pattern selector and stacked `Outputs` / `Targets` / `Inputs` charts
 - JAR decompile verification for `PatternPlot`, `TimeSeriesPlotter`, and `SurfacePlotter` now matches the implemented utility-window sizes and control surfaces
 - checked-in BasicProp golden fixtures for 2-layer, 3-layer, 3-layer batch, 3-layer cross-entropy, 3-layer momentum, stop-rule, and 4-layer feed-forward training parity
+- checked-in BasicProp multi-step online feed-forward fixture to verify repeated pattern-mode updates against the reference JAR
 - checked-in BasicProp SRN fixtures for forward outputs, sequential-training weights, and batch-training weights
 - reset-aware SRN trace capture in the BasicProp probe for consistent hidden-state parity checks
 
