@@ -1413,7 +1413,30 @@ public partial class MainWindowViewModel : ViewModelBase
     public void LoadPatternText(string text, string? sourceName = null)
     {
         PatternText = text;
-        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: false, consoleMessage: $"Loaded patterns from {sourceName ?? "file"}.");
+
+        if (_definition is null || _engine is null)
+        {
+            Inform("Load patterns failed. You must first set up a network");
+            return;
+        }
+
+        var parsedPatterns = PatternSetParser.Parse(text, _definition.Name);
+        parsedPatterns.ValidateAgainst(_definition, requireTargets: false);
+
+        _patternSet = parsedPatterns;
+        _lastRun = null;
+        UpdatePatternOptions(parsedPatterns);
+        NetworkSummary = BuildNetworkSummary(_definition, parsedPatterns);
+        HistoryText = "No training history yet.";
+        ErrorProgressPoints = "0,132 240,132";
+        UpdateErrorPlotScale([]);
+        PatternOutputRows.Clear();
+        PatternOutputSummary = "No pattern outputs calculated yet.";
+        UtilityPlotMarkers.Clear();
+        UtilityPlotPoints = "0,110 240,110";
+        UtilityPlotSummary = "No utility plot prepared.";
+        AnalysisText = $"{_definition.ToSummary()}{Environment.NewLine}{parsedPatterns.ToSummary()}";
+        ConsoleText = $"Loaded patterns from {sourceName ?? "file"}.";
     }
 
     public void ApplyConfiguredNetwork(NetworkDefinition definition)
