@@ -981,21 +981,12 @@ public partial class MainWindowViewModel : ViewModelBase
         UtilityPlotSummary = "Projected 3D view using the first hidden/output dimensions.";
     }
 
-    private static string BuildHiddenActivationData(RunResult run)
+    private string BuildHiddenActivationData()
     {
-        var builder = new StringBuilder();
-
-        foreach (var result in run.Results)
-        {
-            builder.AppendLine(string.Join(" ", result.HiddenActivations.Select(hidden => hidden.ToString("R", CultureInfo.InvariantCulture))));
-        }
-
-        if (builder.Length == 0)
-        {
-            builder.AppendLine();
-        }
-
-        return builder.ToString();
+        EnsureContext(resetWeights: false);
+        EnsureRun();
+        var rows = _engine!.GetExportHiddenActivations(_patternSet!);
+        return BasicPropDisplayFormatter.FormatHiddenActivationExport(rows);
     }
 
     private static string BuildWeightsText(WeightSet weights)
@@ -1628,8 +1619,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public string BuildHiddenActivationExportText()
     {
         EnsureContext(resetWeights: false);
-        var run = EnsureRun();
-        return BuildHiddenActivationData(run);
+        return BuildHiddenActivationData();
     }
 
     public void ReportHiddenActivationExport(string path)

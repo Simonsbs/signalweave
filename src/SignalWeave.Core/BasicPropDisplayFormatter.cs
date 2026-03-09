@@ -40,6 +40,28 @@ public static class BasicPropDisplayFormatter
         return builder.ToString();
     }
 
+    public static string FormatHiddenActivationExport(IReadOnlyList<IReadOnlyList<double>> rows)
+    {
+        var builder = new StringBuilder();
+
+        foreach (var row in rows)
+        {
+            foreach (var value in row)
+            {
+                builder.Append(value.ToString("R", CultureInfo.InvariantCulture));
+            }
+
+            builder.AppendLine();
+        }
+
+        if (builder.Length == 0)
+        {
+            builder.AppendLine();
+        }
+
+        return builder.ToString();
+    }
+
     private static string FormatPatternValue(double value)
     {
         return value.ToString("0.##", CultureInfo.InvariantCulture);

@@ -94,7 +94,7 @@ Source basis used for this implementation:
   - output clustering and hidden-state clustering are reachable from the desktop shell through dedicated text-report windows
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
-  - hidden activation export through a save dialog using BasicProp-like raw `.dat` rows instead of the earlier SignalWeave temp-CSV flow
+  - hidden activation export through a save dialog using the BasicProp `getHiddenActs()` helper semantics, including raw concatenated `.dat` rows with no separators between values
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: BasicProp-style `Note:` message output that appends to the desktop console for uninitialized patterns, plus a `No can do!` modal for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
@@ -108,7 +108,7 @@ Source basis used for this implementation:
 ## Remaining parity work
 
 - Match BasicProp 1.3 engine behavior exactly from the runnable JAR
-- Continue resolving the remaining SRN parity edges around BasicProp's inconsistent helper buffers, using the reset-aware probe trace instead of raw `getHiddenActs()`
+- Keep the SRN split explicit: reset-aware probe traces drive run-result parity, while hidden-activation export intentionally matches BasicProp's raw `getHiddenActs()` helper behavior
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely
 - Finish cross-platform release validation from real CI runs and ship the packaged desktop bundles

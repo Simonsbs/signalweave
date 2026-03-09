@@ -123,6 +123,18 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void FormatsHiddenActivationExportLikeBasicPropFileIo()
+    {
+        var text = BasicPropDisplayFormatter.FormatHiddenActivationExport(
+        [
+            new[] { 0.1, 0.2 },
+            new[] { -0.3, 0.4 }
+        ]);
+
+        Assert.Equal("0.10.2\n-0.30.4\n", text.Replace("\r\n", "\n"));
+    }
+
+    [Fact]
     public void TrainsAndFunctionToLowError()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""
@@ -405,6 +417,51 @@ public class SignalWeaveEngineTests
         AssertRunMatchesGolden(run, golden);
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
+    public void ExportsBasicPropHiddenActivationsForThreeLayerFeedForward()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 3-layer export parity
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2, 0.5 },
+                { -0.3, 0.6 },
+                { 0.1, -0.4 }
+            },
+            new double[,]
+            {
+                { -0.8 },
+                { 0.9 },
+                { 0.7 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        engine.Train(patterns, 1);
+        var golden = LoadGoldenFixture("ff3-train-single.json");
+
+        AssertJaggedMatrixMatches(engine.GetExportHiddenActivations(patterns), golden.HiddenActivations!);
     }
 
     [Fact]
@@ -764,6 +821,60 @@ public class SignalWeaveEngineTests
         AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
         AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
         AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
+    }
+
+    [Fact]
+    public void ExportsBasicPropHiddenActivationsForSrn()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = SRN export parity
+            network = srn
+            inputs = 1
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            c: 1 => 0
+            d: 0 => 1
+            reset
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.4, 0.7 },
+                { 0.2, -0.3 }
+            },
+            new double[,]
+            {
+                { -0.5 },
+                { 0.8 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.6, 0.1 },
+                { -0.2, 0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("srn-forward-helper-hidden-acts.json");
+
+        AssertJaggedMatrixMatches(engine.GetExportHiddenActivations(patterns), golden.HiddenActivations!);
     }
 
     [Fact]
@@ -1147,6 +1258,21 @@ public class SignalWeaveEngineTests
             for (var column = 0; column < expected[row].Length; column++)
             {
                 Assert.Equal(expected[row][column], actual[row, column], 12);
+            }
+        }
+    }
+
+    private static void AssertJaggedMatrixMatches(double[][] actual, double[][] expected)
+    {
+        Assert.Equal(expected.Length, actual.Length);
+
+        for (var row = 0; row < expected.Length; row++)
+        {
+            Assert.Equal(expected[row].Length, actual[row].Length);
+
+            for (var column = 0; column < expected[row].Length; column++)
+            {
+                Assert.Equal(expected[row][column], actual[row][column], 12);
             }
         }
     }

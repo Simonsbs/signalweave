@@ -117,6 +117,13 @@ public sealed class SignalWeaveEngine
         var reportedAverageError = _definition.NetworkKind == NetworkKind.SimpleRecurrent
             ? MeasureReportedSrnAggregateError(patternSet)
             : averageError;
+
+        if (_definition.NetworkKind == NetworkKind.SimpleRecurrent)
+        {
+            _visibleHiddenContext = (double[])context.Clone();
+            _visibleHiddenBiasValue = hiddenBiasValue;
+        }
+
         return new RunResult(results, averageError, reportedAverageError);
     }
 
@@ -170,6 +177,20 @@ public sealed class SignalWeaveEngine
     {
         var run = TestAll(patternSet);
         return HierarchicalClusterer.Cluster(run.Results.Select(result => (result.Label, result.HiddenActivations)).ToList());
+    }
+
+    public double[][] GetExportHiddenActivations(PatternSet patternSet)
+    {
+        patternSet.ValidateAgainst(_definition, requireTargets: false);
+
+        if (_definition.TotalLayerCount != 3)
+        {
+            throw new InvalidOperationException("getHiddenActs: Network must be 3-layer");
+        }
+
+        return _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? GetSrnExportHiddenActivations(patternSet)
+            : GetFeedForwardExportHiddenActivations(patternSet);
     }
 
     private void TrainSimpleRecurrent(PatternSet patternSet, int steps, List<TrainingPoint> history)
@@ -256,6 +277,38 @@ public sealed class SignalWeaveEngine
         }
 
         _lastTrainedPatternIndex = lastPatternIndex;
+    }
+
+    private double[][] GetFeedForwardExportHiddenActivations(PatternSet patternSet)
+    {
+        var hiddenActivations = new double[patternSet.Examples.Count][];
+
+        for (var index = 0; index < patternSet.Examples.Count; index++)
+        {
+            var step = Forward(patternSet.Examples[index].Inputs, Array.Empty<double>(), 1.0);
+            hiddenActivations[index] = (double[])step.HiddenActivations.Clone();
+        }
+
+        return hiddenActivations;
+    }
+
+    private double[][] GetSrnExportHiddenActivations(PatternSet patternSet)
+    {
+        var context = _visibleHiddenContext is null
+            ? new double[_definition.HiddenUnits]
+            : (double[])_visibleHiddenContext.Clone();
+        var hiddenBiasValue = _visibleHiddenBiasValue;
+
+        var hiddenActivations = new double[patternSet.Examples.Count][];
+
+        for (var index = 0; index < patternSet.Examples.Count; index++)
+        {
+            var step = Forward(patternSet.Examples[index].Inputs, context, hiddenBiasValue);
+            hiddenActivations[index] = (double[])step.HiddenActivations.Clone();
+            context = (double[])step.FinalHidden.Clone();
+        }
+
+        return hiddenActivations;
     }
 
     private SequenceGradient ComputeSrnSequenceGradient(IReadOnlyList<PatternExample> sequence)

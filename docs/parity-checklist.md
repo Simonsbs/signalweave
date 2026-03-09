@@ -81,7 +81,7 @@ Status legend:
 
 - `[in-progress]` 3D plotting workflow
 - `[in-progress]` time-series plotting workflow
-- `[in-progress]` hidden activation export
+- `[done]` hidden activation export
 - `[in-progress]` output clustering
 - `[in-progress]` hidden-state clustering
 - `[todo]` JAR-backed utility parity verification
