@@ -82,3 +82,12 @@ Local path:
 - Add at least one feed-forward and one SRN golden experiment captured from the JAR.
 - Capture screenshots for all utility windows and pattern/output inspection screens.
 - Decompile engine classes and document update semantics in a dedicated design note.
+
+## Probe tooling
+
+- SignalWeave now includes a headless BasicProp probe:
+  - `/home/simon/signalweave/tools/basicprop-probe/BasicPropProbe.java`
+- Purpose:
+  - instantiate BasicProp without the full UI workflow
+  - print live defaults from `SimControl`
+  - run deterministic experiments from probe files with explicit weights

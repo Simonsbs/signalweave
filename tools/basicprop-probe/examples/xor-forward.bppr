@@ -1,0 +1,21 @@
+type=FeedForward
+layers=2,2,1
+biases=true,true,false
+learningRate=0.3
+momentum=0.8
+steps=0
+batchUpdate=false
+crossEntropy=false
+
+patterns:
+0,0 => 0
+0,1 => 1
+1,0 => 1
+1,1 => 0
+
+weights 0:
+0.10,0.20,-0.30
+-0.40,0.50,0.60
+
+weights 1:
+0.70,-0.80,0.90

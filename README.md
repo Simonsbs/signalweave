@@ -74,6 +74,7 @@ SignalWeave targets the BasicProp feature model described on `basicprop.wordpres
 ## Delivery docs
 
 - `docs/basicprop-compatibility.md`: scope and compatibility basis
+- `docs/basicprop-engine-notes.md`: observed BasicProp 1.3 runtime semantics
 - `docs/reference-assets.md`: local BasicProp reference bundle inventory
 - `docs/parity-checklist.md`: parity status by engine, UI, and utilities
 - `docs/e2e-backlog.md`: milestone backlog and implementation tasks
