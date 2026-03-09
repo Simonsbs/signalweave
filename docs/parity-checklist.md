@@ -73,14 +73,14 @@ Status legend:
 
 - `[done]` pattern parsing with `reset`
 - `[in-progress]` desktop pattern loading
-- `[in-progress]` pattern plot window
+- `[done]` pattern plot window
 - `[in-progress]` patterns/outputs viewing
 - `[todo]` exact workflow and formatting parity
 
 ## Utilities
 
-- `[in-progress]` 3D plotting workflow
-- `[in-progress]` time-series plotting workflow
+- `[done]` 3D plotting workflow
+- `[done]` time-series plotting workflow
 - `[done]` hidden activation export
 - `[in-progress]` output clustering
 - `[in-progress]` hidden-state clustering
