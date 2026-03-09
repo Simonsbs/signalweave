@@ -27,6 +27,13 @@ Run a deterministic experiment from a probe file:
 java -cp /home/simon/temp/BasicProp/basicProp-1.3.jar:tools/basicprop-probe BasicPropProbe run tools/basicprop-probe/examples/xor-forward.bppr
 ```
 
+`run` now emits two kinds of outputs:
+
+- `outputs` / `hiddenActivations`: BasicProp's built-in helper methods
+- `traceOutputs` / `traceHiddenActivations` / `traceError`: a reset-aware per-pattern trace captured from one consistent execution path
+
+For SRNs, prefer the `trace*` fields when comparing hidden-state behavior, because BasicProp's `getHiddenActs()` does not apply reset handling the same way `getOutputsAsList()` does.
+
 Current checked-in feed-forward training probes:
 
 - `examples/ff2-train-single.bppr`

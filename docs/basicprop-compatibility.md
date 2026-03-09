@@ -38,6 +38,7 @@ Source basis used for this implementation:
 - Hierarchical clustering over outputs and hidden activations
 - Probe-backed golden regression fixtures for 2-layer, 3-layer, 3-layer batch, and 4-layer feed-forward training
 - Probe-backed SRN fixtures for forward outputs and sequential-training weights
+- Reset-aware SRN trace capture in the BasicProp probe so hidden activations can be compared from one consistent execution path
 - BasicProp-style desktop shell with:
   - menu structure
   - dedicated network configuration dialog
@@ -68,7 +69,7 @@ Source basis used for this implementation:
 
 - Match BasicProp 1.3 engine behavior exactly from the runnable JAR
 - Extend the golden parity suite beyond the current feed-forward training fixtures into broader FF and SRN coverage
-- Resolve SRN hidden-activation parity separately from output/weight parity, because BasicProp's SRN post-run buffers are not fully aligned with `testAll()`
+- Continue resolving the remaining SRN parity edges around BasicProp's inconsistent helper buffers, using the reset-aware probe trace instead of raw `getHiddenActs()`
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely
 

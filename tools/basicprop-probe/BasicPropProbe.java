@@ -104,6 +104,7 @@ public final class BasicPropProbe {
         double testAllError = Controller.net.testAll(spec);
         double[][] outputs = Controller.net.getOutputsAsList();
         double[][] hiddenActivations;
+        TraceSnapshot traceSnapshot = captureTrace(spec, experiment);
 
         try {
             hiddenActivations = Controller.net.getHiddenActs();
@@ -126,6 +127,9 @@ public final class BasicPropProbe {
         writeJsonField(builder, "testAllError", testAllError, 1, true);
         writeJsonField(builder, "outputs", outputs, 1, true);
         writeJsonField(builder, "hiddenActivations", hiddenActivations, 1, true);
+        writeJsonField(builder, "traceError", traceSnapshot.error, 1, true);
+        writeJsonField(builder, "traceOutputs", traceSnapshot.outputs, 1, true);
+        writeJsonField(builder, "traceHiddenActivations", traceSnapshot.hiddenActivations, 1, true);
         writeJsonField(builder, "weights", spec.getWeights(), 1, spec instanceof SrnSpec);
 
         if (spec instanceof SrnSpec srnSpec) {
@@ -134,6 +138,43 @@ public final class BasicPropProbe {
 
         builder.append("}\n");
         System.out.print(builder);
+    }
+
+    private static TraceSnapshot captureTrace(NetSpec spec, Experiment experiment) {
+        double[][] outputs = new double[experiment.patterns.size()][];
+        double[][] hiddenActivations = spec.getNumLayers() == 3
+                ? new double[experiment.patterns.size()][spec.getNumUnits(1)]
+                : null;
+        double totalSquaredError = 0.0;
+        int labeledPatterns = 0;
+
+        if (spec instanceof SrnSpec) {
+            spec.resetHidden();
+        }
+
+        for (int index = 0; index < experiment.patterns.size(); index++) {
+            PatternLine pattern = experiment.patterns.get(index);
+            outputs[index] = Controller.net.testOnePattern(spec, pattern.inputs);
+
+            if (hiddenActivations != null) {
+                for (int hidden = 0; hidden < spec.getNumUnits(1); hidden++) {
+                    hiddenActivations[index][hidden] = spec.getUnitValue(1, hidden + 1);
+                }
+            }
+
+            for (int output = 0; output < pattern.targets.length; output++) {
+                double delta = pattern.targets[output] - outputs[index][output];
+                totalSquaredError += delta * delta;
+            }
+            labeledPatterns++;
+
+            if (spec instanceof SrnSpec && pattern.resetsAfter) {
+                spec.resetHidden();
+            }
+        }
+
+        double error = labeledPatterns == 0 ? 0.0 : Math.sqrt(totalSquaredError / labeledPatterns);
+        return new TraceSnapshot(error, outputs, hiddenActivations);
     }
 
     private static NetSpec createSpec(Experiment experiment) {
@@ -511,6 +552,9 @@ public final class BasicPropProbe {
                     .mapToDouble(Double::parseDouble)
                     .toArray();
         }
+    }
+
+    private record TraceSnapshot(double error, double[][] outputs, double[][] hiddenActivations) {
     }
 
     private enum Section {
