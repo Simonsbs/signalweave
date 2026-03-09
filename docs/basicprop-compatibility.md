@@ -49,6 +49,7 @@ Source basis used for this implementation:
   - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
   - screenshot-driven four-panel main workbench layout closer to the original `Network` / `Control panel` / `Console` / `Error progress` arrangement
   - top-level menu surface now tracks the BasicProp 1.3 shell more closely by removing extra SignalWeave-only menu actions and matching the original visible wording
+  - main frame title and default weight legend now read closer to the original shell chrome and legend markings
   - BasicProp-style training console phrasing, control-value validation messages, and `continue` button text only while a training action is active
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating

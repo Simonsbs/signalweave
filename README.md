@@ -79,6 +79,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
 - screenshot-verified four-panel main shell matching the original BasicProp layout more closely: `Network`, `Control panel`, `Console`, and `Error progress`
 - visible top-level menus now match the BasicProp 1.3 shell more closely, with only the original `Network`, `Weights`, `Patterns`, `Utilities`, and single-item `Help` surface
+- main window title and weight legend now follow the BasicProp shell more closely instead of using SignalWeave-specific defaults
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
 - 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
 - BasicProp-style training console wording (`Training steps` / `Training finished`)

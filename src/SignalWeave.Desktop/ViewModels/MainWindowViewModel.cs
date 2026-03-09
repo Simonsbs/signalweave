@@ -1079,11 +1079,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void UpdateWeightLegend(double maxWeight)
     {
-        var rounded = RoundLegendValue(maxWeight);
+        var rounded = Math.Max(2.0, RoundLegendValue(maxWeight));
         WeightLegendLeftLabel = $"<< -{rounded.ToString("0.##", CultureInfo.InvariantCulture)}";
-        WeightLegendMidLeftLabel = (-rounded / 2).ToString("0.##", CultureInfo.InvariantCulture);
+        WeightLegendMidLeftLabel = rounded == 2.0
+            ? "-1"
+            : (-rounded / 2).ToString("0.##", CultureInfo.InvariantCulture);
         WeightLegendZeroLabel = "0";
-        WeightLegendMidRightLabel = (rounded / 2).ToString("0.##", CultureInfo.InvariantCulture);
+        WeightLegendMidRightLabel = rounded == 2.0
+            ? "1"
+            : (rounded / 2).ToString("0.##", CultureInfo.InvariantCulture);
         WeightLegendRightLabel = $"{rounded.ToString("0.##", CultureInfo.InvariantCulture)} >>";
     }
 
