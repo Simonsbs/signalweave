@@ -18,16 +18,16 @@
 
     <Grid RowDefinitions="*,Auto"
           Margin="10">
-        <StackPanel Spacing="8">
-            <TextBlock FontWeight="SemiBold"
-                       Text="{Binding Summary}" />
-
-            <Border Background="#F8F8F8"
-                    BorderBrush="#B8C0CA"
-                    BorderThickness="1"
-                    Padding="8">
-                <Grid RowDefinitions="Auto,Auto,Auto"
-                      RowSpacing="8">
+        <Border Background="#ECECEC"
+                BorderBrush="#B8C0CA"
+                BorderThickness="1"
+                Padding="8">
+            <Grid RowDefinitions="Auto,Auto,Auto"
+                  RowSpacing="8">
+                <Border Background="#FFFFFF"
+                        BorderBrush="#C8C8C8"
+                        BorderThickness="1"
+                        Padding="6">
                     <Canvas Width="760"
                             Height="124">
                         <shapes:Line StartPoint="34,10"
@@ -68,9 +68,14 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Canvas>
+                </Border>
 
-                    <Canvas Grid.Row="1"
-                            Width="760"
+                <Border Grid.Row="1"
+                        Background="#FFFFFF"
+                        BorderBrush="#C8C8C8"
+                        BorderThickness="1"
+                        Padding="6">
+                    <Canvas Width="760"
                             Height="124">
                         <shapes:Line StartPoint="34,10"
                                      EndPoint="34,110"
@@ -110,9 +115,14 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Canvas>
+                </Border>
 
-                    <Canvas Grid.Row="2"
-                            Width="760"
+                <Border Grid.Row="2"
+                        Background="#FFFFFF"
+                        BorderBrush="#C8C8C8"
+                        BorderThickness="1"
+                        Padding="6">
+                    <Canvas Width="760"
                             Height="124">
                         <shapes:Line StartPoint="34,10"
                                      EndPoint="34,110"
@@ -152,9 +162,9 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Canvas>
-                </Grid>
-            </Border>
-        </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
 
         <Border Grid.Row="1"
                 Margin="0,8,0,0"

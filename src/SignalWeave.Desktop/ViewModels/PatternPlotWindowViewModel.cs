@@ -45,9 +45,6 @@ public partial class PatternPlotWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _selectedPattern = string.Empty;
 
-    [ObservableProperty]
-    private string _summary = string.Empty;
-
     partial void OnSelectedPatternChanged(string value)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -60,7 +57,6 @@ public partial class PatternPlotWindowViewModel : ViewModelBase
     {
         if (_patterns.Count == 0)
         {
-            Summary = "No patterns are loaded.";
             OutputBars.Clear();
             TargetBars.Clear();
             InputBars.Clear();
@@ -68,7 +64,6 @@ public partial class PatternPlotWindowViewModel : ViewModelBase
         }
 
         var pattern = _patterns.FirstOrDefault(item => item.SelectorLabel == SelectedPattern) ?? _patterns[0];
-        Summary = pattern.SelectorLabel;
         ResetBars(OutputBars, pattern.OutputBars);
         ResetBars(TargetBars, pattern.TargetBars);
         ResetBars(InputBars, pattern.InputBars);
