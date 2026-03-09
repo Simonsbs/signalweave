@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SignalWeave.Core;
@@ -163,6 +164,16 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _errorPlotBottomRightLabel = "5000";
 
+    [ObservableProperty]
+    private bool _isControllerIdle = true;
+
+    public bool CanAdjustControls => IsControllerIdle;
+    public bool CanRunReset => IsControllerIdle;
+    public bool CanRunTrain => IsControllerIdle;
+    public bool CanRunTestAll => IsControllerIdle;
+    public bool CanSelectPattern => IsControllerIdle;
+    public bool EffectiveCanTestOne => IsControllerIdle && CanTestOne;
+
     [RelayCommand]
     private void LoadXorDemo()
     {
@@ -211,60 +222,73 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Train()
+    private async Task TrainAsync()
     {
-        RunSafe(() =>
+        await RunSafeAsync(async () =>
         {
             EnsureContext(resetWeights: false);
             EnsurePatternsAvailable();
+
+            var engine = _engine!;
+            var patternSet = _patternSet!;
             var steps = GetLearningStepsValue();
-            ProgressMaximum = Math.Max(_engine!.CompletedCycles + steps, 1);
-            ProgressValue = _engine.CompletedCycles;
-            ProgressLabel = _engine.CompletedCycles == 0
+            ProgressMaximum = Math.Max(engine.CompletedCycles + steps, 1);
+            ProgressValue = engine.CompletedCycles;
+            ProgressLabel = engine.CompletedCycles == 0
                 ? "Untrained"
-                : _engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
-            TrainButtonLabel = "continue";
-            var result = _engine!.Train(_patternSet!, steps);
-            _lastRun = result.FinalRun;
+                : engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
 
-            SetTrainedState(_engine.CompletedCycles);
-            HistoryText = BuildHistoryText(result.History);
-            ErrorProgressPoints = BuildErrorPolyline(result.History);
-            UpdateErrorPlotScale(result.History);
-            WeightsText = BuildWeightsText(result.Weights);
-            RefreshDiagram();
-            RebuildWeightMap();
-            RebuildPatternOutputs(result.FinalRun);
-            BuildTimeSeriesPlot(result.FinalRun);
+            await WithBusyControllerAsync(async () =>
+            {
+                var result = await Task.Run(() => engine.Train(patternSet, steps));
+                _lastRun = result.FinalRun;
 
-            ConsoleText = $"{steps}  Training steps{Environment.NewLine}Training finished";
-            AnalysisText = result.FinalRun.ToTable();
+                SetTrainedState(engine.CompletedCycles);
+                HistoryText = BuildHistoryText(result.History);
+                ErrorProgressPoints = BuildErrorPolyline(result.History);
+                UpdateErrorPlotScale(result.History);
+                WeightsText = BuildWeightsText(result.Weights);
+                RefreshDiagram();
+                RebuildWeightMap();
+                RebuildPatternOutputs(result.FinalRun);
+                BuildTimeSeriesPlot(result.FinalRun);
+
+                ConsoleText = $"{steps}  Training steps{Environment.NewLine}Training finished";
+                AnalysisText = result.FinalRun.ToTable();
+            });
         });
     }
 
     [RelayCommand]
-    private void TestAll()
+    private async Task TestAllAsync()
     {
-        RunSafe(() =>
+        await RunSafeAsync(async () =>
         {
             EnsureContext(resetWeights: false);
             EnsurePatternsAvailable();
-            var run = _engine!.TestAll(_patternSet!);
-            _lastRun = run;
-            ConsoleText = $"Test All: Average per pattern error: {run.AverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
-            AnalysisText = run.ToTable();
-            WeightsText = BuildWeightsText(_engine.Weights);
-            RefreshDiagram();
-            RebuildWeightMap();
-            RebuildPatternOutputs(run);
-            BuildTimeSeriesPlot(run);
+
+            var engine = _engine!;
+            var patternSet = _patternSet!;
+
+            await WithBusyControllerAsync(async () =>
+            {
+                var run = await Task.Run(() => engine.TestAll(patternSet));
+                _lastRun = run;
+                ConsoleText = $"Test All: Average per pattern error: {run.AverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
+                AnalysisText = run.ToTable();
+                WeightsText = BuildWeightsText(engine.Weights);
+                RefreshDiagram();
+                RebuildWeightMap();
+                RebuildPatternOutputs(run);
+                BuildTimeSeriesPlot(run);
+            });
         });
     }
 
     [RelayCommand]
-    private void TestOne()
+    private async Task TestOneAsync()
     {
-        RunSafe(() =>
+        await RunSafeAsync(async () =>
         {
             EnsureContext(resetWeights: false);
             if (!CanTestOne)
@@ -274,18 +298,23 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             EnsurePatternsAvailable();
+            var engine = _engine!;
+            var patternSet = _patternSet!;
             var patternIndex = PatternOptions.IndexOf(SelectedPattern);
             if (patternIndex < 0)
             {
                 patternIndex = 0;
             }
 
-            var result = _engine!.TestOne(_patternSet!, patternIndex);
-            var selectorText = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
-            var resultText = BasicPropDisplayFormatter.FormatPattern(result.Outputs);
-            ConsoleText = $"Pattern: \"{selectorText}\"{Environment.NewLine}Result: \"{resultText}\"";
-            AnalysisText = BuildSinglePatternResult(result);
-            ResultsTabIndex = 0;
+            await WithBusyControllerAsync(async () =>
+            {
+                var result = await Task.Run(() => engine.TestOne(patternSet, patternIndex));
+                var selectorText = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
+                var resultText = BasicPropDisplayFormatter.FormatPattern(result.Outputs);
+                ConsoleText = $"Pattern: \"{selectorText}\"{Environment.NewLine}Result: \"{resultText}\"";
+                AnalysisText = BuildSinglePatternResult(result);
+                ResultsTabIndex = 0;
+            });
         });
     }
 
@@ -1387,6 +1416,43 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    private async Task RunSafeAsync(Func<Task> action)
+    {
+        try
+        {
+            await action();
+        }
+        catch (BasicPropModalException exception)
+        {
+            FeedbackDialogRequested?.Invoke(this, new FeedbackDialogRequestEventArgs(exception.Title, exception.Message));
+        }
+        catch (BasicPropNoteException exception)
+        {
+            Inform(exception.Message);
+        }
+        catch (Exception exception)
+        {
+            ConsoleText = exception.Message;
+        }
+    }
+
+    private async Task WithBusyControllerAsync(Func<Task> action)
+    {
+        IsControllerIdle = false;
+        TrainButtonLabel = "continue";
+        await Task.Yield();
+
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            IsControllerIdle = true;
+            TrainButtonLabel = "Train";
+        }
+    }
+
     public NetworkDefinition GetCurrentDefinition()
     {
         var parsedDefinition = BasicPropNetworkConfigParser.Parse(ConfigText, SampleTitle);
@@ -1700,6 +1766,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedLearningStepsChanged(string value)
     {
+    }
+
+    partial void OnCanTestOneChanged(bool value)
+    {
+        OnPropertyChanged(nameof(EffectiveCanTestOne));
+    }
+
+    partial void OnIsControllerIdleChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanAdjustControls));
+        OnPropertyChanged(nameof(CanRunReset));
+        OnPropertyChanged(nameof(CanRunTrain));
+        OnPropertyChanged(nameof(CanRunTestAll));
+        OnPropertyChanged(nameof(CanSelectPattern));
+        OnPropertyChanged(nameof(EffectiveCanTestOne));
     }
 
     private void SetUntrainedState()

@@ -166,52 +166,64 @@
                               ColumnSpacing="8"
                               Margin="2,2,2,0">
                             <TextBlock Text="Learning rate"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Column="1"
                                       ItemsSource="{Binding LearningRateOptions}"
-                                      SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
+                                      SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanAdjustControls}" />
 
                             <TextBlock Grid.Row="1"
                                        Text="Momentum"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Row="1"
                                       Grid.Column="1"
                                       ItemsSource="{Binding MomentumOptions}"
-                                      SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
+                                      SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanAdjustControls}" />
 
                             <TextBlock Grid.Row="2"
                                        Text="Learning steps"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Row="2"
                                       Grid.Column="1"
                                       ItemsSource="{Binding LearningStepOptions}"
-                                      SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}" />
+                                      SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanAdjustControls}" />
 
                             <TextBlock Grid.Row="3"
                                        Text="Weight range"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Row="3"
                                       Grid.Column="1"
                                       ItemsSource="{Binding WeightRangeOptions}"
-                                      SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
+                                      SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanAdjustControls}" />
 
                             <CheckBox Grid.Row="4"
                                       Content="Batch Update"
-                                      IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
+                                      IsChecked="{Binding BatchUpdate, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanAdjustControls}" />
                             <CheckBox Grid.Row="4"
                                       Grid.Column="1"
                                       Content="X-entropy"
-                                      IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
+                                      IsChecked="{Binding CrossEntropy, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanAdjustControls}" />
 
                             <Button Grid.Row="5"
                                     Classes="panel"
                                     Content="Reset"
-                                    Command="{Binding ResetNetworkCommand}" />
+                                    Command="{Binding ResetNetworkCommand}"
+                                    IsEnabled="{Binding CanRunReset}" />
                             <Button Grid.Row="5"
                                     Grid.Column="1"
                                     Classes="panel"
                                     Content="{Binding TrainButtonLabel}"
-                                    Command="{Binding TrainCommand}" />
+                                    Command="{Binding TrainCommand}"
+                                    IsEnabled="{Binding CanRunTrain}" />
 
                             <TextBlock Grid.Row="6"
                                        Text="Progress"
@@ -235,23 +247,26 @@
 
                             <TextBlock Grid.Row="7"
                                        Text="Pattern"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       IsEnabled="{Binding CanSelectPattern}" />
                             <ComboBox Grid.Row="7"
                                       Grid.Column="1"
                                       ItemsSource="{Binding PatternOptions}"
-                                      SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
+                                      SelectedItem="{Binding SelectedPattern, Mode=TwoWay}"
+                                      IsEnabled="{Binding CanSelectPattern}" />
 
                             <Button Grid.Row="8"
                                     Grid.ColumnSpan="2"
                                     Classes="panel"
                                     Content="Test one"
                                     Command="{Binding TestOneCommand}"
-                                    IsEnabled="{Binding CanTestOne}" />
+                                    IsEnabled="{Binding EffectiveCanTestOne}" />
                             <Button Grid.Row="9"
                                     Grid.ColumnSpan="2"
                                     Classes="panel"
                                     Content="Test all"
-                                    Command="{Binding TestAllCommand}" />
+                                    Command="{Binding TestAllCommand}"
+                                    IsEnabled="{Binding CanRunTestAll}" />
                         </Grid>
                     </Grid>
                 </Border>
