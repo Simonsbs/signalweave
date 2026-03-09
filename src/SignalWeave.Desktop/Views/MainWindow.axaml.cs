@@ -156,7 +156,7 @@ public partial class MainWindow : Window
     {
         await RunWithConsoleAsync(async () =>
         {
-            var window = new PatternOutputsWindow(ViewModel.CreatePatternOutputsSnapshot());
+            var window = new PatternPlotWindow(ViewModel.CreatePatternPlotSession());
             ViewModel.ConsoleText = "Showing patterns and outputs.";
             await window.ShowDialog(this);
         });

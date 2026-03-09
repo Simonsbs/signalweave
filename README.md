@@ -36,6 +36,7 @@ Implemented now:
 - popup utility windows with BasicProp-style layer controls and axis labels
 - dedicated JAR-aligned time-series plot window with `Output`, `Add plot`, and `Dismiss` controls
 - dedicated JAR-aligned `Plot Setup` window for 3D/surface plotting with `X`, `Y`, `Z`, `Show Plot`, and `Dismiss`
+- dedicated JAR-aligned `PatternPlot` window with per-pattern selector and stacked `Outputs` / `Targets` / `Inputs` charts
 
 Still to build for full feature parity:
 

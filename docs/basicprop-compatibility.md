@@ -51,6 +51,7 @@ Source basis used for this implementation:
   - popup plot axes/labels and BasicProp-style weight-layer controls
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
+  - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
   - hidden activation export
 
 ## Remaining parity work

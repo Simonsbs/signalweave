@@ -1268,6 +1268,26 @@ public partial class MainWindowViewModel : ViewModelBase
             PatternOutputRows.ToArray());
     }
 
+    public PatternPlotSession CreatePatternPlotSession()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+
+        var patterns = run.Results.Select(result =>
+        {
+            var selectorLabel = $"[{result.Index}]: {FormatVector(result.Inputs)} => {(result.Targets is null ? "-" : FormatVector(result.Targets))}";
+            return new PatternPlotEntry(
+                result.Index,
+                selectorLabel,
+                result.Label,
+                BuildPatternChartBars("Outputs", result.Outputs, "#D6453D", -0.1, 1.1),
+                BuildPatternChartBars("Targets", result.Targets ?? Array.Empty<double>(), "#2C67C7", -0.1, 1.1),
+                BuildPatternChartBars("Inputs", result.Inputs, "#2F9C42", -1.1, 1.1));
+        }).ToArray();
+
+        return new PatternPlotSession($"{_definition!.Name} - Pattern Plot", patterns);
+    }
+
     public PlotWindowSnapshot CreateTimeSeriesPlotSnapshot()
     {
         EnsureContext(resetWeights: false);
@@ -1392,6 +1412,46 @@ public partial class MainWindowViewModel : ViewModelBase
         return string.IsNullOrWhiteSpace(text.Trim('-')) ? "signalweave" : text.Trim('-');
     }
 
+    private static IReadOnlyList<PatternChartBar> BuildPatternChartBars(string chartTitle, IReadOnlyList<double> values, string fill, double minValue, double maxValue)
+    {
+        const double plotHeight = 100;
+        const double left = 34;
+        const double top = 10;
+        const double slotWidth = 60;
+        const double barWidth = 22;
+
+        var bars = new List<PatternChartBar>();
+        var range = Math.Max(0.000001, maxValue - minValue);
+        var zeroY = top + (maxValue / range * plotHeight);
+
+        for (var index = 0; index < values.Count; index++)
+        {
+            var value = values[index];
+            var valueY = top + ((maxValue - value) / range * plotHeight);
+            var barX = left + 18 + (index * slotWidth);
+            var barTop = Math.Min(zeroY, valueY);
+            var barHeight = Math.Max(2, Math.Abs(zeroY - valueY));
+
+            bars.Add(new PatternChartBar(
+                chartTitle,
+                $"unit {index + 1}",
+                barX,
+                barTop,
+                barWidth,
+                barHeight,
+                fill,
+                index + 1,
+                value.ToString("0.000", CultureInfo.InvariantCulture)));
+        }
+
+        return bars;
+    }
+
+    private static string FormatVector(IReadOnlyList<double> values)
+    {
+        return string.Join(" ", values.Select(FormatNumber));
+    }
+
     private PlotWindowSnapshot CreateScaledPlotSnapshot(
         string title,
         string yAxisTopLabel,
@@ -1484,6 +1544,24 @@ public sealed record SurfacePlotSetupSession(
     IReadOnlyList<SurfacePlotAxisOption> AxisOptions,
     IReadOnlyList<SurfacePlotZOption> ZOptions,
     IReadOnlyList<SurfacePlotSample> Samples);
+public sealed record PatternChartBar(
+    string ChartTitle,
+    string CategoryLabel,
+    double X,
+    double Y,
+    double Width,
+    double Height,
+    string Fill,
+    int UnitNumber,
+    string ValueLabel);
+public sealed record PatternPlotEntry(
+    int Index,
+    string SelectorLabel,
+    string Label,
+    IReadOnlyList<PatternChartBar> OutputBars,
+    IReadOnlyList<PatternChartBar> TargetBars,
+    IReadOnlyList<PatternChartBar> InputBars);
+public sealed record PatternPlotSession(string Title, IReadOnlyList<PatternPlotEntry> Patterns);
 public sealed record PlotWindowSnapshot(
     string Title,
     string Summary,

@@ -1,0 +1,175 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        xmlns:shapes="clr-namespace:Avalonia.Controls.Shapes;assembly=Avalonia.Controls"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.PatternPlotWindow"
+        x:DataType="vm:PatternPlotWindowViewModel"
+        Width="860"
+        Height="640"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:PatternPlotWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="*,Auto"
+          Margin="10">
+        <StackPanel Spacing="8">
+            <TextBlock FontWeight="SemiBold"
+                       Text="{Binding Summary}" />
+
+            <Border Background="#F8F8F8"
+                    BorderBrush="#B8C0CA"
+                    BorderThickness="1"
+                    Padding="8">
+                <Grid RowDefinitions="Auto,Auto,Auto"
+                      RowSpacing="8">
+                    <Canvas Width="760"
+                            Height="124">
+                        <shapes:Line StartPoint="34,10"
+                                     EndPoint="34,110"
+                                     Stroke="#555555"
+                                     StrokeThickness="1.2" />
+                        <shapes:Line StartPoint="34,100"
+                                     EndPoint="344,100"
+                                     Stroke="#555555"
+                                     StrokeThickness="1.2" />
+                        <ItemsControl ItemsSource="{Binding OutputBars}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PatternChartBar">
+                                    <Canvas>
+                                        <TextBlock Canvas.Left="0"
+                                                   Canvas.Top="0"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding ChartTitle}" />
+                                        <Border Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                Background="{Binding Fill}"
+                                                Canvas.Left="{Binding X}"
+                                                Canvas.Top="{Binding Y}" />
+                                        <TextBlock Canvas.Left="{Binding X}"
+                                                   Canvas.Top="104"
+                                                   Text="{Binding CategoryLabel}" />
+                                        <TextBlock Canvas.Left="{Binding X}"
+                                                   Canvas.Top="{Binding Y}"
+                                                   Margin="0,-16,0,0"
+                                                   Text="{Binding ValueLabel}" />
+                                    </Canvas>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Canvas>
+
+                    <Canvas Grid.Row="1"
+                            Width="760"
+                            Height="124">
+                        <shapes:Line StartPoint="34,10"
+                                     EndPoint="34,110"
+                                     Stroke="#555555"
+                                     StrokeThickness="1.2" />
+                        <shapes:Line StartPoint="34,100"
+                                     EndPoint="344,100"
+                                     Stroke="#555555"
+                                     StrokeThickness="1.2" />
+                        <ItemsControl ItemsSource="{Binding TargetBars}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PatternChartBar">
+                                    <Canvas>
+                                        <TextBlock Canvas.Left="0"
+                                                   Canvas.Top="0"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding ChartTitle}" />
+                                        <Border Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                Background="{Binding Fill}"
+                                                Canvas.Left="{Binding X}"
+                                                Canvas.Top="{Binding Y}" />
+                                        <TextBlock Canvas.Left="{Binding X}"
+                                                   Canvas.Top="104"
+                                                   Text="{Binding CategoryLabel}" />
+                                        <TextBlock Canvas.Left="{Binding X}"
+                                                   Canvas.Top="{Binding Y}"
+                                                   Margin="0,-16,0,0"
+                                                   Text="{Binding ValueLabel}" />
+                                    </Canvas>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Canvas>
+
+                    <Canvas Grid.Row="2"
+                            Width="760"
+                            Height="124">
+                        <shapes:Line StartPoint="34,10"
+                                     EndPoint="34,110"
+                                     Stroke="#555555"
+                                     StrokeThickness="1.2" />
+                        <shapes:Line StartPoint="34,100"
+                                     EndPoint="344,100"
+                                     Stroke="#555555"
+                                     StrokeThickness="1.2" />
+                        <ItemsControl ItemsSource="{Binding InputBars}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PatternChartBar">
+                                    <Canvas>
+                                        <TextBlock Canvas.Left="0"
+                                                   Canvas.Top="0"
+                                                   FontWeight="SemiBold"
+                                                   Text="{Binding ChartTitle}" />
+                                        <Border Width="{Binding Width}"
+                                                Height="{Binding Height}"
+                                                Background="{Binding Fill}"
+                                                Canvas.Left="{Binding X}"
+                                                Canvas.Top="{Binding Y}" />
+                                        <TextBlock Canvas.Left="{Binding X}"
+                                                   Canvas.Top="104"
+                                                   Text="{Binding CategoryLabel}" />
+                                        <TextBlock Canvas.Left="{Binding X}"
+                                                   Canvas.Top="{Binding Y}"
+                                                   Margin="0,-16,0,0"
+                                                   Text="{Binding ValueLabel}" />
+                                    </Canvas>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Canvas>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <Border Grid.Row="1"
+                Margin="0,8,0,0"
+                Background="#E7E7E7"
+                BorderBrush="#B8C0CA"
+                BorderThickness="1"
+                Padding="8">
+            <DockPanel>
+                <ComboBox Width="520"
+                          ItemsSource="{Binding PatternOptions}"
+                          SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
+                <Button DockPanel.Dock="Right"
+                        Content="Dismiss"
+                        Click="Dismiss_Click" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
