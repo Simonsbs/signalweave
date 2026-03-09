@@ -41,12 +41,16 @@ Source basis used for this implementation:
   - test-one/test-all interaction
   - current weight inspection
   - live network diagram
+  - weight-map visualization
+  - pattern/output inspection
+  - projected 3D and time-series utility plots
+  - hidden activation export
 
 ## Remaining parity work
 
 - Match BasicProp 1.3 engine behavior exactly from the runnable JAR
-- Recreate the original graph and weight-grid visual panels in the desktop app
-- Recreate utility workflows for 3D plotting, time series plots, and hidden activation export
+- Recreate the original graph and weight-grid visual panels more exactly in the desktop app
+- Tighten utility workflows and visuals so they match BasicProp more closely
 - Add parity regression fixtures using the local BasicProp reference bundle
 
 ## Scope decision

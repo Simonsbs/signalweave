@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,6 +21,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private NetworkDefinition? _definition;
     private PatternSet? _patternSet;
     private SignalWeaveEngine? _engine;
+    private RunResult? _lastRun;
     private string? _engineSignature;
 
     public MainWindowViewModel()
@@ -37,8 +39,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<string> LearningStepOptions { get; }
     public IReadOnlyList<string> WeightRangeOptions { get; }
     public ObservableCollection<string> PatternOptions { get; } = [];
+    public ObservableCollection<string> WeightLayerOptions { get; } = [];
     public ObservableCollection<DiagramEdgeItem> DiagramEdges { get; } = [];
     public ObservableCollection<DiagramNodeItem> DiagramNodes { get; } = [];
+    public ObservableCollection<WeightGlyphItem> WeightGlyphs { get; } = [];
+    public ObservableCollection<PatternOutputRow> PatternOutputRows { get; } = [];
+    public ObservableCollection<PlotMarkerItem> UtilityPlotMarkers { get; } = [];
 
     [ObservableProperty]
     private string _sampleTitle = "XOR demo";
@@ -97,6 +103,24 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private int _editorTabIndex;
 
+    [ObservableProperty]
+    private int _resultsTabIndex;
+
+    [ObservableProperty]
+    private string _selectedWeightLayer = string.Empty;
+
+    [ObservableProperty]
+    private string _weightMapSummary = "No weight map available.";
+
+    [ObservableProperty]
+    private string _patternOutputSummary = "No pattern outputs calculated yet.";
+
+    [ObservableProperty]
+    private string _utilityPlotPoints = "0,110 240,110";
+
+    [ObservableProperty]
+    private string _utilityPlotSummary = "No utility plot prepared.";
+
     [RelayCommand]
     private void LoadXorDemo()
     {
@@ -127,10 +151,16 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights: true);
+            _lastRun = null;
             ProgressLabel = "Untrained";
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
             AnalysisText = "Weights were reset using the selected range.";
+            PatternOutputRows.Clear();
+            PatternOutputSummary = "No pattern outputs calculated yet.";
+            UtilityPlotMarkers.Clear();
+            UtilityPlotPoints = "0,110 240,110";
+            UtilityPlotSummary = "No utility plot prepared.";
             ConsoleText = $"Reset {_definition!.Name}.{Environment.NewLine}{_definition.ToSummary()}";
         });
     }
@@ -143,12 +173,16 @@ public partial class MainWindowViewModel : ViewModelBase
             EnsureContext(resetWeights: false);
             var steps = ParseInt(SelectedLearningSteps);
             var result = _engine!.Train(_patternSet!, steps);
+            _lastRun = result.FinalRun;
 
             ProgressLabel = $"{result.History.Count} cycles";
             HistoryText = BuildHistoryText(result.History);
             ErrorProgressPoints = BuildErrorPolyline(result.History);
             WeightsText = BuildWeightsText(result.Weights);
             RefreshDiagram();
+            RebuildWeightMap();
+            RebuildPatternOutputs(result.FinalRun);
+            BuildTimeSeriesPlot(result.FinalRun);
 
             ConsoleText =
                 $"Training completed for {_definition!.Name}.{Environment.NewLine}" +
@@ -165,10 +199,14 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: false);
             var run = _engine!.TestAll(_patternSet!);
+            _lastRun = run;
             ConsoleText = $"Test all completed for {_definition!.Name}.{Environment.NewLine}Average error: {run.AverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
             AnalysisText = run.ToTable();
             WeightsText = BuildWeightsText(_engine.Weights);
             RefreshDiagram();
+            RebuildWeightMap();
+            RebuildPatternOutputs(run);
+            BuildTimeSeriesPlot(run);
         });
     }
 
@@ -192,6 +230,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var result = _engine!.TestOne(_patternSet!, patternIndex);
             ConsoleText = $"Test one completed for pattern '{result.Label}'.";
             AnalysisText = BuildSinglePatternResult(result);
+            ResultsTabIndex = 0;
         });
     }
 
@@ -204,6 +243,8 @@ public partial class MainWindowViewModel : ViewModelBase
             WeightsText = BuildWeightsText(_engine!.Weights);
             AnalysisText = WeightsText;
             EditorTabIndex = 3;
+            RebuildWeightMap();
+            ResultsTabIndex = 1;
             ConsoleText = "Showing current network weights.";
         });
     }
@@ -214,9 +255,12 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights: false);
+            var run = EnsureRun();
+            RebuildPatternOutputs(run);
             AnalysisText = BuildPatternSummary();
-            EditorTabIndex = 2;
-            ConsoleText = "Showing parsed pattern summary.";
+            PatternOutputSummary = $"Showing {run.Results.Count} patterns with outputs.";
+            ResultsTabIndex = 2;
+            ConsoleText = "Showing patterns and outputs.";
         });
     }
 
@@ -249,6 +293,46 @@ public partial class MainWindowViewModel : ViewModelBase
         ConsoleText = "Showing current compatibility profile.";
     }
 
+    [RelayCommand]
+    private void ShowTimeSeriesPlot()
+    {
+        RunSafe(() =>
+        {
+            EnsureContext(resetWeights: false);
+            var run = EnsureRun();
+            BuildTimeSeriesPlot(run);
+            ResultsTabIndex = 3;
+            ConsoleText = "Showing time series plot for output unit 1.";
+        });
+    }
+
+    [RelayCommand]
+    private void Show3DPlot()
+    {
+        RunSafe(() =>
+        {
+            EnsureContext(resetWeights: false);
+            var run = EnsureRun();
+            BuildScatterPlot(run);
+            ResultsTabIndex = 3;
+            ConsoleText = "Showing projected 3D plot from hidden/output activations.";
+        });
+    }
+
+    [RelayCommand]
+    private void ExportHiddenActivations()
+    {
+        RunSafe(() =>
+        {
+            EnsureContext(resetWeights: false);
+            var run = EnsureRun();
+            var path = Path.Combine(Path.GetTempPath(), $"signalweave-hidden-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
+            File.WriteAllText(path, BuildHiddenActivationCsv(run));
+            ConsoleText = $"Exported hidden activations to {path}";
+            AnalysisText = $"Hidden activations exported:{Environment.NewLine}{path}";
+        });
+    }
+
     private void ParseEditorInternal(bool syncControlsFromEditor, bool resetWeights, string consoleMessage)
     {
         RunSafe(() =>
@@ -258,6 +342,7 @@ public partial class MainWindowViewModel : ViewModelBase
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
             AnalysisText = $"{_definition!.ToSummary()}{Environment.NewLine}{_patternSet!.ToSummary()}";
+            RebuildWeightMap();
             ConsoleText = consoleMessage;
         });
     }
@@ -291,9 +376,20 @@ public partial class MainWindowViewModel : ViewModelBase
         SampleTitle = effectiveDefinition.Name;
 
         UpdatePatternOptions(parsedPatterns);
+        UpdateWeightLayerOptions(_engine.Weights);
         NetworkSummary = BuildNetworkSummary(effectiveDefinition, parsedPatterns);
         WeightsText = BuildWeightsText(_engine.Weights);
         RefreshDiagram();
+    }
+
+    partial void OnSelectedWeightLayerChanged(string value)
+    {
+        if (_engine is null || string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        RebuildWeightMap();
     }
 
     private void SyncControlsFromDefinition(NetworkDefinition definition)
@@ -347,6 +443,21 @@ public partial class MainWindowViewModel : ViewModelBase
         PatternOptions.Add($"{SampleTitle} ({patternSet.Examples.Count} patterns)");
         SelectedPattern = PatternOptions[0];
         CanTestOne = false;
+    }
+
+    private void UpdateWeightLayerOptions(WeightSet weights)
+    {
+        var current = SelectedWeightLayer;
+        WeightLayerOptions.Clear();
+        WeightLayerOptions.Add("Input -> Hidden");
+        WeightLayerOptions.Add("Hidden -> Output");
+
+        if (weights.RecurrentHidden is not null)
+        {
+            WeightLayerOptions.Add("Hidden -> Hidden");
+        }
+
+        SelectedWeightLayer = WeightLayerOptions.Contains(current) ? current : WeightLayerOptions[0];
     }
 
     private void RefreshDiagram()
@@ -483,6 +594,162 @@ public partial class MainWindowViewModel : ViewModelBase
                 $"{index + 1,3} {example.Label,-16} " +
                 $"in: {string.Join(" ", example.Inputs.Select(FormatNumber)),-12} " +
                 $"out: {(example.Targets is null ? "-" : string.Join(" ", example.Targets.Select(FormatNumber)))}{resetSuffix}");
+        }
+
+        return builder.ToString();
+    }
+
+    private void RebuildPatternOutputs(RunResult run)
+    {
+        PatternOutputRows.Clear();
+
+        foreach (var result in run.Results)
+        {
+            PatternOutputRows.Add(new PatternOutputRow(
+                result.Index + 1,
+                result.Label,
+                string.Join(" ", result.Inputs.Select(FormatNumber)),
+                result.Targets is null ? "-" : string.Join(" ", result.Targets.Select(FormatNumber)),
+                string.Join(" ", result.Outputs.Select(FormatNumber)),
+                result.Error.ToString("0.000000", CultureInfo.InvariantCulture)));
+        }
+
+        PatternOutputSummary = $"Average error: {run.AverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
+    }
+
+    private void RebuildWeightMap()
+    {
+        WeightGlyphs.Clear();
+
+        if (_engine is null)
+        {
+            WeightMapSummary = "No weight map available.";
+            return;
+        }
+
+        var (matrix, layerTitle) = GetSelectedWeightMatrix(_engine.Weights);
+        var rows = matrix.GetLength(0);
+        var columns = matrix.GetLength(1);
+        var maxValue = Flatten(matrix).Select(Math.Abs).DefaultIfEmpty(1.0).Max();
+        const double cellSize = 118;
+
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                var weight = matrix[row, column];
+                var normalized = Math.Abs(weight) / Math.Max(0.000001, maxValue);
+                var size = 18 + (normalized * 82);
+                WeightGlyphs.Add(new WeightGlyphItem(
+                    column * cellSize,
+                    row * cellSize,
+                    cellSize - 6,
+                    cellSize - 6,
+                    size,
+                    size,
+                    weight >= 0 ? "#020202" : "#FF1616",
+                    $"{weight.ToString("0.000000", CultureInfo.InvariantCulture)}"));
+            }
+        }
+
+        WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
+    }
+
+    private void BuildTimeSeriesPlot(RunResult run)
+    {
+        UtilityPlotMarkers.Clear();
+
+        if (run.Results.Count == 0)
+        {
+            UtilityPlotPoints = "0,110 240,110";
+            UtilityPlotSummary = "No time series data available.";
+            return;
+        }
+
+        const double width = 240;
+        const double height = 110;
+        var maxX = Math.Max(1, run.Results.Count - 1);
+        UtilityPlotPoints = string.Join(
+            " ",
+            run.Results.Select(result =>
+            {
+                var x = result.Index * width / maxX;
+                var y = height - (result.Outputs[0] * height);
+                return $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
+            }));
+
+        foreach (var result in run.Results)
+        {
+            var x = result.Index * width / maxX;
+            var y = height - (result.Outputs[0] * height);
+            UtilityPlotMarkers.Add(new PlotMarkerItem(x, y, 6, 6, "#4E7396", result.Label));
+        }
+
+        UtilityPlotSummary = "Time series plot of output unit 1 across pattern order.";
+    }
+
+    private void BuildScatterPlot(RunResult run)
+    {
+        UtilityPlotMarkers.Clear();
+        UtilityPlotPoints = "0,110 240,110";
+
+        if (run.Results.Count == 0)
+        {
+            UtilityPlotSummary = "No plot data available.";
+            return;
+        }
+
+        var vectors = run.Results
+            .Select(result => result.HiddenActivations.Length >= 2
+                ? result.HiddenActivations
+                : result.Outputs)
+            .ToArray();
+
+        var xs = vectors.Select(vector => vector[0]).ToArray();
+        var ys = vectors.Select(vector => vector.Length > 1 ? vector[1] : 0.0).ToArray();
+        var zs = vectors.Select(vector => vector.Length > 2 ? vector[2] : 0.0).ToArray();
+
+        var minX = xs.Min();
+        var maxX = xs.Max();
+        var minY = ys.Min();
+        var maxY = ys.Max();
+
+        for (var index = 0; index < run.Results.Count; index++)
+        {
+            var projectedX = Normalize(xs[index], minX, maxX) * 220 + (zs[index] * 12);
+            var projectedY = 110 - (Normalize(ys[index], minY, maxY) * 90) - (zs[index] * 8);
+            UtilityPlotMarkers.Add(new PlotMarkerItem(projectedX, projectedY, 8, 8, "#B24C3D", run.Results[index].Label));
+        }
+
+        UtilityPlotSummary = "Projected 3D view using the first hidden/output dimensions.";
+    }
+
+    private static string BuildHiddenActivationCsv(RunResult run)
+    {
+        var builder = new StringBuilder();
+        builder.Append("index,label");
+
+        var hiddenCount = run.Results.FirstOrDefault()?.HiddenActivations.Length ?? 0;
+        for (var index = 0; index < hiddenCount; index++)
+        {
+            builder.Append($",hidden_{index + 1}");
+        }
+
+        builder.AppendLine();
+
+        foreach (var result in run.Results)
+        {
+            builder.Append(result.Index + 1);
+            builder.Append(',');
+            builder.Append(result.Label);
+
+            foreach (var hidden in result.HiddenActivations)
+            {
+                builder.Append(',');
+                builder.Append(hidden.ToString("0.000000000000", CultureInfo.InvariantCulture));
+            }
+
+            builder.AppendLine();
         }
 
         return builder.ToString();
@@ -632,6 +899,16 @@ public partial class MainWindowViewModel : ViewModelBase
         return Math.Max(0.001, values.Select(Math.Abs).DefaultIfEmpty(1.0).Max());
     }
 
+    private (double[,] Matrix, string Title) GetSelectedWeightMatrix(WeightSet weights)
+    {
+        return SelectedWeightLayer switch
+        {
+            "Hidden -> Output" => (weights.HiddenOutput, "Hidden -> Output"),
+            "Hidden -> Hidden" when weights.RecurrentHidden is not null => (weights.RecurrentHidden, "Hidden -> Hidden"),
+            _ => (weights.InputHidden, "Input -> Hidden")
+        };
+    }
+
     private static IEnumerable<double> Flatten(double[,] matrix)
     {
         for (var row = 0; row < matrix.GetLength(0); row++)
@@ -723,6 +1000,22 @@ public partial class MainWindowViewModel : ViewModelBase
         return $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
     }
 
+    private RunResult EnsureRun()
+    {
+        _lastRun ??= _engine!.TestAll(_patternSet!);
+        return _lastRun;
+    }
+
+    private static double Normalize(double value, double min, double max)
+    {
+        if (Math.Abs(max - min) < 0.000001)
+        {
+            return 0.5;
+        }
+
+        return (value - min) / (max - min);
+    }
+
     private void RunSafe(Action action)
     {
         try
@@ -738,3 +1031,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
 public sealed record DiagramNodeItem(double X, double Y, double Width, double Height, string Label, string Fill, string Stroke);
 public sealed record DiagramEdgeItem(string StartPoint, string EndPoint, string Stroke, double Thickness, bool IsRecurrent);
+public sealed record WeightGlyphItem(double X, double Y, double CellWidth, double CellHeight, double EllipseWidth, double EllipseHeight, string Fill, string Tooltip);
+public sealed record PatternOutputRow(int Index, string Label, string Inputs, string Targets, string Outputs, string Error);
+public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);

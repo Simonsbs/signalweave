@@ -52,11 +52,15 @@
                 <MenuItem Header="_Show Current Weights" Command="{Binding ShowWeightsCommand}" />
             </MenuItem>
             <MenuItem Header="_Patterns">
-                <MenuItem Header="_Show Pattern Summary" Command="{Binding ShowPatternsCommand}" />
+                <MenuItem Header="_Show Patterns and Outputs" Command="{Binding ShowPatternsCommand}" />
                 <MenuItem Header="_Test One" Command="{Binding TestOneCommand}" />
                 <MenuItem Header="Test _All" Command="{Binding TestAllCommand}" />
             </MenuItem>
             <MenuItem Header="_Utilities">
+                <MenuItem Header="_3D Plotting" Command="{Binding Show3DPlotCommand}" />
+                <MenuItem Header="_Time Series Plot" Command="{Binding ShowTimeSeriesPlotCommand}" />
+                <MenuItem Header="_Export Hidden Units Activations" Command="{Binding ExportHiddenActivationsCommand}" />
+                <Separator />
                 <MenuItem Header="Cluster _Outputs" Command="{Binding ClusterOutputsCommand}" />
                 <MenuItem Header="Cluster _Hidden States" Command="{Binding ClusterHiddenCommand}" />
             </MenuItem>
@@ -287,14 +291,23 @@
                     <Separator Margin="0,6,0,4" />
 
                     <Button Classes="panel"
+                            Content="3D plotting"
+                            Command="{Binding Show3DPlotCommand}" />
+                    <Button Classes="panel"
+                            Content="Time series plot"
+                            Command="{Binding ShowTimeSeriesPlotCommand}" />
+                    <Button Classes="panel"
+                            Content="Export hidden activations"
+                            Command="{Binding ExportHiddenActivationsCommand}" />
+                    <Button Classes="panel"
                             Content="Cluster outputs"
                             Command="{Binding ClusterOutputsCommand}" />
                     <Button Classes="panel"
+                            Content="Show patterns and outputs"
+                            Command="{Binding ShowPatternsCommand}" />
+                    <Button Classes="panel"
                             Content="Cluster hidden states"
                             Command="{Binding ClusterHiddenCommand}" />
-                    <Button Classes="panel"
-                            Content="Pattern summary"
-                            Command="{Binding ShowPatternsCommand}" />
                     <Button Classes="panel"
                             Content="Compatibility"
                             Command="{Binding ShowCompatibilityCommand}" />
@@ -311,12 +324,128 @@
                                    FontSize="18"
                                    FontWeight="SemiBold"
                                    Foreground="#3A3A3A" />
-                        <TextBox Classes="editor"
-                                 Text="{Binding AnalysisText}"
-                                 IsReadOnly="True"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap"
-                                 Height="170" />
+                        <TabControl SelectedIndex="{Binding ResultsTabIndex, Mode=TwoWay}"
+                                    Height="170">
+                            <TabItem Header="Overview">
+                                <TextBox Classes="editor"
+                                         Text="{Binding AnalysisText}"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap" />
+                            </TabItem>
+                            <TabItem Header="Weight Map">
+                                <Grid RowDefinitions="Auto,*"
+                                      RowSpacing="6">
+                                    <DockPanel>
+                                        <ComboBox Width="150"
+                                                  ItemsSource="{Binding WeightLayerOptions}"
+                                                  SelectedItem="{Binding SelectedWeightLayer, Mode=TwoWay}" />
+                                        <TextBlock Margin="10,4,0,0"
+                                                   Text="{Binding WeightMapSummary}"
+                                                   Foreground="#5A5A5A" />
+                                    </DockPanel>
+                                    <ScrollViewer Grid.Row="1"
+                                                  HorizontalScrollBarVisibility="Auto"
+                                                  VerticalScrollBarVisibility="Auto">
+                                        <Canvas Width="420"
+                                                Height="360">
+                                            <ItemsControl ItemsSource="{Binding WeightGlyphs}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <Canvas />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:WeightGlyphItem">
+                                                        <Canvas>
+                                                            <Border Width="{Binding CellWidth}"
+                                                                    Height="{Binding CellHeight}"
+                                                                    Background="#BFBFBF"
+                                                                    Canvas.Left="{Binding X}"
+                                                                    Canvas.Top="{Binding Y}" />
+                                                            <shapes:Ellipse Width="{Binding EllipseWidth}"
+                                                                            Height="{Binding EllipseHeight}"
+                                                                            Fill="{Binding Fill}"
+                                                                            Canvas.Left="{Binding X}"
+                                                                            Canvas.Top="{Binding Y}">
+                                                                <ToolTip.Tip>
+                                                                    <TextBlock Text="{Binding Tooltip}" />
+                                                                </ToolTip.Tip>
+                                                            </shapes:Ellipse>
+                                                        </Canvas>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Canvas>
+                                    </ScrollViewer>
+                                </Grid>
+                            </TabItem>
+                            <TabItem Header="Patterns and Outputs">
+                                <Grid RowDefinitions="Auto,*"
+                                      RowSpacing="6">
+                                    <TextBlock Text="{Binding PatternOutputSummary}"
+                                               Foreground="#5A5A5A" />
+                                    <ScrollViewer Grid.Row="1">
+                                        <ItemsControl ItemsSource="{Binding PatternOutputRows}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:PatternOutputRow">
+                                                    <Grid ColumnDefinitions="36,120,90,90,90,*"
+                                                          Margin="0,0,0,4">
+                                                        <TextBlock Text="{Binding Index}" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Label}" />
+                                                        <TextBlock Grid.Column="2" Text="{Binding Inputs}" />
+                                                        <TextBlock Grid.Column="3" Text="{Binding Targets}" />
+                                                        <TextBlock Grid.Column="4" Text="{Binding Outputs}" />
+                                                        <TextBlock Grid.Column="5" Text="{Binding Error}" />
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </TabItem>
+                            <TabItem Header="Utility Plot">
+                                <Grid RowDefinitions="Auto,*"
+                                      RowSpacing="6">
+                                    <TextBlock Text="{Binding UtilityPlotSummary}"
+                                               Foreground="#5A5A5A" />
+                                    <Border Grid.Row="1"
+                                            Background="#F7F7F7"
+                                            BorderBrush="#AAB4C0"
+                                            BorderThickness="1"
+                                            Padding="8">
+                                        <Canvas Width="240"
+                                                Height="110"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                            <shapes:Polyline Points="{Binding UtilityPlotPoints}"
+                                                             Stroke="#B24C3D"
+                                                             StrokeThickness="2" />
+                                            <ItemsControl ItemsSource="{Binding UtilityPlotMarkers}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <Canvas />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:PlotMarkerItem">
+                                                        <shapes:Ellipse Width="{Binding Width}"
+                                                                        Height="{Binding Height}"
+                                                                        Fill="{Binding Fill}"
+                                                                        Canvas.Left="{Binding X}"
+                                                                        Canvas.Top="{Binding Y}">
+                                                            <ToolTip.Tip>
+                                                                <TextBlock Text="{Binding Label}" />
+                                                            </ToolTip.Tip>
+                                                        </shapes:Ellipse>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Canvas>
+                                    </Border>
+                                </Grid>
+                            </TabItem>
+                        </TabControl>
                     </StackPanel>
 
                     <Grid Grid.Column="1"

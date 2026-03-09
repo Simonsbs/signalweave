@@ -28,6 +28,7 @@ Implemented now:
 - weight save/load
 - output and hidden-state hierarchical clustering
 - desktop workbench with a BasicProp-style control panel, live network view, editor tabs, testing, clustering, and weight inspection
+- utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
 
 Still to build for full feature parity:
 
@@ -65,6 +66,8 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - live network diagram colored by weight sign and magnitude
 - console/config/pattern/weight tabs
 - test-one gating that follows the original `< 24 patterns` behavior
+- utility tabs for weight maps, pattern/output tables, and plots
+- hidden-activation export to CSV from the desktop app
 
 ## Samples
 
