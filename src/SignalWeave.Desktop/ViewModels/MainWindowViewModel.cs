@@ -591,17 +591,17 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        const double inputX = 130;
-        const double hiddenX = 280;
-        const double hidden2X = 430;
-        const double outputX = 580;
-        const double nodeWidth = 76;
-        const double nodeHeight = 42;
-        const double biasWidth = 64;
-        const double biasHeight = 56;
-        const double inputBiasX = 30;
-        const double hiddenBiasX = 180;
-        const double secondHiddenBiasX = 330;
+        const double inputX = 165;
+        const double hiddenX = 285;
+        const double hidden2X = 405;
+        const double outputX = 525;
+        const double nodeWidth = 48;
+        const double nodeHeight = 40;
+        const double biasWidth = 50;
+        const double biasHeight = 54;
+        const double inputBiasX = 105;
+        const double hiddenBiasX = 225;
+        const double secondHiddenBiasX = 345;
 
         var inputYs = BuildLane(_definition.InputUnits, 120, 350);
         var hiddenYs = BuildLane(_definition.HiddenUnits, 90, 300);
@@ -625,12 +625,12 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             for (var index = 0; index < _definition.InputUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, $"I{index + 1}", "#F4F4F2", "#585858"));
+                DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
             }
 
             for (var index = 0; index < _definition.OutputUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, $"O{index + 1}", "#F4F4F2", "#585858"));
+                DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
             }
 
             for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
@@ -668,26 +668,25 @@ public partial class MainWindowViewModel : ViewModelBase
 
         for (var index = 0; index < _definition.InputUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, $"I{index + 1}", "#F4F4F2", "#585858"));
+            DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
         }
 
         for (var index = 0; index < _definition.HiddenUnits; index++)
         {
-            var label = _definition.HasSecondHiddenLayer ? $"H1-{index + 1}" : $"H{index + 1}";
-            DiagramNodes.Add(new DiagramNodeItem(hiddenX, hiddenYs[index], nodeWidth, nodeHeight, label, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(new DiagramNodeItem(hiddenX, hiddenYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
         }
 
         if (_definition.HasSecondHiddenLayer)
         {
             for (var index = 0; index < _definition.SecondHiddenUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(hidden2X, secondHiddenYs[index], nodeWidth, nodeHeight, $"H2-{index + 1}", "#F4F4F2", "#585858"));
+                DiagramNodes.Add(new DiagramNodeItem(hidden2X, secondHiddenYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
             }
         }
 
         for (var index = 0; index < _definition.OutputUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, $"O{index + 1}", "#F4F4F2", "#585858"));
+            DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
         }
 
         for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
