@@ -225,10 +225,7 @@ public partial class MainWindowViewModel : ViewModelBase
             RebuildPatternOutputs(result.FinalRun);
             BuildTimeSeriesPlot(result.FinalRun);
 
-            ConsoleText =
-                $"Training completed for {_definition!.Name}.{Environment.NewLine}" +
-                $"Cycles: {result.History.Count}{Environment.NewLine}" +
-                $"Final TSQ: {result.FinalPoint.AverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
+            ConsoleText = $"{steps}  Training steps{Environment.NewLine}Training finished";
             AnalysisText = result.FinalRun.ToTable();
         });
     }

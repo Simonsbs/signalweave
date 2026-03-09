@@ -78,6 +78,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
 - 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
 - console/config/pattern/weight tabs
+- BasicProp-style training console wording (`Training steps` / `Training finished`)
 - BasicProp-style `Test All` / `Test One` console output wording and menu gating
 - test-one gating that follows the original `< 24 patterns` behavior
 - utility tabs for weight maps, pattern/output tables, and plots

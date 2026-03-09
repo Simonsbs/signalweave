@@ -47,7 +47,7 @@ Source basis used for this implementation:
   - working 4-layer feed-forward apply path in the desktop dialog
   - desktop save/load workflows for networks and weights, plus pattern loading
   - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
-  - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
+  - `Train` to `continue` state transitions, BasicProp-style training console phrasing, and BasicProp-style control-value validation messages
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating
   - test-one/test-all interaction
