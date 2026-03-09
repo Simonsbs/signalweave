@@ -85,7 +85,7 @@ public sealed class NetworkDefinition
     }
 }
 
-public sealed record PatternExample(string Label, double[] Inputs, double[]? Targets, bool StartsSequence);
+public sealed record PatternExample(string Label, double[] Inputs, double[]? Targets, bool ResetsContextAfter);
 
 public sealed class PatternSet
 {
@@ -96,6 +96,8 @@ public sealed class PatternSet
 
     public IReadOnlyList<PatternExample> Examples { get; }
 
+    public bool HasResetMarkers => Examples.Any(example => example.ResetsContextAfter);
+
     public IReadOnlyList<IReadOnlyList<PatternExample>> ToSequences()
     {
         var sequences = new List<IReadOnlyList<PatternExample>>();
@@ -103,13 +105,13 @@ public sealed class PatternSet
 
         foreach (var example in Examples)
         {
-            if (example.StartsSequence && current.Count > 0)
+            current.Add(example);
+
+            if (example.ResetsContextAfter && current.Count > 0)
             {
                 sequences.Add(current.ToArray());
                 current = new List<PatternExample>();
             }
-
-            current.Add(example);
         }
 
         if (current.Count > 0)

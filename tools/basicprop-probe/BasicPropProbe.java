@@ -164,7 +164,7 @@ public final class BasicPropProbe {
             System.arraycopy(pattern.targets, 0, combined, pattern.inputs.length, pattern.targets.length);
             patternConfig.addPattern(index, combined);
 
-            if (pattern.startsSequence) {
+            if (pattern.resetsAfter) {
                 patternConfig.addReset(index);
             }
         }
@@ -331,12 +331,12 @@ public final class BasicPropProbe {
     private static final class PatternLine {
         private final double[] inputs;
         private final double[] targets;
-        private final boolean startsSequence;
+        private boolean resetsAfter;
 
-        private PatternLine(double[] inputs, double[] targets, boolean startsSequence) {
+        private PatternLine(double[] inputs, double[] targets, boolean resetsAfter) {
             this.inputs = inputs;
             this.targets = targets;
-            this.startsSequence = startsSequence;
+            this.resetsAfter = resetsAfter;
         }
     }
 
@@ -361,7 +361,6 @@ public final class BasicPropProbe {
             Section section = Section.HEADER;
             List<String> matrixRows = new ArrayList<>();
             Integer activeWeightLayer = null;
-            boolean nextPatternStartsSequence = false;
 
             for (String rawLine : lines) {
                 String line = stripComment(rawLine).trim();
@@ -395,10 +394,11 @@ public final class BasicPropProbe {
                     case HEADER -> parseHeaderLine(experiment, line);
                     case PATTERNS -> {
                         if (lower.equals("reset")) {
-                            nextPatternStartsSequence = true;
+                            if (!experiment.patterns.isEmpty()) {
+                                experiment.patterns.get(experiment.patterns.size() - 1).resetsAfter = true;
+                            }
                         } else {
-                            experiment.patterns.add(parsePattern(line, nextPatternStartsSequence));
-                            nextPatternStartsSequence = false;
+                            experiment.patterns.add(parsePattern(line));
                         }
                     }
                     case WEIGHTS, RECURRENT -> matrixRows.add(line);
@@ -446,13 +446,13 @@ public final class BasicPropProbe {
             }
         }
 
-        private static PatternLine parsePattern(String line, boolean startsSequence) {
+        private static PatternLine parsePattern(String line) {
             String[] parts = line.split("=>");
             if (parts.length != 2) {
                 throw new IllegalArgumentException("Invalid pattern line: " + line);
             }
 
-            return new PatternLine(parseDoubleVector(parts[0]), parseDoubleVector(parts[1]), startsSequence);
+            return new PatternLine(parseDoubleVector(parts[0]), parseDoubleVector(parts[1]), false);
         }
 
         private static void flushMatrix(Experiment experiment, List<String> rows, Integer activeWeightLayer, Section section) {

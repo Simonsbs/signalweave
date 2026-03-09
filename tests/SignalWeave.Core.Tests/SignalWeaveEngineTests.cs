@@ -40,9 +40,9 @@ public class SignalWeaveEngineTests
             """);
 
         Assert.Equal(3, patterns.Examples.Count);
-        Assert.True(patterns.Examples[0].StartsSequence);
-        Assert.False(patterns.Examples[1].StartsSequence);
-        Assert.True(patterns.Examples[2].StartsSequence);
+        Assert.False(patterns.Examples[0].ResetsContextAfter);
+        Assert.True(patterns.Examples[1].ResetsContextAfter);
+        Assert.False(patterns.Examples[2].ResetsContextAfter);
         Assert.Equal(2, patterns.ToSequences().Count);
     }
 
@@ -142,5 +142,132 @@ public class SignalWeaveEngineTests
         Assert.Equal(0.524979187479, run.Results[2].HiddenActivations[1], 12);
         Assert.Equal(0.5, run.Results[3].HiddenActivations[0], 12);
         Assert.Equal(0.668187772168, run.Results[3].HiddenActivations[1], 12);
+    }
+
+    [Fact]
+    public void MatchesBasicPropProbeForFixedWeightSrnForwardPass()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = SRN probe parity
+            network = srn
+            inputs = 1
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            c: 1 => 0
+            d: 0 => 1
+            reset
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.4, 0.7 },
+                { 0.2, -0.3 }
+            },
+            new double[,]
+            {
+                { -0.5 },
+                { 0.8 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.6, 0.1 },
+                { -0.2, 0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var run = engine.TestAll(patterns);
+        Assert.Equal(0.51637638731, run.Results[0].Outputs[0], 12);
+        Assert.Equal(0.542741670816, run.Results[1].Outputs[0], 12);
+        Assert.Equal(0.538951408832, run.Results[2].Outputs[0], 12);
+        Assert.Equal(0.523331468988, run.Results[3].Outputs[0], 12);
+    }
+
+    [Fact]
+    public void MatchesBasicPropProbeForSequentialSrnTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = SRN train parity
+            network = srn
+            inputs = 1
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 4
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 0 => 0
+            b: 1 => 1
+            reset
+            c: 1 => 0
+            d: 0 => 1
+            reset
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.4, 0.7 },
+                { 0.2, -0.3 }
+            },
+            new double[,]
+            {
+                { -0.5 },
+                { 0.8 },
+                { 0.1 }
+            },
+            new double[,]
+            {
+                { 0.6, 0.1 },
+                { -0.2, 0.4 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var result = engine.Train(patterns, 4);
+        var run = engine.TestAll(patterns);
+
+        Assert.Equal(4, result.History.Count);
+        Assert.Equal(0.398576432913, engine.Weights.InputHidden[0, 0], 12);
+        Assert.Equal(0.702655047097, engine.Weights.InputHidden[0, 1], 12);
+        Assert.Equal(0.203340134128, engine.Weights.InputHidden[1, 0], 12);
+        Assert.Equal(-0.304381361609, engine.Weights.InputHidden[1, 1], 12);
+
+        Assert.Equal(-0.503859340742, engine.Weights.HiddenOutput[0, 0], 12);
+        Assert.Equal(0.800209495605, engine.Weights.HiddenOutput[1, 0], 12);
+        Assert.Equal(0.084758793661, engine.Weights.HiddenOutput[2, 0], 12);
+
+        Assert.Equal(0.593964802018, engine.Weights.RecurrentHidden![0, 0], 12);
+        Assert.Equal(0.110344928474, engine.Weights.RecurrentHidden[0, 1], 12);
+        Assert.Equal(-0.205093551689, engine.Weights.RecurrentHidden[1, 0], 12);
+        Assert.Equal(0.408723508299, engine.Weights.RecurrentHidden[1, 1], 12);
+
+        Assert.Equal(0.515550698433, run.Results[0].Outputs[0], 12);
+        Assert.Equal(0.542510847774, run.Results[1].Outputs[0], 12);
+        Assert.Equal(0.538225952973, run.Results[2].Outputs[0], 12);
+        Assert.Equal(0.523232075003, run.Results[3].Outputs[0], 12);
     }
 }

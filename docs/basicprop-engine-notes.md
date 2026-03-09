@@ -63,6 +63,12 @@ Reference artifact:
 - SRN `testAll()` resets hidden state after patterns marked with `reset`.
 - SRN training also resets hidden state after cycles whose current pattern is marked with `reset`.
 - SRN `feedForward()` copies the previous hidden activations before computing the new hidden state and uses those saved values for recurrent contributions.
+- In pattern files, `reset` marks the previous pattern index, not the next one.
+  - A leading `reset` is effectively ignored.
+- SRN hidden-layer bias does not behave like feed-forward hidden bias.
+  - Training starts with the hidden bias available.
+  - Once `resetHidden()` is called, the hidden-layer bias is also zeroed.
+  - `getOutputsAsList()` and `testAll()` can therefore diverge if one call follows the other.
 
 ### Stop rule
 
@@ -139,5 +145,6 @@ From `SpecStub` and config code:
 - Remove the current sigmoid-derivative offset from the parity engine path.
 - Feed-forward online mode must support random pattern sampling.
 - SRN parity must preserve sequential progression and `lastTrainedIx`.
+- SRN parity must model BasicProp's non-standard hidden-bias lifecycle separately from feed-forward behavior.
 - Golden parity tests should not rely on BasicProp random initialization.
   - Instead, set explicit starting weights or capture saved initial weights.

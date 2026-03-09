@@ -4,6 +4,12 @@ public sealed class SignalWeaveEngine
 {
     private readonly NetworkDefinition _definition;
     private readonly Random _patternRandom;
+    private readonly double[,] _previousInputHiddenDelta;
+    private readonly double[,] _previousHiddenOutputDelta;
+    private readonly double[,]? _previousRecurrentDelta;
+    private double[]? _trainingHiddenContext;
+    private double _trainingHiddenBiasValue;
+    private int _lastTrainedPatternIndex;
 
     public SignalWeaveEngine(NetworkDefinition definition, WeightSet? weights = null, int? seed = null)
     {
@@ -11,6 +17,15 @@ public sealed class SignalWeaveEngine
         _definition.Validate();
         _patternRandom = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         Weights = weights?.Clone() ?? WeightSet.CreateRandom(_definition, seed);
+        _previousInputHiddenDelta = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
+        _previousHiddenOutputDelta = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
+        _previousRecurrentDelta = Weights.RecurrentHidden is null
+            ? null
+            : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
+        _trainingHiddenContext = _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? new double[_definition.HiddenUnits]
+            : null;
+        _trainingHiddenBiasValue = _definition.UseHiddenBias ? 1.0 : 0.0;
     }
 
     public WeightSet Weights { get; private set; }
@@ -21,77 +36,14 @@ public sealed class SignalWeaveEngine
 
         var steps = maxEpochs ?? _definition.MaxEpochs;
         var history = new List<TrainingPoint>(steps);
-        var previousInputHiddenDelta = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
-        var previousHiddenOutputDelta = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
-        var previousRecurrentDelta = Weights.RecurrentHidden is null
-            ? null
-            : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
 
         if (_definition.NetworkKind == NetworkKind.FeedForward)
         {
-            TrainFeedForward(
-                patternSet,
-                steps,
-                history,
-                previousInputHiddenDelta,
-                previousHiddenOutputDelta,
-                previousRecurrentDelta);
+            TrainFeedForward(patternSet, steps, history);
         }
         else
         {
-            var sequences = patternSet.ToSequences();
-
-            for (var step = 1; step <= steps; step++)
-            {
-                var totalSquaredError = 0.0;
-                var labeledExampleCount = 0;
-
-                var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
-                var batchHiddenOutput = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
-                var batchRecurrent = Weights.RecurrentHidden is null
-                    ? null
-                    : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
-
-                foreach (var sequence in sequences)
-                {
-                    var gradient = ComputeSequenceGradient(sequence);
-                    totalSquaredError += gradient.TotalSquaredError;
-                    labeledExampleCount += gradient.LabeledExampleCount;
-
-                    if (_definition.UpdateMode == UpdateMode.Batch)
-                    {
-                        AddInPlace(batchInputHidden, gradient.InputHiddenGradient);
-                        AddInPlace(batchHiddenOutput, gradient.HiddenOutputGradient);
-                        if (batchRecurrent is not null && gradient.RecurrentGradient is not null)
-                        {
-                            AddInPlace(batchRecurrent, gradient.RecurrentGradient);
-                        }
-                    }
-                    else
-                    {
-                        ApplyGradient(gradient, previousInputHiddenDelta, previousHiddenOutputDelta, previousRecurrentDelta, 1.0);
-                    }
-                }
-
-                if (_definition.UpdateMode == UpdateMode.Batch)
-                {
-                    var normalizer = Math.Max(1, labeledExampleCount);
-                    ApplyGradient(
-                        new SequenceGradient(batchInputHidden, batchHiddenOutput, batchRecurrent, totalSquaredError, labeledExampleCount),
-                        previousInputHiddenDelta,
-                        previousHiddenOutputDelta,
-                        previousRecurrentDelta,
-                        1.0 / normalizer);
-                }
-
-                var currentTsq = ComputeTsq(totalSquaredError);
-                history.Add(new TrainingPoint(step, currentTsq));
-
-                if (currentTsq <= _definition.ErrorThreshold || ShouldStopEarly(history, patternSet.Examples.Count))
-                {
-                    break;
-                }
-            }
+            TrainSimpleRecurrent(patternSet, steps, history);
         }
 
         var finalRun = TestAll(patternSet);
@@ -105,28 +57,41 @@ public sealed class SignalWeaveEngine
         var results = new List<TestResult>(patternSet.Examples.Count);
         var totalSquaredError = 0.0;
         var labeled = 0;
-        var index = 0;
+        var context = new double[_definition.HiddenUnits];
+        var hiddenBiasValue = _definition.NetworkKind == NetworkKind.SimpleRecurrent
+            ? 0.0
+            : _definition.UseHiddenBias ? 1.0 : 0.0;
 
-        foreach (var sequence in patternSet.ToSequences())
+        for (var index = 0; index < patternSet.Examples.Count; index++)
         {
-            var context = new double[_definition.HiddenUnits];
+            var example = patternSet.Examples[index];
+            var step = Forward(
+                example.Inputs,
+                _definition.NetworkKind == NetworkKind.SimpleRecurrent ? context : Array.Empty<double>(),
+                _definition.NetworkKind == NetworkKind.SimpleRecurrent ? hiddenBiasValue : 1.0);
 
-            foreach (var example in sequence)
+            var error = 0.0;
+            if (example.Targets is not null)
             {
-                var step = Forward(example.Inputs, context);
-                context = step.Hidden;
+                var squaredError = CalculateSquaredError(step.Outputs, example.Targets);
+                error = ComputeTsq(squaredError);
+                totalSquaredError += squaredError;
+                labeled++;
+            }
 
-                var error = 0.0;
-                if (example.Targets is not null)
+            results.Add(new TestResult(index, example.Label, example.Inputs, step.Outputs, step.Hidden, example.Targets, error));
+
+            if (_definition.NetworkKind == NetworkKind.SimpleRecurrent)
+            {
+                if (example.ResetsContextAfter)
                 {
-                    var squaredError = CalculateSquaredError(step.Outputs, example.Targets);
-                    error = ComputeTsq(squaredError);
-                    totalSquaredError += squaredError;
-                    labeled++;
+                    Array.Clear(context, 0, context.Length);
+                    hiddenBiasValue = 0.0;
                 }
-
-                results.Add(new TestResult(index, example.Label, example.Inputs, step.Outputs, step.Hidden, example.Targets, error));
-                index++;
+                else
+                {
+                    context = (double[])step.Hidden.Clone();
+                }
             }
         }
 
@@ -151,6 +116,74 @@ public sealed class SignalWeaveEngine
         return HierarchicalClusterer.Cluster(run.Results.Select(result => (result.Label, result.HiddenActivations)).ToList());
     }
 
+    private void TrainSimpleRecurrent(PatternSet patternSet, int steps, List<TrainingPoint> history)
+    {
+        var examples = patternSet.Examples;
+        var useSequentialUpdate = patternSet.HasResetMarkers;
+        var useAccumulatedUpdates = _definition.UpdateMode == UpdateMode.Batch || useSequentialUpdate;
+        var pendingInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
+        var pendingHiddenOutput = new double[Weights.HiddenOutput.GetLength(0), Weights.HiddenOutput.GetLength(1)];
+        var pendingRecurrent = Weights.RecurrentHidden is null
+            ? null
+            : new double[Weights.RecurrentHidden.GetLength(0), Weights.RecurrentHidden.GetLength(1)];
+        var lastPatternIndex = _lastTrainedPatternIndex;
+
+        _trainingHiddenContext ??= new double[_definition.HiddenUnits];
+
+        for (var step = 1; step <= steps; step++)
+        {
+            lastPatternIndex = (_lastTrainedPatternIndex + step - 1) % examples.Count;
+            var example = examples[lastPatternIndex];
+            var previousHidden = (double[])_trainingHiddenContext.Clone();
+            var forward = Forward(example.Inputs, previousHidden, _trainingHiddenBiasValue);
+            var outputDelta = ComputeOutputDelta(forward.Outputs, example.Targets);
+            var hiddenDelta = ComputeHiddenDelta(forward.Hidden, outputDelta);
+
+            if (useAccumulatedUpdates)
+            {
+                AccumulateScaledOuterProduct(pendingInputHidden, forward.AugmentedInputs, hiddenDelta, _definition.LearningRate);
+                AccumulateScaledOuterProduct(pendingHiddenOutput, forward.AugmentedHidden, outputDelta, _definition.LearningRate);
+
+                if (pendingRecurrent is not null)
+                {
+                    AccumulateScaledOuterProduct(pendingRecurrent, previousHidden, hiddenDelta, _definition.LearningRate);
+                }
+            }
+            else
+            {
+                ApplyImmediateGradient(forward, outputDelta, hiddenDelta, previousHidden);
+            }
+
+            var shouldFlushPending = useAccumulatedUpdates &&
+                (example.ResetsContextAfter || (!useSequentialUpdate && step % examples.Count == 0));
+
+            if (shouldFlushPending)
+            {
+                FlushPendingUpdates(pendingInputHidden, pendingHiddenOutput, pendingRecurrent);
+            }
+
+            if (example.ResetsContextAfter)
+            {
+                Array.Clear(_trainingHiddenContext, 0, _trainingHiddenContext.Length);
+                _trainingHiddenBiasValue = 0.0;
+            }
+            else
+            {
+                _trainingHiddenContext = (double[])forward.Hidden.Clone();
+            }
+
+            var currentTsq = ComputeTsq(CalculateSquaredError(forward.Outputs, example.Targets!));
+            history.Add(new TrainingPoint(step, currentTsq));
+
+            if (currentTsq <= _definition.ErrorThreshold || ShouldStopEarly(history, examples.Count))
+            {
+                break;
+            }
+        }
+
+        _lastTrainedPatternIndex = lastPatternIndex;
+    }
+
     private SequenceGradient ComputeSequenceGradient(IReadOnlyList<PatternExample> sequence)
     {
         var steps = new ForwardStep[sequence.Count];
@@ -162,7 +195,7 @@ public sealed class SignalWeaveEngine
         for (var index = 0; index < sequence.Count; index++)
         {
             previousHiddenStates[index] = (double[])context.Clone();
-            steps[index] = Forward(sequence[index].Inputs, context);
+            steps[index] = Forward(sequence[index].Inputs, context, 1.0);
             context = steps[index].Hidden;
 
             if (sequence[index].Targets is not null)
@@ -184,19 +217,7 @@ public sealed class SignalWeaveEngine
         {
             var example = sequence[index];
             var step = steps[index];
-            var outputDelta = new double[_definition.OutputUnits];
-
-            if (example.Targets is not null)
-            {
-                for (var output = 0; output < _definition.OutputUnits; output++)
-                {
-                    var difference = example.Targets[output] - step.Outputs[output];
-                    outputDelta[output] = _definition.CostFunction == CostFunction.CrossEntropy
-                        ? difference
-                        : difference * SigmoidDerivative(step.Outputs[output]);
-                }
-            }
-
+            var outputDelta = ComputeOutputDelta(step.Outputs, example.Targets);
             var hiddenDelta = new double[_definition.HiddenUnits];
 
             for (var hidden = 0; hidden < _definition.HiddenUnits; hidden++)
@@ -233,7 +254,7 @@ public sealed class SignalWeaveEngine
         return new SequenceGradient(inputHiddenGradient, hiddenOutputGradient, recurrentGradient, totalSquaredError, labeledCount);
     }
 
-    private ForwardStep Forward(double[] inputs, double[] context)
+    private ForwardStep Forward(double[] inputs, double[] context, double hiddenBiasValue)
     {
         var augmentedInputs = AppendBias(inputs, _definition.UseInputBias);
         var hiddenNet = Multiply(augmentedInputs, Weights.InputHidden);
@@ -244,9 +265,46 @@ public sealed class SignalWeaveEngine
         }
 
         var hidden = hiddenNet.Select(Sigmoid).ToArray();
-        var augmentedHidden = AppendBias(hidden, _definition.UseHiddenBias);
+        var augmentedHidden = AppendBias(hidden, _definition.UseHiddenBias, hiddenBiasValue);
         var outputs = Multiply(augmentedHidden, Weights.HiddenOutput).Select(Sigmoid).ToArray();
         return new ForwardStep(augmentedInputs, hidden, augmentedHidden, outputs);
+    }
+
+    private double[] ComputeOutputDelta(double[] outputs, double[]? targets)
+    {
+        var outputDelta = new double[_definition.OutputUnits];
+        if (targets is null)
+        {
+            return outputDelta;
+        }
+
+        for (var output = 0; output < _definition.OutputUnits; output++)
+        {
+            var difference = targets[output] - outputs[output];
+            outputDelta[output] = _definition.CostFunction == CostFunction.CrossEntropy
+                ? difference
+                : difference * SigmoidDerivative(outputs[output]);
+        }
+
+        return outputDelta;
+    }
+
+    private double[] ComputeHiddenDelta(double[] hidden, double[] outputDelta)
+    {
+        var hiddenDelta = new double[_definition.HiddenUnits];
+
+        for (var hiddenIndex = 0; hiddenIndex < _definition.HiddenUnits; hiddenIndex++)
+        {
+            var signal = 0.0;
+            for (var output = 0; output < _definition.OutputUnits; output++)
+            {
+                signal += outputDelta[output] * Weights.HiddenOutput[hiddenIndex, output];
+            }
+
+            hiddenDelta[hiddenIndex] = signal * SigmoidDerivative(hidden[hiddenIndex]);
+        }
+
+        return hiddenDelta;
     }
 
     private void ApplyGradient(
@@ -283,10 +341,7 @@ public sealed class SignalWeaveEngine
     private void TrainFeedForward(
         PatternSet patternSet,
         int steps,
-        List<TrainingPoint> history,
-        double[,] previousInputHiddenDelta,
-        double[,] previousHiddenOutputDelta,
-        double[,]? previousRecurrentDelta)
+        List<TrainingPoint> history)
     {
         var examples = patternSet.Examples;
         var batchInputHidden = new double[Weights.InputHidden.GetLength(0), Weights.InputHidden.GetLength(1)];
@@ -310,9 +365,9 @@ public sealed class SignalWeaveEngine
                 {
                     ApplyGradient(
                         new SequenceGradient(batchInputHidden, batchHiddenOutput, null, gradient.TotalSquaredError, gradient.LabeledExampleCount),
-                        previousInputHiddenDelta,
-                        previousHiddenOutputDelta,
-                        previousRecurrentDelta,
+                        _previousInputHiddenDelta,
+                        _previousHiddenOutputDelta,
+                        _previousRecurrentDelta,
                         1.0);
                     Array.Clear(batchInputHidden, 0, batchInputHidden.Length);
                     Array.Clear(batchHiddenOutput, 0, batchHiddenOutput.Length);
@@ -320,7 +375,7 @@ public sealed class SignalWeaveEngine
             }
             else
             {
-                ApplyGradient(gradient, previousInputHiddenDelta, previousHiddenOutputDelta, previousRecurrentDelta, 1.0);
+                ApplyGradient(gradient, _previousInputHiddenDelta, _previousHiddenOutputDelta, _previousRecurrentDelta, 1.0);
             }
 
             var currentTsq = ComputeTsq(gradient.TotalSquaredError);
@@ -332,6 +387,54 @@ public sealed class SignalWeaveEngine
             }
 
             stepIndex++;
+        }
+    }
+
+    private void ApplyImmediateGradient(ForwardStep step, double[] outputDelta, double[] hiddenDelta, double[] previousHidden)
+    {
+        ApplyImmediateWeights(Weights.InputHidden, step.AugmentedInputs, hiddenDelta, _previousInputHiddenDelta);
+        ApplyImmediateWeights(Weights.HiddenOutput, step.AugmentedHidden, outputDelta, _previousHiddenOutputDelta);
+
+        if (Weights.RecurrentHidden is not null && _previousRecurrentDelta is not null)
+        {
+            ApplyImmediateWeights(Weights.RecurrentHidden, previousHidden, hiddenDelta, _previousRecurrentDelta);
+        }
+    }
+
+    private void ApplyImmediateWeights(double[,] weights, double[] left, double[] right, double[,] previousDelta)
+    {
+        for (var row = 0; row < left.Length; row++)
+        {
+            for (var column = 0; column < right.Length; column++)
+            {
+                var delta = (_definition.LearningRate * left[row] * right[column]) + (_definition.Momentum * previousDelta[row, column]);
+                weights[row, column] += delta;
+                previousDelta[row, column] = delta;
+            }
+        }
+    }
+
+    private void FlushPendingUpdates(double[,] pendingInputHidden, double[,] pendingHiddenOutput, double[,]? pendingRecurrent)
+    {
+        FlushPendingWeights(Weights.InputHidden, pendingInputHidden, _previousInputHiddenDelta);
+        FlushPendingWeights(Weights.HiddenOutput, pendingHiddenOutput, _previousHiddenOutputDelta);
+
+        if (Weights.RecurrentHidden is not null && pendingRecurrent is not null && _previousRecurrentDelta is not null)
+        {
+            FlushPendingWeights(Weights.RecurrentHidden, pendingRecurrent, _previousRecurrentDelta);
+        }
+    }
+
+    private void FlushPendingWeights(double[,] weights, double[,] pendingDelta, double[,] previousDelta)
+    {
+        for (var row = 0; row < weights.GetLength(0); row++)
+        {
+            for (var column = 0; column < weights.GetLength(1); column++)
+            {
+                weights[row, column] += pendingDelta[row, column] + (_definition.Momentum * previousDelta[row, column]);
+                previousDelta[row, column] = pendingDelta[row, column];
+                pendingDelta[row, column] = 0.0;
+            }
         }
     }
 
@@ -379,6 +482,11 @@ public sealed class SignalWeaveEngine
 
     private double[] AppendBias(double[] values, bool includeBias)
     {
+        return AppendBias(values, includeBias, 1.0);
+    }
+
+    private double[] AppendBias(double[] values, bool includeBias, double biasValue)
+    {
         if (!includeBias)
         {
             return (double[])values.Clone();
@@ -386,7 +494,7 @@ public sealed class SignalWeaveEngine
 
         var augmented = new double[values.Length + 1];
         Array.Copy(values, augmented, values.Length);
-        augmented[^1] = 1.0;
+        augmented[^1] = biasValue;
         return augmented;
     }
 
@@ -434,6 +542,17 @@ public sealed class SignalWeaveEngine
             for (var column = 0; column < right.Length; column++)
             {
                 matrix[row, column] += left[row] * right[column];
+            }
+        }
+    }
+
+    private static void AccumulateScaledOuterProduct(double[,] matrix, double[] left, double[] right, double scale)
+    {
+        for (var row = 0; row < left.Length; row++)
+        {
+            for (var column = 0; column < right.Length; column++)
+            {
+                matrix[row, column] += left[row] * right[column] * scale;
             }
         }
     }

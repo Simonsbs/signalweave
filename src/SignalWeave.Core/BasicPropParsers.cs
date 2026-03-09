@@ -220,7 +220,6 @@ public static class PatternSetParser
     public static PatternSet Parse(string text, string? name = null)
     {
         var examples = new List<PatternExample>();
-        var startsSequence = true;
         var index = 1;
 
         foreach (var rawLine in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
@@ -233,7 +232,11 @@ public static class PatternSetParser
 
             if (string.Equals(line, "reset", StringComparison.OrdinalIgnoreCase))
             {
-                startsSequence = true;
+                if (examples.Count > 0)
+                {
+                    examples[^1] = examples[^1] with { ResetsContextAfter = true };
+                }
+
                 continue;
             }
 
@@ -269,10 +272,9 @@ public static class PatternSetParser
                 label,
                 ParseVector(inputsText),
                 targetsText is null ? null : ParseVector(targetsText),
-                startsSequence);
+                false);
 
             examples.Add(example);
-            startsSequence = false;
             index++;
         }
 

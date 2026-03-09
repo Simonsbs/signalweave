@@ -51,6 +51,8 @@ reset
 1,0 => 1
 ```
 
+`reset` follows BasicProp's actual loader behavior: it resets the recurrent context after the previous pattern, even though it appears on the line before the next pattern.
+
 Weight blocks:
 
 - `weights <layerIndex>:` where `layerIndex` is zero-based
