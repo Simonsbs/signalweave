@@ -29,6 +29,7 @@ Implemented now:
 - output and hidden-state hierarchical clustering
 - desktop workbench with a BasicProp-style control panel, live network view, editor tabs, testing, clustering, and weight inspection
 - dedicated desktop network-configuration dialog with feed-forward and SRN modes, including 2-layer, 3-layer, and 4-layer feed-forward paths
+- screenshot-verified feed-forward and SRN configuration tabs with BasicProp-style layer-count and bias controls
 - native desktop file workflows for network save/load, pattern load, and weight save/load
 - utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
 - BasicProp-style visual touches including weight-value legend, Hinton-like weight cells, and axis-based error plotting

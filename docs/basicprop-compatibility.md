@@ -50,6 +50,7 @@ Source basis used for this implementation:
   - distinct feed-forward and SRN tab content in the configuration dialog, instead of one merged form
   - working 2-layer feed-forward apply path in the desktop dialog
   - working 4-layer feed-forward apply path in the desktop dialog
+  - screenshot-verified feed-forward and SRN configuration tabs aligned to the BasicProp reference bundle, including the layer-count slider and per-layer bias toggles
   - desktop save/load workflows for networks and weights, plus pattern loading
   - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
   - screenshot-driven four-panel main workbench layout closer to the original `Network` / `Control panel` / `Console` / `Error progress` arrangement

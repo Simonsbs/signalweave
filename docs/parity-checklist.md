@@ -36,14 +36,14 @@ Status legend:
 
 ## Network configuration dialog
 
-- `[in-progress]` feed-forward tab structure
-- `[in-progress]` SRN tab structure
+- `[done]` feed-forward tab structure
+- `[done]` SRN tab structure
 - `[done]` feed-forward 2-layer apply path in the desktop dialog
 - `[done]` feed-forward 4-layer apply path in the desktop dialog
-- `[in-progress]` layer-count slider behavior
-- `[in-progress]` layer bias toggles
+- `[done]` layer-count slider behavior
+- `[done]` layer bias toggles
 - `[done]` separate topology dialog from main control-panel training settings
-- `[todo]` screenshot-verified visual parity
+- `[done]` screenshot-verified visual parity
 
 ## Main window
 
