@@ -1,0 +1,15 @@
+name = Echo SRN demo
+network = srn
+inputs = 1
+hidden = 3
+outputs = 1
+inputBias = true
+hiddenBias = true
+learningRate = 0.45
+momentum = 0.1
+randomWeightRange = 0.4
+sigmoidPrimeOffset = 0.1
+maxEpochs = 3000
+errorThreshold = 0.02
+update = pattern
+cost = sse

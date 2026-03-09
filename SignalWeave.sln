@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E5CA3A4F-6E8A-4D4E-8EB5-53772D0CF9A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalWeave.Core", "src\SignalWeave.Core\SignalWeave.Core.csproj", "{8A4C4E14-EADC-4BE3-A1ED-18BA4504270C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalWeave.Cli", "src\SignalWeave.Cli\SignalWeave.Cli.csproj", "{1EDEC4BA-5C9A-4379-9007-5FF50808DD4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalWeave.Desktop", "src\SignalWeave.Desktop\SignalWeave.Desktop.csproj", "{5B3FFBE6-8B53-4F12-A316-5C93714A6946}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{68BBB8D9-EB7F-4F0F-9B8C-A9C3EDC93D69}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalWeave.Core.Tests", "tests\SignalWeave.Core.Tests\SignalWeave.Core.Tests.csproj", "{5B08FB5C-84FC-4491-8325-FABC595BADDC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8A4C4E14-EADC-4BE3-A1ED-18BA4504270C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A4C4E14-EADC-4BE3-A1ED-18BA4504270C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A4C4E14-EADC-4BE3-A1ED-18BA4504270C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A4C4E14-EADC-4BE3-A1ED-18BA4504270C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EDEC4BA-5C9A-4379-9007-5FF50808DD4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EDEC4BA-5C9A-4379-9007-5FF50808DD4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EDEC4BA-5C9A-4379-9007-5FF50808DD4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EDEC4BA-5C9A-4379-9007-5FF50808DD4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B3FFBE6-8B53-4F12-A316-5C93714A6946}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B3FFBE6-8B53-4F12-A316-5C93714A6946}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B3FFBE6-8B53-4F12-A316-5C93714A6946}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B3FFBE6-8B53-4F12-A316-5C93714A6946}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B08FB5C-84FC-4491-8325-FABC595BADDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B08FB5C-84FC-4491-8325-FABC595BADDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B08FB5C-84FC-4491-8325-FABC595BADDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B08FB5C-84FC-4491-8325-FABC595BADDC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8A4C4E14-EADC-4BE3-A1ED-18BA4504270C} = {E5CA3A4F-6E8A-4D4E-8EB5-53772D0CF9A6}
+		{1EDEC4BA-5C9A-4379-9007-5FF50808DD4F} = {E5CA3A4F-6E8A-4D4E-8EB5-53772D0CF9A6}
+		{5B3FFBE6-8B53-4F12-A316-5C93714A6946} = {E5CA3A4F-6E8A-4D4E-8EB5-53772D0CF9A6}
+		{5B08FB5C-84FC-4491-8325-FABC595BADDC} = {68BBB8D9-EB7F-4F0F-9B8C-A9C3EDC93D69}
+	EndGlobalSection
+EndGlobal

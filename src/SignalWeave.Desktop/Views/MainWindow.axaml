@@ -1,0 +1,135 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="860"
+        x:Class="SignalWeave.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="SignalWeave"
+        Width="1280"
+        Height="860"
+        Background="#F3EFE5">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="320,*" RowDefinitions="Auto,*" Margin="18">
+        <Border Grid.ColumnSpan="2"
+                Background="#10313F"
+                Padding="22"
+                CornerRadius="18">
+            <StackPanel Spacing="10">
+                <TextBlock Text="SignalWeave"
+                           FontSize="30"
+                           FontWeight="Bold"
+                           Foreground="#FFF7E9"/>
+                <TextBlock Text="A cross-platform BasicProp alternative for Windows, Linux, and macOS."
+                           FontSize="15"
+                           Foreground="#D9E2D3"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1"
+                Margin="0,18,18,0"
+                Padding="18"
+                Background="#E4D3B8"
+                CornerRadius="18">
+            <StackPanel Spacing="14">
+                <TextBlock Text="Workbench"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="#3A2212"/>
+                <TextBlock Text="{Binding FeatureText}"
+                           TextWrapping="Wrap"
+                           Foreground="#4E3523"/>
+                <TextBlock Text="Sample"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,8,0,0"/>
+                <TextBlock Text="{Binding SampleTitle}"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="#10313F"/>
+                <Button Content="Load XOR demo" Command="{Binding LoadXorDemoCommand}" />
+                <Button Content="Load SRN demo" Command="{Binding LoadSrnDemoCommand}" />
+                <Separator Margin="0,8,0,8"/>
+                <Button Content="Parse config + patterns" Command="{Binding ParseCommand}" />
+                <Button Content="Train network" Command="{Binding TrainCommand}" />
+                <Button Content="Test all patterns" Command="{Binding TestCommand}" />
+                <Button Content="Cluster outputs" Command="{Binding ClusterOutputsCommand}" />
+                <Button Content="Cluster hidden states" Command="{Binding ClusterHiddenCommand}" />
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="1" Grid.Column="1" Margin="0,18,0,0" ColumnDefinitions="*,*" RowDefinitions="Auto,*,Auto">
+            <TextBlock Grid.ColumnSpan="2"
+                       Text="Paste BasicProp-style files directly into the panels below."
+                       Foreground="#5A4436"
+                       Margin="0,0,0,10"/>
+
+            <Border Grid.Row="1"
+                    Margin="0,0,9,0"
+                    Padding="14"
+                    Background="#FFF9F0"
+                    CornerRadius="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Network config"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#10313F"/>
+                    <TextBox Text="{Binding ConfigText, Mode=TwoWay}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="420"
+                             FontFamily="Courier New" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="9,0,0,0"
+                    Padding="14"
+                    Background="#FFF9F0"
+                    CornerRadius="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Pattern file"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#10313F"/>
+                    <TextBox Text="{Binding PatternText, Mode=TwoWay}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="420"
+                             FontFamily="Courier New" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Grid.ColumnSpan="2"
+                    Margin="0,16,0,0"
+                    Padding="14"
+                    Background="#10313F"
+                    CornerRadius="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="Run output"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="#FFF7E9"/>
+                    <TextBox Text="{Binding ResultText}"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="180"
+                             Background="#10313F"
+                             Foreground="#F7F0E3"
+                             BorderThickness="0"
+                             FontFamily="Courier New" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+
+</Window>
