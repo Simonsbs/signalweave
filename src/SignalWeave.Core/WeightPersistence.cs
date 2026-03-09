@@ -29,15 +29,21 @@ public sealed class WeightSet
     public static WeightSet CreateRandom(NetworkDefinition definition, int? seed = null)
     {
         var random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
-        var inputHidden = CreateMatrix(definition.InputUnits + (definition.UseInputBias ? 1 : 0), definition.HiddenUnits, definition.RandomWeightRange, random);
+        var inputHidden = CreateMatrix(
+            definition.InputUnits + (definition.UseInputBias ? 1 : 0),
+            definition.IsDirectFeedForward ? definition.OutputUnits : definition.HiddenUnits,
+            definition.RandomWeightRange,
+            random);
         var hiddenHidden = definition.HasSecondHiddenLayer
             ? CreateMatrix(definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0), definition.SecondHiddenUnits, definition.RandomWeightRange, random)
             : null;
         var hiddenOutput = CreateMatrix(
-            definition.HasSecondHiddenLayer
+            definition.IsDirectFeedForward
+                ? 0
+                : definition.HasSecondHiddenLayer
                 ? definition.SecondHiddenUnits + (definition.UseSecondHiddenBias ? 1 : 0)
                 : definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0),
-            definition.OutputUnits,
+            definition.IsDirectFeedForward ? 0 : definition.OutputUnits,
             definition.RandomWeightRange,
             random);
         var recurrent = definition.NetworkKind == NetworkKind.SimpleRecurrent

@@ -32,7 +32,7 @@ Source basis used for this implementation:
 
 - Config and pattern parsing
 - Core engine for feed-forward and SRN execution
-- Core engine support for both 3-layer and 4-layer feed-forward execution, plus SRN execution
+- Core engine support for 2-layer, 3-layer, and 4-layer feed-forward execution, plus SRN execution
 - Training and testing workflows
 - Weight persistence
 - Hierarchical clustering over outputs and hidden activations
@@ -40,15 +40,16 @@ Source basis used for this implementation:
   - menu structure
   - dedicated network configuration dialog
   - distinct feed-forward and SRN tab content in the configuration dialog, instead of one merged form
+  - working 2-layer feed-forward apply path in the desktop dialog
   - working 4-layer feed-forward apply path in the desktop dialog
   - desktop save/load workflows for networks and weights, plus pattern loading
   - control panel defaults
   - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
   - test-one/test-all interaction
   - current weight inspection
-  - live network diagram with 3-layer, 4-layer, and SRN-aware weight routing
+  - live network diagram with 2-layer, 3-layer, 4-layer, and SRN-aware weight routing
   - weight-map visualization with Hinton-style emphasis
-  - 4-layer-aware weight-layer switching in the desktop and popup weight views
+  - 2-layer and 4-layer-aware weight-layer switching in the desktop and popup weight views
   - pattern/output inspection
   - projected 3D and time-series utility plots
   - weight legend and axis-based error progress plot
@@ -63,7 +64,6 @@ Source basis used for this implementation:
 
 ## Remaining parity work
 
-- Add BasicProp's 2-layer feed-forward topology
 - Match BasicProp 1.3 engine behavior exactly from the runnable JAR
 - Recreate the original graph and weight-grid visual panels more exactly in the desktop app
 - Tighten utility workflows and visuals so they match BasicProp more closely

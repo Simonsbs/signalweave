@@ -42,13 +42,20 @@ public sealed class NetworkDefinition
     public CostFunction CostFunction { get; init; } = CostFunction.SumSquaredError;
 
     public bool HasSecondHiddenLayer => NetworkKind == NetworkKind.FeedForward && SecondHiddenUnits > 0;
-    public int TotalLayerCount => NetworkKind == NetworkKind.SimpleRecurrent ? 3 : HasSecondHiddenLayer ? 4 : 3;
+    public bool HasHiddenLayer => NetworkKind == NetworkKind.SimpleRecurrent || HiddenUnits > 0;
+    public bool IsDirectFeedForward => NetworkKind == NetworkKind.FeedForward && HiddenUnits == 0 && SecondHiddenUnits == 0;
+    public int TotalLayerCount => NetworkKind == NetworkKind.SimpleRecurrent ? 3 : HasSecondHiddenLayer ? 4 : HasHiddenLayer ? 3 : 2;
 
     public void Validate()
     {
-        if (InputUnits < 1 || HiddenUnits < 1 || OutputUnits < 1)
+        if (InputUnits < 1 || OutputUnits < 1)
         {
-            throw new InvalidOperationException("Input, hidden, and output unit counts must all be positive.");
+            throw new InvalidOperationException("Input and output unit counts must both be positive.");
+        }
+
+        if (HiddenUnits < 0)
+        {
+            throw new InvalidOperationException("Hidden unit count cannot be negative.");
         }
 
         if (SecondHiddenUnits < 0)
@@ -56,9 +63,19 @@ public sealed class NetworkDefinition
             throw new InvalidOperationException("Second hidden unit count cannot be negative.");
         }
 
+        if (NetworkKind == NetworkKind.SimpleRecurrent && HiddenUnits < 1)
+        {
+            throw new InvalidOperationException("Simple recurrent networks require at least one hidden unit.");
+        }
+
         if (NetworkKind == NetworkKind.SimpleRecurrent && SecondHiddenUnits > 0)
         {
             throw new InvalidOperationException("Simple recurrent networks do not support a second hidden layer.");
+        }
+
+        if (NetworkKind == NetworkKind.FeedForward && HiddenUnits == 0 && SecondHiddenUnits > 0)
+        {
+            throw new InvalidOperationException("A second hidden layer requires the first hidden layer to exist.");
         }
 
         if (LearningRate <= 0)
@@ -93,10 +110,14 @@ public sealed class NetworkDefinition
             Environment.NewLine,
             $"Name: {Name}",
             $"Network: {NetworkKind}",
-            HasSecondHiddenLayer
+            IsDirectFeedForward
+                ? $"Units: {InputUnits} input / {OutputUnits} output"
+                : HasSecondHiddenLayer
                 ? $"Units: {InputUnits} input / {HiddenUnits} hidden1 / {SecondHiddenUnits} hidden2 / {OutputUnits} output"
                 : $"Units: {InputUnits} input / {HiddenUnits} hidden / {OutputUnits} output",
-            HasSecondHiddenLayer
+            IsDirectFeedForward
+                ? $"Bias: input={UseInputBias}"
+                : HasSecondHiddenLayer
                 ? $"Bias: input={UseInputBias}, hidden1={UseHiddenBias}, hidden2={UseSecondHiddenBias}"
                 : $"Bias: input={UseInputBias}, hidden={UseHiddenBias}",
             $"Learning: rate={LearningRate.ToString("0.###", CultureInfo.InvariantCulture)}, momentum={Momentum.ToString("0.###", CultureInfo.InvariantCulture)}",

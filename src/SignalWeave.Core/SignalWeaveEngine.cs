@@ -274,6 +274,22 @@ public sealed class SignalWeaveEngine
         var step = Forward(example.Inputs, Array.Empty<double>(), 1.0);
         var outputDelta = ComputeOutputDelta(step.Outputs, example.Targets);
 
+        if (_definition.IsDirectFeedForward)
+        {
+            return new FeedForwardGradient(
+                step,
+                new SequenceGradient(
+                    CreateOuterProduct(step.AugmentedInputs, outputDelta),
+                    new double[0, 0],
+                    null,
+                    null,
+                    CalculateSquaredError(step.Outputs, example.Targets!),
+                    example.Targets is null ? 0 : 1),
+                Array.Empty<double>(),
+                null,
+                outputDelta);
+        }
+
         if (_definition.HasSecondHiddenLayer)
         {
             var secondHiddenDelta = ComputeSingleHiddenDelta(step.FinalHidden, outputDelta, Weights.HiddenOutput);
@@ -313,6 +329,20 @@ public sealed class SignalWeaveEngine
     private ForwardStep Forward(double[] inputs, double[] context, double hiddenBiasValue)
     {
         var augmentedInputs = AppendBias(inputs, _definition.UseInputBias);
+
+        if (_definition.IsDirectFeedForward)
+        {
+            var outputs = Multiply(augmentedInputs, Weights.InputHidden).Select(Sigmoid).ToArray();
+            return new ForwardStep(
+                augmentedInputs,
+                Array.Empty<double>(),
+                null,
+                Array.Empty<double>(),
+                Array.Empty<double>(),
+                outputs,
+                Array.Empty<double>());
+        }
+
         var firstHiddenNet = Multiply(augmentedInputs, Weights.InputHidden);
 
         if (Weights.RecurrentHidden is not null)

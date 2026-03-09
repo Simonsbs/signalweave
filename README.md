@@ -28,7 +28,7 @@ Implemented now:
 - weight save/load
 - output and hidden-state hierarchical clustering
 - desktop workbench with a BasicProp-style control panel, live network view, editor tabs, testing, clustering, and weight inspection
-- dedicated desktop network-configuration dialog with feed-forward and SRN modes, including 3-layer and 4-layer feed-forward paths
+- dedicated desktop network-configuration dialog with feed-forward and SRN modes, including 2-layer, 3-layer, and 4-layer feed-forward paths
 - native desktop file workflows for network save/load, pattern load, and weight save/load
 - utility views for weight maps, pattern/output inspection, projected 3D plotting, time-series plotting, and hidden-activation export
 - BasicProp-style visual touches including weight-value legend, Hinton-like weight cells, and axis-based error plotting
@@ -40,7 +40,6 @@ Implemented now:
 
 Still to build for full feature parity:
 
-- 2-layer feed-forward topology support
 - exact BasicProp file-format compatibility for legacy weight files
 - desktop plotting panes and matrix visualizations that mirror the original UX
 - interactive weight editing
@@ -74,7 +73,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
 - right-side training/test control panel with BasicProp defaults, `Train`/`continue` state, and progress bar behavior
 - live network diagram colored by weight sign and magnitude
-- 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
+- 2-layer, 3-layer, and 4-layer-aware topology summaries, diagram layout, and weight-layer inspection
 - console/config/pattern/weight tabs
 - test-one gating that follows the original `< 24 patterns` behavior
 - utility tabs for weight maps, pattern/output tables, and plots

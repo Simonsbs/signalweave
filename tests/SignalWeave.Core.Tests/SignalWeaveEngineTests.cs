@@ -30,6 +30,25 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void ParsesTwoLayerFeedForwardConfig()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = Two layer parser test
+            network = feedforward
+            inputs = 2
+            hidden = 0
+            outputs = 1
+            inputBias = true
+            """);
+
+        Assert.Equal("Two layer parser test", definition.Name);
+        Assert.Equal(NetworkKind.FeedForward, definition.NetworkKind);
+        Assert.True(definition.IsDirectFeedForward);
+        Assert.False(definition.HasHiddenLayer);
+        Assert.Equal(2, definition.TotalLayerCount);
+    }
+
+    [Fact]
     public void ParsesFourLayerFeedForwardConfig()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""
@@ -222,6 +241,46 @@ public class SignalWeaveEngineTests
         Assert.Equal(0.549833997312, run.Results[0].HiddenActivations[1], 12);
         Assert.Equal(0.656418318669, run.Results[0].HiddenActivations[2], 12);
         Assert.Equal(0.531179411791, run.Results[0].HiddenActivations[3], 12);
+    }
+
+    [Fact]
+    public void SupportsFixedWeightForwardPassForTwoLayerFeedForward()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = Two layer forward
+            network = feedforward
+            inputs = 2
+            hidden = 0
+            outputs = 1
+            inputBias = true
+            hiddenBias = false
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2 },
+                { -0.4 },
+                { 0.1 }
+            },
+            new double[0, 0]);
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var run = engine.TestAll(patterns);
+
+        Assert.Equal(0.574442516812, run.Results[0].Outputs[0], 12);
+        Assert.Empty(run.Results[0].HiddenActivations);
     }
 
     [Fact]

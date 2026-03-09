@@ -27,9 +27,9 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
         SelectedTabIndex = definition.NetworkKind == NetworkKind.SimpleRecurrent ? 1 : 0;
         Name = definition.Name;
         InputUnitsValue = definition.InputUnits;
-        HiddenUnitsValue = definition.HiddenUnits;
+        HiddenUnitsValue = definition.HiddenUnits > 0 ? definition.HiddenUnits : 3;
         OutputUnitsValue = definition.OutputUnits;
-        SecondHiddenUnitsValue = definition.SecondHiddenUnits > 0 ? definition.SecondHiddenUnits : definition.HiddenUnits;
+        SecondHiddenUnitsValue = definition.SecondHiddenUnits > 0 ? definition.SecondHiddenUnits : 3;
         FeedForwardLayersValue = definition.NetworkKind == NetworkKind.FeedForward ? definition.TotalLayerCount : 3;
         UseInputBias = definition.UseInputBias;
         UseHiddenBias = definition.UseHiddenBias;
@@ -75,27 +75,24 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
     public int HiddenUnitsDisplay => (int)Math.Round(HiddenUnitsValue, MidpointRounding.AwayFromZero);
     public int SecondHiddenUnitsDisplay => (int)Math.Round(SecondHiddenUnitsValue, MidpointRounding.AwayFromZero);
     public int OutputUnitsDisplay => (int)Math.Round(OutputUnitsValue, MidpointRounding.AwayFromZero);
+    public bool IsFeedForwardFirstLayerEnabled => FeedForwardLayersDisplay >= 3;
     public bool IsFeedForwardSecondLayerEnabled => FeedForwardLayersDisplay >= 4;
 
     public NetworkDefinition BuildDefinition()
     {
-        if (SelectedTabIndex == 0 && FeedForwardLayersDisplay < 3)
-        {
-            throw new InvalidOperationException("SignalWeave does not support 2-layer feed-forward networks yet.");
-        }
-
         var isSrn = SelectedTabIndex == 1;
+        var includeFirstHiddenLayer = !isSrn && FeedForwardLayersDisplay >= 3;
         var includeSecondHiddenLayer = !isSrn && FeedForwardLayersDisplay >= 4;
         var definition = new NetworkDefinition
         {
             Name = string.IsNullOrWhiteSpace(Name) ? "Untitled" : Name.Trim(),
             NetworkKind = isSrn ? NetworkKind.SimpleRecurrent : NetworkKind.FeedForward,
             InputUnits = InputUnitsDisplay,
-            HiddenUnits = HiddenUnitsDisplay,
-            SecondHiddenUnits = includeSecondHiddenLayer ? SecondHiddenUnitsDisplay : 0,
+            HiddenUnits = isSrn ? Math.Max(1, HiddenUnitsDisplay) : includeFirstHiddenLayer ? Math.Max(1, HiddenUnitsDisplay) : 0,
+            SecondHiddenUnits = includeSecondHiddenLayer ? Math.Max(1, SecondHiddenUnitsDisplay) : 0,
             OutputUnits = OutputUnitsDisplay,
             UseInputBias = UseInputBias,
-            UseHiddenBias = UseHiddenBias,
+            UseHiddenBias = includeFirstHiddenLayer && UseHiddenBias,
             UseSecondHiddenBias = includeSecondHiddenLayer && UseSecondHiddenBias,
             LearningRate = _baseDefinition.LearningRate,
             Momentum = _baseDefinition.Momentum,
@@ -114,6 +111,7 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
     partial void OnFeedForwardLayersValueChanged(double value)
     {
         OnPropertyChanged(nameof(FeedForwardLayersDisplay));
+        OnPropertyChanged(nameof(IsFeedForwardFirstLayerEnabled));
         OnPropertyChanged(nameof(IsFeedForwardSecondLayerEnabled));
         UpdateFeedForwardStatus();
     }
@@ -145,12 +143,6 @@ public partial class NetworkConfigDialogViewModel : ViewModelBase
 
     private void UpdateFeedForwardStatus()
     {
-        if (SelectedTabIndex == 0 && FeedForwardLayersDisplay < 3)
-        {
-            StatusText = "SignalWeave does not support 2-layer feed-forward networks yet.";
-            return;
-        }
-
         StatusText = string.Empty;
     }
 }

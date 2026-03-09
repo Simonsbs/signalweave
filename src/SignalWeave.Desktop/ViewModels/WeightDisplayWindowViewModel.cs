@@ -50,7 +50,7 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
     private string _weightMapSummary = "No weights loaded.";
 
     [ObservableProperty]
-    private string _selectedLayerDescription = "Input -> Hidden";
+    private string _selectedLayerDescription = "Input -> Output";
 
     partial void OnSelectedWeightLayerChanged(string value)
     {
@@ -112,6 +112,12 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
 
     private static IEnumerable<WeightLayerOption> BuildLayerOptions(WeightSet weights)
     {
+        if (weights.HiddenOutput.Length == 0 && weights.HiddenHidden is null && weights.RecurrentHidden is null)
+        {
+            yield return new WeightLayerOption("1", "Input -> Output", value => value.InputHidden);
+            yield break;
+        }
+
         if (weights.HiddenHidden is not null)
         {
             yield return new WeightLayerOption("1", "Input -> Hidden1", value => value.InputHidden);

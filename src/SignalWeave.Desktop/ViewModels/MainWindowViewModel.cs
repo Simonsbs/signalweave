@@ -495,7 +495,11 @@ public partial class MainWindowViewModel : ViewModelBase
         var current = SelectedWeightLayer;
         WeightLayerOptions.Clear();
 
-        if (weights.HiddenHidden is not null)
+        if (weights.HiddenOutput.Length == 0 && weights.HiddenHidden is null && weights.RecurrentHidden is null)
+        {
+            WeightLayerOptions.Add("Input -> Output");
+        }
+        else if (weights.HiddenHidden is not null)
         {
             WeightLayerOptions.Add("Input -> Hidden1");
             WeightLayerOptions.Add("Hidden1 -> Hidden2");
@@ -554,6 +558,40 @@ public partial class MainWindowViewModel : ViewModelBase
         if (_definition.UseInputBias)
         {
             DiagramNodes.Add(new DiagramNodeItem(inputBiasX, inputBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+        }
+
+        if (_definition.IsDirectFeedForward)
+        {
+            for (var index = 0; index < _definition.InputUnits; index++)
+            {
+                DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, $"I{index + 1}", "#F4F4F2", "#585858"));
+            }
+
+            for (var index = 0; index < _definition.OutputUnits; index++)
+            {
+                DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, $"O{index + 1}", "#F4F4F2", "#585858"));
+            }
+
+            for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
+            {
+                var x1 = source < _definition.InputUnits ? inputX + nodeWidth : inputBiasX + biasWidth;
+                var y1 = source < _definition.InputUnits
+                    ? inputYs[source] + (nodeHeight / 2)
+                    : inputBiasY;
+
+                for (var target = 0; target < _engine.Weights.InputHidden.GetLength(1); target++)
+                {
+                    var weight = _engine.Weights.InputHidden[source, target];
+                    DiagramEdges.Add(new DiagramEdgeItem(
+                        ToPoint(x1, y1),
+                        ToPoint(outputX, outputYs[target] + (nodeHeight / 2)),
+                        WeightColor(weight),
+                        WeightThickness(weight, maxWeight),
+                        false));
+                }
+            }
+
+            return;
         }
 
         if (_definition.UseHiddenBias)
@@ -681,7 +719,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var updateText = definition.UpdateMode == UpdateMode.Batch ? "Batch update" : "Pattern update";
         var costText = definition.CostFunction == CostFunction.CrossEntropy ? "Cross-entropy" : "Sum squared error";
-        var topology = definition.HasSecondHiddenLayer
+        var topology = definition.IsDirectFeedForward
+            ? $"{definition.InputUnits}-{definition.OutputUnits}"
+            : definition.HasSecondHiddenLayer
             ? $"{definition.InputUnits}-{definition.HiddenUnits}-{definition.SecondHiddenUnits}-{definition.OutputUnits}"
             : $"{definition.InputUnits}-{definition.HiddenUnits}-{definition.OutputUnits}";
         return
@@ -931,8 +971,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private static string BuildWeightsText(WeightSet weights)
     {
         var builder = new StringBuilder();
-        builder.AppendLine(weights.HiddenHidden is null ? "Input -> Hidden" : "Input -> Hidden1");
+        builder.AppendLine(weights.HiddenOutput.Length == 0 && weights.HiddenHidden is null ? "Input -> Output" : weights.HiddenHidden is null ? "Input -> Hidden" : "Input -> Hidden1");
         builder.AppendLine(FormatMatrix(weights.InputHidden));
+        if (weights.HiddenOutput.Length == 0 && weights.HiddenHidden is null)
+        {
+            return builder.ToString();
+        }
+
         builder.AppendLine();
 
         if (weights.HiddenHidden is not null)
@@ -1097,6 +1142,16 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var inputRows = definition.InputUnits + (definition.UseInputBias ? 1 : 0);
 
+        if (definition.IsDirectFeedForward)
+        {
+            return weights.InputHidden.GetLength(0) == inputRows &&
+                   weights.InputHidden.GetLength(1) == definition.OutputUnits &&
+                   weights.HiddenOutput.GetLength(0) == 0 &&
+                   weights.HiddenOutput.GetLength(1) == 0 &&
+                   weights.HiddenHidden is null &&
+                   weights.RecurrentHidden is null;
+        }
+
         if (weights.InputHidden.GetLength(0) != inputRows || weights.InputHidden.GetLength(1) != definition.HiddenUnits)
         {
             return false;
@@ -1161,6 +1216,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         return SelectedWeightLayer switch
         {
+            "Input -> Output" => (weights.InputHidden, "Input -> Output"),
             "Hidden1 -> Hidden2" when weights.HiddenHidden is not null => (weights.HiddenHidden, "Hidden1 -> Hidden2"),
             "Hidden2 -> Output" when weights.HiddenHidden is not null => (weights.HiddenOutput, "Hidden2 -> Output"),
             "Hidden -> Output" => (weights.HiddenOutput, "Hidden -> Output"),

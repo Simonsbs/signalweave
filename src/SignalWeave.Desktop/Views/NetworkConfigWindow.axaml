@@ -116,8 +116,9 @@
                                    Text="Layer 1:" />
                         <StackPanel Grid.Row="2"
                                     Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Minimum="1"
+                                    Spacing="2"
+                                    IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}">
+                            <Slider Minimum="0"
                                     Maximum="10"
                                     TickFrequency="1"
                                     IsSnapToTickEnabled="True"
@@ -136,6 +137,7 @@
                                   Grid.Column="2"
                                   HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
+                                  IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}"
                                   IsChecked="{Binding UseHiddenBias, Mode=TwoWay}" />
 
                         <TextBlock Grid.Row="3"
