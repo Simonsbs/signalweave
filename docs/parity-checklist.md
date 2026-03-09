@@ -3,81 +3,108 @@
 Status legend:
 
 - `[done]` implemented and verified
-- `[in-progress]` partially implemented or not yet verified against the JAR
-- `[todo]` not implemented
+- `[in-progress]` implemented partially or not yet JAR-verified
+- `[todo]` missing
+- `[blocked]` cannot be closed until a dependency is completed
 
 ## Engine
 
-- `[in-progress]` feed-forward training parity
-- `[in-progress]` SRN training parity
-- `[in-progress]` batch update semantics
-- `[in-progress]` cross-entropy semantics
-- `[in-progress]` learning-rate behavior
-- `[in-progress]` momentum behavior
-- `[in-progress]` learning-step stopping behavior
-- `[in-progress]` weight-range initialization behavior
-- `[in-progress]` per-pattern test output parity
+- `[done]` feed-forward 3-layer execution exists
+- `[todo]` feed-forward 4-layer execution
+- `[in-progress]` feed-forward online training parity
+- `[in-progress]` feed-forward batch update parity
+- `[in-progress]` feed-forward cross-entropy parity
+- `[in-progress]` feed-forward momentum parity
+- `[in-progress]` feed-forward stop-rule parity
+- `[in-progress]` SRN sequential training parity
+- `[in-progress]` SRN hidden-state reset parity
+- `[in-progress]` SRN hidden-bias lifecycle parity
+- `[in-progress]` per-pattern output parity
 - `[in-progress]` test-all aggregate error parity
-- `[todo]` golden parity tests against the JAR
+- `[todo]` saved-weight parity fixtures
+- `[todo]` JAR-backed golden parity suite
 
-## Project and data model
+## Topologies
 
-- `[done]` custom SignalWeave project format is allowed
-- `[done]` custom sample config and pattern formats exist
-- `[todo]` stable v1 project schema
-- `[todo]` checkpoint schema
-- `[todo]` export/import docs for SignalWeave-native files
+- `[done]` feed-forward 3-layer topology
+- `[todo]` feed-forward 4-layer topology
+- `[done]` SRN topology
+- `[todo]` 4-layer topology support in diagrams, persistence, and utilities
+
+## Network configuration dialog
+
+- `[in-progress]` feed-forward tab structure
+- `[in-progress]` SRN tab structure
+- `[todo]` feed-forward 4-layer apply path
+- `[in-progress]` layer-count slider behavior
+- `[in-progress]` layer bias toggles
+- `[done]` separate topology dialog from main control-panel training settings
+- `[todo]` screenshot-verified visual parity
 
 ## Main window
 
-- `[in-progress]` menu bar exists
-- `[in-progress]` main network workbench exists
-- `[todo]` network drawing matches BasicProp layout behavior
-- `[todo]` control panel fully mirrors BasicProp
-- `[todo]` console panel mirrors BasicProp messaging
-- `[todo]` live error-progress chart in the main window
-
-## Network configuration
-
-- `[todo]` feed-forward configuration dialog parity
-- `[todo]` SRN configuration dialog parity
-- `[todo]` layer-count sliders and enable/disable behavior
-- `[todo]` bias toggles and persistence
-
-## Control panel workflows
-
-- `[in-progress]` parse/train/test flow exists
-- `[todo]` `Reset` parity
-- `[todo]` `Train` and `Continue` button-state parity
-- `[todo]` progress bar parity
-- `[todo]` pattern combo-box behavior
-- `[todo]` `Test one` parity
-- `[todo]` `Test all` parity
+- `[done]` menu bar
+- `[in-progress]` main workbench shell
+- `[in-progress]` control panel defaults
+- `[in-progress]` `Train` / `continue` state
+- `[in-progress]` progress bar state
+- `[in-progress]` pattern combo `< 24` handling
+- `[todo]` full `SimControl.checkControls()` parity
+- `[todo]` BasicProp-identical network drawing
+- `[in-progress]` detached message window
+- `[todo]` modal invalid-value dialogs
+- `[todo]` modal missing-pattern dialogs
+- `[in-progress]` error-progress chart
 
 ## Weights workflows
 
-- `[todo]` Hinton-style weight display parity
-- `[done]` weight persistence exists in SignalWeave-native form
-- `[todo]` weight refresh / layer switching parity
-- `[todo]` FF and SRN weight workflow parity
+- `[in-progress]` Hinton-style weight window
+- `[done]` SignalWeave-native weight persistence
+- `[todo]` separate FF and SRN weight-load workflows
+- `[in-progress]` layer switching
+- `[in-progress]` refresh behavior
+- `[todo]` screenshot-verified visual parity
 
 ## Patterns workflows
 
 - `[done]` pattern parsing with `reset`
-- `[todo]` load patterns desktop flow parity
-- `[todo]` patterns and outputs viewer parity
+- `[in-progress]` desktop pattern loading
+- `[in-progress]` pattern plot window
+- `[in-progress]` patterns/outputs viewing
+- `[todo]` exact workflow and formatting parity
 
-## Utility workflows
+## Utilities
 
-- `[todo]` 3D plotting parity
-- `[todo]` time series plot parity
-- `[todo]` hidden activation export parity
-- `[in-progress]` hidden activations are available in the core
+- `[in-progress]` 3D plotting workflow
+- `[in-progress]` time-series plotting workflow
+- `[in-progress]` hidden activation export
+- `[in-progress]` output clustering
+- `[in-progress]` hidden-state clustering
+- `[todo]` JAR-backed utility parity verification
+
+## File workflows
+
+- `[done]` custom SignalWeave project/file formats are allowed
+- `[done]` network save/load exists
+- `[done]` pattern load exists
+- `[done]` weight save/load exists
+- `[todo]` stable v1 project schema
+- `[todo]` checkpoint schema
+- `[todo]` SignalWeave-native schema documentation
 
 ## Release engineering
 
-- `[done]` .NET 8 solution builds on Linux
-- `[todo]` Windows validation
-- `[todo]` macOS validation
-- `[todo]` packaged desktop releases
+- `[done]` Linux build validation
+- `[todo]` Windows build validation
+- `[todo]` macOS build validation
+- `[todo]` packaged desktop binaries
 - `[todo]` GitHub release workflow
+- `[todo]` final parity sign-off script
+
+## Release gate
+
+SignalWeave reaches BasicProp-equivalent status only when:
+
+- every item above is `[done]`
+- no topology advertised by the UI is unsupported by the engine
+- golden parity tests pass against `basicProp-1.3.jar`
