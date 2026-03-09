@@ -79,22 +79,22 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
         var matrix = layer.MatrixSelector(_weights);
         var layerTitle = layer.Description;
 
-        var rows = matrix.GetLength(0);
-        var columns = matrix.GetLength(1);
+        var sourceCount = matrix.GetLength(0);
+        var targetCount = matrix.GetLength(1);
         var maxValue = Flatten(matrix).Select(Math.Abs).DefaultIfEmpty(1.0).Max();
-        CanvasWidth = Math.Max(280, (columns * CellSize) + (CanvasPadding * 2));
-        CanvasHeight = Math.Max(280, (rows * CellSize) + (CanvasPadding * 2));
+        CanvasWidth = Math.Max(280, (sourceCount * CellSize) + (CanvasPadding * 2));
+        CanvasHeight = Math.Max(280, (targetCount * CellSize) + (CanvasPadding * 2));
 
-        for (var row = 0; row < rows; row++)
+        for (var target = 0; target < targetCount; target++)
         {
-            for (var column = 0; column < columns; column++)
+            for (var source = 0; source < sourceCount; source++)
             {
-                var weight = matrix[row, column];
+                var weight = matrix[source, target];
                 var normalized = Math.Abs(weight) / Math.Max(0.000001, maxValue);
                 var size = 12 + (normalized * 68);
-                var cellFill = ((row + column) % 2 == 0) ? "#C8C8C8" : "#D0D0D0";
-                var cellX = CanvasPadding + (column * CellSize);
-                var cellY = CanvasPadding + (row * CellSize);
+                var cellFill = ((source + target) % 2 == 0) ? "#C8C8C8" : "#D0D0D0";
+                var cellX = CanvasPadding + (source * CellSize);
+                var cellY = CanvasPadding + (target * CellSize);
 
                 WeightGlyphs.Add(new WeightGlyphItem(
                     cellX,
@@ -111,7 +111,7 @@ public partial class WeightDisplayWindowViewModel : ViewModelBase
             }
         }
 
-        WeightMapSummary = $"{layerTitle} | rows={rows}, cols={columns}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
+        WeightMapSummary = $"{layerTitle} | rows={targetCount}, cols={sourceCount}, max |w|={maxValue.ToString("0.000000", CultureInfo.InvariantCulture)}";
         WindowTitle = $"{BaseTitle} - {layer.Id}";
     }
 

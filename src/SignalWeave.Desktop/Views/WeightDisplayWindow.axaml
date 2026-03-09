@@ -24,34 +24,8 @@
                       VerticalScrollBarVisibility="Auto">
             <Canvas Width="{Binding CanvasWidth}"
                     Height="{Binding CanvasHeight}"
+                    x:Name="WeightGlyphCanvas"
                     Background="#D5D5D5">
-                <ItemsControl ItemsSource="{Binding WeightGlyphs}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <Canvas />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:WeightGlyphItem">
-                            <Canvas>
-                                <Border Width="{Binding CellWidth}"
-                                        Height="{Binding CellHeight}"
-                                        Background="{Binding CellFill}"
-                                        Canvas.Left="{Binding X}"
-                                        Canvas.Top="{Binding Y}" />
-                                <shapes:Ellipse Width="{Binding EllipseWidth}"
-                                                Height="{Binding EllipseHeight}"
-                                                Fill="{Binding Fill}"
-                                                Canvas.Left="{Binding EllipseX}"
-                                                Canvas.Top="{Binding EllipseY}">
-                                    <ToolTip.Tip>
-                                        <TextBlock Text="{Binding Tooltip}" />
-                                    </ToolTip.Tip>
-                                </shapes:Ellipse>
-                            </Canvas>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
             </Canvas>
         </ScrollViewer>
 

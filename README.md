@@ -125,7 +125,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - the visible menu labels now mirror the BasicProp wording more closely by removing extra ellipses and non-reference top-level actions
 - network configuration `Apply` now updates the live desktop state without closing the dialog
 - network configuration styling now follows the BasicProp dialog more closely, with centered `OK` / `Apply` / `Cancel` buttons and tighter slider/bias layout
-- weight display now uses a matrix-sized Hinton-style frame with numeric layer selectors plus `Rec` for SRN recurrent weights, a compact BasicProp-like bottom control strip, and a live `Refresh` action against the current engine weights
+- weight display now uses a matrix-sized Hinton-style frame with numeric layer selectors plus `Rec` for SRN recurrent weights, BasicProp-style target-row/source-column orientation, a compact BasicProp-like bottom control strip, and a live `Refresh` action against the current engine weights
 - utility-window launches stay quiet in the main console, matching BasicProp more closely
 - in-place analysis/refresh actions also stay quiet unless they actually produce user-facing output or a note
 - reset and hidden-activation export no longer emit synthetic console lines
