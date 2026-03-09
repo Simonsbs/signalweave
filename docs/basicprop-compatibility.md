@@ -74,7 +74,7 @@ Source basis used for this implementation:
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
   - hidden activation export
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
-  - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: note-style message output for uninitialized patterns and modal feedback for zero loaded patterns
+  - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: note-style message output for uninitialized patterns and a `No can do!` modal for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
   - screenshot-driven cleanup of the main window and configuration dialog to remove SignalWeave-specific chrome and move closer to the BasicProp 1.3 layout
   - built-in XOR demo defaults aligned to the BasicProp reference control values (`0.3`, `0.8`, `5000`, `-1 - 1`)

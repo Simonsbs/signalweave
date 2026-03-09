@@ -14,6 +14,7 @@ namespace SignalWeave.Desktop.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private const string InvalidValueDialogTitle = "Invalid value";
+    private const string MissingPatternsDialogTitle = "No can do!";
     private const string MissingPatternsDialogMessage = "No training patterns have been provided!\nWhere are my patterns?";
     private const string PatternsNotInitializedNote = "SimControl.checkPatternsAvailable: Patterns have not been initialized";
     private const string LoadWeightsSrnNote = "Please select Load Weights (SRN) instead";
@@ -1750,7 +1751,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (_patternSet.Examples.Count == 0)
         {
-            throw new BasicPropModalException(InvalidValueDialogTitle, MissingPatternsDialogMessage);
+            throw new BasicPropModalException(MissingPatternsDialogTitle, MissingPatternsDialogMessage);
         }
     }
 
