@@ -1,0 +1,19 @@
+name=FF 3-layer train parity
+type=FeedForward
+layers=2,2,1
+biases=true,true,false
+learningRate=0.3
+momentum=0.8
+steps=1
+batchUpdate=false
+crossEntropy=false
+
+patterns:
+1,0 => 1
+
+weights 0:
+0.1,0.2,-0.3
+-0.4,0.5,0.6
+
+weights 1:
+0.7,-0.8,0.9

@@ -1,0 +1,15 @@
+{
+  "averageError": 0.410374208153,
+  "outputs": [
+    [0.589625791847]
+  ],
+  "hiddenActivations": [
+    []
+  ],
+  "inputHidden": [
+    [0.23120931916],
+    [-0.4],
+    [0.13120931916]
+  ],
+  "hiddenOutput": []
+}

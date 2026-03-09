@@ -27,6 +27,13 @@ Run a deterministic experiment from a probe file:
 java -cp /home/simon/temp/BasicProp/basicProp-1.3.jar:tools/basicprop-probe BasicPropProbe run tools/basicprop-probe/examples/xor-forward.bppr
 ```
 
+Current checked-in feed-forward training probes:
+
+- `examples/ff2-train-single.bppr`
+- `examples/ff3-train-single.bppr`
+- `examples/ff3-train-batch.bppr`
+- `examples/ff4-train-single.bppr`
+
 ## Probe file format
 
 Header fields:

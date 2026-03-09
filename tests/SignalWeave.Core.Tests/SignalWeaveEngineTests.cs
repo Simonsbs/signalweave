@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SignalWeave.Core;
 
 namespace SignalWeave.Core.Tests;
@@ -284,6 +285,203 @@ public class SignalWeaveEngineTests
     }
 
     [Fact]
+    public void MatchesBasicPropProbeForSingleStepTwoLayerFeedForwardTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 2-layer train parity
+            network = feedforward
+            inputs = 2
+            hidden = 0
+            outputs = 1
+            inputBias = true
+            hiddenBias = false
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2 },
+                { -0.4 },
+                { 0.1 }
+            },
+            new double[0, 0]);
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        engine.Train(patterns, 1);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff2-train-single.json");
+
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        Assert.Empty(engine.Weights.HiddenOutput);
+    }
+
+    [Fact]
+    public void MatchesBasicPropProbeForSingleStepThreeLayerFeedForwardTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 3-layer train parity
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2, 0.5 },
+                { -0.3, 0.6 },
+                { 0.1, -0.4 }
+            },
+            new double[,]
+            {
+                { -0.8 },
+                { 0.9 },
+                { 0.7 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        engine.Train(patterns, 1);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff3-train-single.json");
+
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
+    public void MatchesBasicPropProbeForBatchThreeLayerFeedForwardTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 3-layer batch parity
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 2
+            errorThreshold = 0.0
+            update = batch
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 0 0 => 0
+            b: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.2, 0.5 },
+                { -0.3, 0.6 },
+                { 0.1, -0.4 }
+            },
+            new double[,]
+            {
+                { -0.8 },
+                { 0.9 },
+                { 0.7 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        engine.Train(patterns, 2);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff3-train-batch.json");
+
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
+    public void MatchesBasicPropProbeForSingleStepFourLayerFeedForwardTraining()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = FF 4-layer train parity
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            hidden2 = 2
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            hidden2Bias = true
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.1, 0.2 },
+                { 0.3, 0.4 },
+                { 0.05, -0.05 }
+            },
+            new double[,]
+            {
+                { 0.9 },
+                { -1.0 },
+                { 0.2 }
+            },
+            hiddenHidden: new double[,]
+            {
+                { 0.5, -0.6 },
+                { 0.7, 0.8 },
+                { 0.1, -0.2 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        engine.Train(patterns, 1);
+        var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("ff4-train-single.json");
+
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenHidden!, golden.HiddenHidden!);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+    }
+
+    [Fact]
     public void MatchesBasicPropProbeForFixedWeightSrnForwardPass()
     {
         var definition = BasicPropNetworkConfigParser.Parse("""
@@ -408,5 +606,74 @@ public class SignalWeaveEngineTests
         Assert.Equal(0.542510847774, run.Results[1].Outputs[0], 12);
         Assert.Equal(0.538225952973, run.Results[2].Outputs[0], 12);
         Assert.Equal(0.523232075003, run.Results[3].Outputs[0], 12);
+    }
+
+    private static BasicPropGoldenFixture LoadGoldenFixture(string fileName)
+    {
+        var path = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "..",
+            "..",
+            "..",
+            "Fixtures",
+            "BasicProp",
+            fileName));
+
+        return JsonSerializer.Deserialize<BasicPropGoldenFixture>(
+            File.ReadAllText(path),
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            })
+            ?? throw new InvalidOperationException($"Failed to load golden fixture '{fileName}'.");
+    }
+
+    private static void AssertRunMatchesGolden(RunResult run, BasicPropGoldenFixture golden)
+    {
+        Assert.Equal(golden.AverageError, run.AverageError, 12);
+        Assert.Equal(golden.Outputs.Length, run.Results.Count);
+
+        for (var index = 0; index < golden.Outputs.Length; index++)
+        {
+            for (var output = 0; output < golden.Outputs[index].Length; output++)
+            {
+                Assert.Equal(golden.Outputs[index][output], run.Results[index].Outputs[output], 12);
+            }
+
+            if (golden.HiddenActivations is null)
+            {
+                continue;
+            }
+
+            Assert.Equal(golden.HiddenActivations[index].Length, run.Results[index].HiddenActivations.Length);
+            for (var hidden = 0; hidden < golden.HiddenActivations[index].Length; hidden++)
+            {
+                Assert.Equal(golden.HiddenActivations[index][hidden], run.Results[index].HiddenActivations[hidden], 12);
+            }
+        }
+    }
+
+    private static void AssertMatrixMatches(double[,] actual, double[][] expected)
+    {
+        Assert.Equal(expected.Length, actual.GetLength(0));
+        Assert.Equal(expected.Length == 0 ? 0 : expected[0].Length, actual.GetLength(1));
+
+        for (var row = 0; row < expected.Length; row++)
+        {
+            for (var column = 0; column < expected[row].Length; column++)
+            {
+                Assert.Equal(expected[row][column], actual[row, column], 12);
+            }
+        }
+    }
+
+    private sealed class BasicPropGoldenFixture
+    {
+        public double AverageError { get; set; }
+        public double[][] Outputs { get; set; } = [];
+        public double[][]? HiddenActivations { get; set; }
+        public double[][] InputHidden { get; set; } = [];
+        public double[][]? HiddenHidden { get; set; }
+        public double[][]? HiddenOutput { get; set; }
     }
 }

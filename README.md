@@ -37,6 +37,7 @@ Implemented now:
 - dedicated JAR-aligned time-series plot window with `Output`, `Add plot`, and `Dismiss` controls
 - dedicated JAR-aligned `Plot Setup` window for 3D/surface plotting with `X`, `Y`, `Z`, `Show Plot`, and `Dismiss`
 - dedicated JAR-aligned `PatternPlot` window with per-pattern selector and stacked `Outputs` / `Targets` / `Inputs` charts
+- checked-in BasicProp golden fixtures for 2-layer, 3-layer, 3-layer batch, and 4-layer feed-forward training parity
 
 Still to build for full feature parity:
 
