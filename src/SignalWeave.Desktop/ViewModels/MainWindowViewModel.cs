@@ -293,7 +293,7 @@ public partial class MainWindowViewModel : ViewModelBase
             EnsureContext(resetWeights: false);
             if (!CanTestOne)
             {
-                Inform("Test one is only available when more than 24 patterns are loaded.");
+                Inform("Test one is only available when 24 or fewer patterns are loaded.");
                 return;
             }
 
