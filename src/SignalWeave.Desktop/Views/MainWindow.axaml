@@ -259,124 +259,108 @@
                     Grid.Row="1"
                     Classes="group"
                     Margin="0,0,0,8">
-                <StackPanel Spacing="8">
+                <Grid RowDefinitions="Auto,*"
+                      RowSpacing="8">
                     <TextBlock Text="Control panel"
                                FontSize="18"
                                FontWeight="SemiBold"
                                Foreground="#3A3A3A" />
 
-                    <Grid ColumnDefinitions="*,110"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                          RowSpacing="8"
-                          ColumnSpacing="8">
-                        <TextBlock Text="Learning rate" />
-                        <ComboBox Grid.Column="1"
-                                  ItemsSource="{Binding LearningRateOptions}"
-                                  SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="8"
+                                    Margin="0,0,4,0">
+                            <Grid ColumnDefinitions="*,110"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                                  RowSpacing="8"
+                                  ColumnSpacing="8">
+                                <TextBlock Text="Learning rate" />
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding LearningRateOptions}"
+                                          SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="1" Text="Momentum" />
-                        <ComboBox Grid.Row="1"
-                                  Grid.Column="1"
-                                  ItemsSource="{Binding MomentumOptions}"
-                                  SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="1" Text="Momentum" />
+                                <ComboBox Grid.Row="1"
+                                          Grid.Column="1"
+                                          ItemsSource="{Binding MomentumOptions}"
+                                          SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="2" Text="Learning steps" />
-                        <ComboBox Grid.Row="2"
-                                  Grid.Column="1"
-                                  ItemsSource="{Binding LearningStepOptions}"
-                                  SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="2" Text="Learning steps" />
+                                <ComboBox Grid.Row="2"
+                                          Grid.Column="1"
+                                          ItemsSource="{Binding LearningStepOptions}"
+                                          SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="3" Text="Weight range" />
-                        <ComboBox Grid.Row="3"
-                                  Grid.Column="1"
-                                  ItemsSource="{Binding WeightRangeOptions}"
-                                  SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="3" Text="Weight range" />
+                                <ComboBox Grid.Row="3"
+                                          Grid.Column="1"
+                                          ItemsSource="{Binding WeightRangeOptions}"
+                                          SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}" />
 
-                        <CheckBox Grid.Row="4"
-                                  Grid.ColumnSpan="2"
-                                  Content="Batch Update"
-                                  IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
-                        <CheckBox Grid.Row="5"
-                                  Grid.ColumnSpan="2"
-                                  Content="X-entropy"
-                                  IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
+                                <CheckBox Grid.Row="4"
+                                          Grid.ColumnSpan="2"
+                                          Content="Batch Update"
+                                          IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
+                                <CheckBox Grid.Row="5"
+                                          Grid.ColumnSpan="2"
+                                          Content="X-entropy"
+                                          IsChecked="{Binding CrossEntropy, Mode=TwoWay}" />
 
-                        <Button Grid.Row="6"
-                                Classes="panel"
-                                Content="Reset"
-                                Command="{Binding ResetNetworkCommand}" />
-                        <Button Grid.Row="6"
-                                Grid.Column="1"
-                                Classes="panel"
-                                Content="{Binding TrainButtonLabel}"
-                                Command="{Binding TrainCommand}" />
+                                <Button Grid.Row="6"
+                                        Classes="panel"
+                                        Content="Reset"
+                                        Command="{Binding ResetNetworkCommand}" />
+                                <Button Grid.Row="6"
+                                        Grid.Column="1"
+                                        Classes="panel"
+                                        Content="{Binding TrainButtonLabel}"
+                                        Command="{Binding TrainCommand}" />
 
-                        <TextBlock Grid.Row="7" Text="Progress" />
-                        <Grid Grid.Row="7"
-                              Grid.Column="1">
-                            <ProgressBar Minimum="0"
-                                         Maximum="{Binding ProgressMaximum}"
-                                         Value="{Binding ProgressValue}"
-                                         Height="28"
-                                         Foreground="#5E7FA3"
-                                         Background="#E9EEF2"
-                                         BorderBrush="#9FB0C0"
-                                         BorderThickness="1" />
-                            <TextBlock Text="{Binding ProgressLabel}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="#2F4964"
-                                       FontWeight="SemiBold" />
-                        </Grid>
+                                <TextBlock Grid.Row="7" Text="Progress" />
+                                <Grid Grid.Row="7"
+                                      Grid.Column="1">
+                                    <ProgressBar Minimum="0"
+                                                 Maximum="{Binding ProgressMaximum}"
+                                                 Value="{Binding ProgressValue}"
+                                                 Height="28"
+                                                 Foreground="#5E7FA3"
+                                                 Background="#E9EEF2"
+                                                 BorderBrush="#9FB0C0"
+                                                 BorderThickness="1" />
+                                    <TextBlock Text="{Binding ProgressLabel}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="#2F4964"
+                                               FontWeight="SemiBold" />
+                                </Grid>
 
-                        <TextBlock Grid.Row="8" Text="Pattern" />
-                        <ComboBox Grid.Row="8"
-                                  Grid.Column="1"
-                                  ItemsSource="{Binding PatternOptions}"
-                                  SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
+                                <TextBlock Grid.Row="8" Text="Pattern" />
+                                <ComboBox Grid.Row="8"
+                                          Grid.Column="1"
+                                          ItemsSource="{Binding PatternOptions}"
+                                          SelectedItem="{Binding SelectedPattern, Mode=TwoWay}" />
 
-                        <Button Grid.Row="9"
-                                Grid.ColumnSpan="2"
-                                Classes="panel"
-                                Content="Test one"
-                                Command="{Binding TestOneCommand}"
-                                IsEnabled="{Binding CanTestOne}" />
-                        <Button Grid.Row="10"
-                                Grid.ColumnSpan="2"
-                                Classes="panel"
-                                Content="Test all"
-                                Command="{Binding TestAllCommand}" />
-                        <Button Grid.Row="11"
-                                Grid.ColumnSpan="2"
-                                Classes="panel"
-                                Content="Show weights"
-                                Command="{Binding ShowWeightsCommand}" />
-                    </Grid>
-
-                    <Separator Margin="0,6,0,4" />
-
-                    <Button Classes="panel"
-                            Content="3D plotting"
-                            Command="{Binding Show3DPlotCommand}" />
-                    <Button Classes="panel"
-                            Content="Time series plot"
-                            Command="{Binding ShowTimeSeriesPlotCommand}" />
-                    <Button Classes="panel"
-                            Content="Export hidden activations"
-                            Command="{Binding ExportHiddenActivationsCommand}" />
-                    <Button Classes="panel"
-                            Content="Cluster outputs"
-                            Command="{Binding ClusterOutputsCommand}" />
-                    <Button Classes="panel"
-                            Content="Show patterns and outputs"
-                            Command="{Binding ShowPatternsCommand}" />
-                    <Button Classes="panel"
-                            Content="Cluster hidden states"
-                            Command="{Binding ClusterHiddenCommand}" />
-                    <Button Classes="panel"
-                            Content="Compatibility"
-                            Command="{Binding ShowCompatibilityCommand}" />
-                </StackPanel>
+                                <Button Grid.Row="9"
+                                        Grid.ColumnSpan="2"
+                                        Classes="panel"
+                                        Content="Test one"
+                                        Command="{Binding TestOneCommand}"
+                                        IsEnabled="{Binding CanTestOne}" />
+                                <Button Grid.Row="10"
+                                        Grid.ColumnSpan="2"
+                                        Classes="panel"
+                                        Content="Test all"
+                                        Command="{Binding TestAllCommand}" />
+                                <Button Grid.Row="11"
+                                        Grid.ColumnSpan="2"
+                                        Classes="panel"
+                                        Content="Show weights"
+                                        Command="{Binding ShowWeightsCommand}" />
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Border>
 
             <Border Grid.Row="2"
