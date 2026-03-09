@@ -27,9 +27,11 @@ public sealed class NetworkDefinition
     public NetworkKind NetworkKind { get; init; } = NetworkKind.FeedForward;
     public int InputUnits { get; init; }
     public int HiddenUnits { get; init; }
+    public int SecondHiddenUnits { get; init; }
     public int OutputUnits { get; init; }
     public bool UseInputBias { get; init; } = true;
     public bool UseHiddenBias { get; init; } = true;
+    public bool UseSecondHiddenBias { get; init; }
     public double LearningRate { get; init; } = 0.3;
     public double Momentum { get; init; } = 0.0;
     public double RandomWeightRange { get; init; } = 0.5;
@@ -39,11 +41,24 @@ public sealed class NetworkDefinition
     public UpdateMode UpdateMode { get; init; } = UpdateMode.Pattern;
     public CostFunction CostFunction { get; init; } = CostFunction.SumSquaredError;
 
+    public bool HasSecondHiddenLayer => NetworkKind == NetworkKind.FeedForward && SecondHiddenUnits > 0;
+    public int TotalLayerCount => NetworkKind == NetworkKind.SimpleRecurrent ? 3 : HasSecondHiddenLayer ? 4 : 3;
+
     public void Validate()
     {
         if (InputUnits < 1 || HiddenUnits < 1 || OutputUnits < 1)
         {
             throw new InvalidOperationException("Input, hidden, and output unit counts must all be positive.");
+        }
+
+        if (SecondHiddenUnits < 0)
+        {
+            throw new InvalidOperationException("Second hidden unit count cannot be negative.");
+        }
+
+        if (NetworkKind == NetworkKind.SimpleRecurrent && SecondHiddenUnits > 0)
+        {
+            throw new InvalidOperationException("Simple recurrent networks do not support a second hidden layer.");
         }
 
         if (LearningRate <= 0)
@@ -78,8 +93,12 @@ public sealed class NetworkDefinition
             Environment.NewLine,
             $"Name: {Name}",
             $"Network: {NetworkKind}",
-            $"Units: {InputUnits} input / {HiddenUnits} hidden / {OutputUnits} output",
-            $"Bias: input={UseInputBias}, hidden={UseHiddenBias}",
+            HasSecondHiddenLayer
+                ? $"Units: {InputUnits} input / {HiddenUnits} hidden1 / {SecondHiddenUnits} hidden2 / {OutputUnits} output"
+                : $"Units: {InputUnits} input / {HiddenUnits} hidden / {OutputUnits} output",
+            HasSecondHiddenLayer
+                ? $"Bias: input={UseInputBias}, hidden1={UseHiddenBias}, hidden2={UseSecondHiddenBias}"
+                : $"Bias: input={UseInputBias}, hidden={UseHiddenBias}",
             $"Learning: rate={LearningRate.ToString("0.###", CultureInfo.InvariantCulture)}, momentum={Momentum.ToString("0.###", CultureInfo.InvariantCulture)}",
             $"Training: update={UpdateMode}, cost={CostFunction}, maxEpochs={MaxEpochs}, threshold={ErrorThreshold.ToString("0.####", CultureInfo.InvariantCulture)}");
     }

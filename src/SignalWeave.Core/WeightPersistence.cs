@@ -4,35 +4,47 @@ namespace SignalWeave.Core;
 
 public sealed class WeightSet
 {
-    public WeightSet(double[,] inputHidden, double[,] hiddenOutput, double[,]? recurrentHidden = null)
+    public WeightSet(double[,] inputHidden, double[,] hiddenOutput, double[,]? recurrentHidden = null, double[,]? hiddenHidden = null)
     {
         InputHidden = inputHidden;
         HiddenOutput = hiddenOutput;
         RecurrentHidden = recurrentHidden;
+        HiddenHidden = hiddenHidden;
     }
 
     public double[,] InputHidden { get; }
     public double[,] HiddenOutput { get; }
     public double[,]? RecurrentHidden { get; }
+    public double[,]? HiddenHidden { get; }
 
     public WeightSet Clone()
     {
         return new WeightSet(
             (double[,])InputHidden.Clone(),
             (double[,])HiddenOutput.Clone(),
-            RecurrentHidden is null ? null : (double[,])RecurrentHidden.Clone());
+            RecurrentHidden is null ? null : (double[,])RecurrentHidden.Clone(),
+            HiddenHidden is null ? null : (double[,])HiddenHidden.Clone());
     }
 
     public static WeightSet CreateRandom(NetworkDefinition definition, int? seed = null)
     {
         var random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         var inputHidden = CreateMatrix(definition.InputUnits + (definition.UseInputBias ? 1 : 0), definition.HiddenUnits, definition.RandomWeightRange, random);
-        var hiddenOutput = CreateMatrix(definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0), definition.OutputUnits, definition.RandomWeightRange, random);
+        var hiddenHidden = definition.HasSecondHiddenLayer
+            ? CreateMatrix(definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0), definition.SecondHiddenUnits, definition.RandomWeightRange, random)
+            : null;
+        var hiddenOutput = CreateMatrix(
+            definition.HasSecondHiddenLayer
+                ? definition.SecondHiddenUnits + (definition.UseSecondHiddenBias ? 1 : 0)
+                : definition.HiddenUnits + (definition.UseHiddenBias ? 1 : 0),
+            definition.OutputUnits,
+            definition.RandomWeightRange,
+            random);
         var recurrent = definition.NetworkKind == NetworkKind.SimpleRecurrent
             ? CreateMatrix(definition.HiddenUnits, definition.HiddenUnits, definition.RandomWeightRange, random)
             : null;
 
-        return new WeightSet(inputHidden, hiddenOutput, recurrent);
+        return new WeightSet(inputHidden, hiddenOutput, recurrent, hiddenHidden);
     }
 
     private static double[,] CreateMatrix(int rows, int columns, double range, Random random)
@@ -61,7 +73,8 @@ public static class WeightSetSerializer
             NetworkKind = definition.NetworkKind.ToString(),
             InputHidden = ToJagged(weights.InputHidden),
             HiddenOutput = ToJagged(weights.HiddenOutput),
-            RecurrentHidden = weights.RecurrentHidden is null ? null : ToJagged(weights.RecurrentHidden)
+            RecurrentHidden = weights.RecurrentHidden is null ? null : ToJagged(weights.RecurrentHidden),
+            HiddenHidden = weights.HiddenHidden is null ? null : ToJagged(weights.HiddenHidden)
         };
 
         var json = JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true });
@@ -77,7 +90,8 @@ public static class WeightSetSerializer
         return new WeightSet(
             ToRectangular(document.InputHidden),
             ToRectangular(document.HiddenOutput),
-            document.RecurrentHidden is null ? null : ToRectangular(document.RecurrentHidden));
+            document.RecurrentHidden is null ? null : ToRectangular(document.RecurrentHidden),
+            document.HiddenHidden is null ? null : ToRectangular(document.HiddenHidden));
     }
 
     private static double[][] ToJagged(double[,] matrix)
@@ -127,5 +141,6 @@ public static class WeightSetSerializer
         public double[][] InputHidden { get; set; } = [];
         public double[][] HiddenOutput { get; set; } = [];
         public double[][]? RecurrentHidden { get; set; }
+        public double[][]? HiddenHidden { get; set; }
     }
 }

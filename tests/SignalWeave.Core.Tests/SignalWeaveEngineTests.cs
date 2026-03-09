@@ -23,9 +23,35 @@ public class SignalWeaveEngineTests
         Assert.Equal(NetworkKind.FeedForward, definition.NetworkKind);
         Assert.Equal(3, definition.InputUnits);
         Assert.Equal(5, definition.HiddenUnits);
+        Assert.Equal(0, definition.SecondHiddenUnits);
         Assert.Equal(2, definition.OutputUnits);
         Assert.Equal(UpdateMode.Batch, definition.UpdateMode);
         Assert.Equal(CostFunction.CrossEntropy, definition.CostFunction);
+    }
+
+    [Fact]
+    public void ParsesFourLayerFeedForwardConfig()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = Four layer parser test
+            network = feedforward
+            inputs = 2
+            hidden = 4
+            hidden2 = 3
+            outputs = 1
+            inputBias = true
+            hiddenBias = true
+            hidden2Bias = true
+            """);
+
+        Assert.Equal("Four layer parser test", definition.Name);
+        Assert.Equal(NetworkKind.FeedForward, definition.NetworkKind);
+        Assert.Equal(2, definition.InputUnits);
+        Assert.Equal(4, definition.HiddenUnits);
+        Assert.Equal(3, definition.SecondHiddenUnits);
+        Assert.True(definition.HasSecondHiddenLayer);
+        Assert.True(definition.UseSecondHiddenBias);
+        Assert.Equal(4, definition.TotalLayerCount);
     }
 
     [Fact]
@@ -142,6 +168,60 @@ public class SignalWeaveEngineTests
         Assert.Equal(0.524979187479, run.Results[2].HiddenActivations[1], 12);
         Assert.Equal(0.5, run.Results[3].HiddenActivations[0], 12);
         Assert.Equal(0.668187772168, run.Results[3].HiddenActivations[1], 12);
+    }
+
+    [Fact]
+    public void SupportsFixedWeightForwardPassForFourLayerFeedForward()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse("""
+            name = Four layer forward
+            network = feedforward
+            inputs = 2
+            hidden = 2
+            hidden2 = 2
+            outputs = 1
+            inputBias = false
+            hiddenBias = false
+            hidden2Bias = false
+            learningRate = 0.3
+            momentum = 0.8
+            randomWeightRange = 1.0
+            maxEpochs = 1
+            errorThreshold = 0.0
+            update = pattern
+            cost = sse
+            """);
+
+        var patterns = PatternSetParser.Parse("""
+            a: 1 0 => 1
+            """);
+
+        var weights = new WeightSet(
+            new double[,]
+            {
+                { 0.1, 0.2 },
+                { 0.3, 0.4 }
+            },
+            new double[,]
+            {
+                { 0.9 },
+                { -1.0 }
+            },
+            hiddenHidden: new double[,]
+            {
+                { 0.5, -0.6 },
+                { 0.7, 0.8 }
+            });
+
+        var engine = new SignalWeaveEngine(definition, weights);
+        var run = engine.TestAll(patterns);
+
+        Assert.Equal(0.514894860369, run.Results[0].Outputs[0], 12);
+        Assert.Equal(4, run.Results[0].HiddenActivations.Length);
+        Assert.Equal(0.524979187479, run.Results[0].HiddenActivations[0], 12);
+        Assert.Equal(0.549833997312, run.Results[0].HiddenActivations[1], 12);
+        Assert.Equal(0.656418318669, run.Results[0].HiddenActivations[2], 12);
+        Assert.Equal(0.531179411791, run.Results[0].HiddenActivations[3], 12);
     }
 
     [Fact]

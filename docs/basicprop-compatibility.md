@@ -32,6 +32,7 @@ Source basis used for this implementation:
 
 - Config and pattern parsing
 - Core engine for feed-forward and SRN execution
+- Core engine support for both 3-layer and 4-layer feed-forward execution, plus SRN execution
 - Training and testing workflows
 - Weight persistence
 - Hierarchical clustering over outputs and hidden activations
