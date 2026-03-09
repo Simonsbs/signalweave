@@ -34,6 +34,11 @@ Current checked-in feed-forward training probes:
 - `examples/ff3-train-batch.bppr`
 - `examples/ff4-train-single.bppr`
 
+Current checked-in SRN probes:
+
+- `examples/srn-forward.bppr`
+- `examples/srn-train-sequential.bppr`
+
 ## Probe file format
 
 Header fields:

@@ -530,10 +530,12 @@ public class SignalWeaveEngineTests
 
         var engine = new SignalWeaveEngine(definition, weights);
         var run = engine.TestAll(patterns);
-        Assert.Equal(0.51637638731, run.Results[0].Outputs[0], 12);
-        Assert.Equal(0.542741670816, run.Results[1].Outputs[0], 12);
-        Assert.Equal(0.538951408832, run.Results[2].Outputs[0], 12);
-        Assert.Equal(0.523331468988, run.Results[3].Outputs[0], 12);
+        var golden = LoadGoldenFixture("srn-forward.json");
+
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+        AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
     }
 
     [Fact]
@@ -586,26 +588,13 @@ public class SignalWeaveEngineTests
         var engine = new SignalWeaveEngine(definition, weights);
         var result = engine.Train(patterns, 4);
         var run = engine.TestAll(patterns);
+        var golden = LoadGoldenFixture("srn-train-sequential.json");
 
         Assert.Equal(4, result.History.Count);
-        Assert.Equal(0.398576432913, engine.Weights.InputHidden[0, 0], 12);
-        Assert.Equal(0.702655047097, engine.Weights.InputHidden[0, 1], 12);
-        Assert.Equal(0.203340134128, engine.Weights.InputHidden[1, 0], 12);
-        Assert.Equal(-0.304381361609, engine.Weights.InputHidden[1, 1], 12);
-
-        Assert.Equal(-0.503859340742, engine.Weights.HiddenOutput[0, 0], 12);
-        Assert.Equal(0.800209495605, engine.Weights.HiddenOutput[1, 0], 12);
-        Assert.Equal(0.084758793661, engine.Weights.HiddenOutput[2, 0], 12);
-
-        Assert.Equal(0.593964802018, engine.Weights.RecurrentHidden![0, 0], 12);
-        Assert.Equal(0.110344928474, engine.Weights.RecurrentHidden[0, 1], 12);
-        Assert.Equal(-0.205093551689, engine.Weights.RecurrentHidden[1, 0], 12);
-        Assert.Equal(0.408723508299, engine.Weights.RecurrentHidden[1, 1], 12);
-
-        Assert.Equal(0.515550698433, run.Results[0].Outputs[0], 12);
-        Assert.Equal(0.542510847774, run.Results[1].Outputs[0], 12);
-        Assert.Equal(0.538225952973, run.Results[2].Outputs[0], 12);
-        Assert.Equal(0.523232075003, run.Results[3].Outputs[0], 12);
+        AssertRunMatchesGolden(run, golden);
+        AssertMatrixMatches(engine.Weights.InputHidden, golden.InputHidden);
+        AssertMatrixMatches(engine.Weights.HiddenOutput, golden.HiddenOutput!);
+        AssertMatrixMatches(engine.Weights.RecurrentHidden!, golden.RecurrentHidden!);
     }
 
     private static BasicPropGoldenFixture LoadGoldenFixture(string fileName)
@@ -675,5 +664,6 @@ public class SignalWeaveEngineTests
         public double[][] InputHidden { get; set; } = [];
         public double[][]? HiddenHidden { get; set; }
         public double[][]? HiddenOutput { get; set; }
+        public double[][]? RecurrentHidden { get; set; }
     }
 }
