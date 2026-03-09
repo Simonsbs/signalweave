@@ -55,8 +55,6 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<PlotMarkerItem> UtilityPlotMarkers { get; } = [];
     public MessageWindowViewModel MessageWindow { get; }
     public event EventHandler<FeedbackDialogRequestEventArgs>? FeedbackDialogRequested;
-    public bool IsBatchUpdateAvailable => _definition?.NetworkKind != NetworkKind.SimpleRecurrent;
-
     [ObservableProperty]
     private string _sampleTitle = "XOR demo";
 
@@ -425,7 +423,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _definition = effectiveDefinition;
         _patternSet = parsedPatterns;
         SampleTitle = effectiveDefinition.Name;
-        if (!IsBatchUpdateAvailable)
+        if (effectiveDefinition.NetworkKind == NetworkKind.SimpleRecurrent)
         {
             BatchUpdate = false;
         }
@@ -435,7 +433,6 @@ public partial class MainWindowViewModel : ViewModelBase
         NetworkSummary = BuildNetworkSummary(effectiveDefinition, parsedPatterns);
         WeightsText = BuildWeightsText(_engine.Weights);
         RefreshDiagram();
-        OnPropertyChanged(nameof(IsBatchUpdateAvailable));
     }
 
     partial void OnSelectedWeightLayerChanged(string value)

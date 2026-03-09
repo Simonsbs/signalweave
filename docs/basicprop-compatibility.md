@@ -54,7 +54,7 @@ Source basis used for this implementation:
   - pattern loading now uses the current configured network state instead of reparsing the editor surface
   - pattern-loading parse/validation failures now collapse to the original `Failed to load patterns` note instead of leaking raw parser exceptions into the desktop console
   - network saving now uses the loaded configured network state instead of reparsing the editor surface
-  - `Batch Update` now behaves as a feed-forward-only control in the desktop UI, matching BasicProp's `SimControl.checkControls()` behavior more closely
+  - `Batch Update` now stays enabled like the original control surface, but is cleared automatically for SRNs so the applied runtime still matches BasicProp's feed-forward-only batch-update semantics
   - main `Pattern` selector now uses BasicProp-style `PatternHolder` text for `< 24` patterns and falls back to the loaded pattern source name at `24+`, while keeping `Test one` enabled at exactly `24` patterns to match the original controller
   - weight loading no longer fakes a `Loaded weights` progress-bar state; the progress bar stays aligned with BasicProp's cycle-based `Untrained`/count display instead of the selected learning-step count
   - current weight inspection
