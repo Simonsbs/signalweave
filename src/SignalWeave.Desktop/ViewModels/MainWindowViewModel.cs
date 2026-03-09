@@ -53,6 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<PlotMarkerItem> UtilityPlotMarkers { get; } = [];
     public MessageWindowViewModel MessageWindow { get; }
     public event EventHandler<FeedbackDialogRequestEventArgs>? FeedbackDialogRequested;
+    public bool IsBatchUpdateAvailable => _definition?.NetworkKind != NetworkKind.SimpleRecurrent;
 
     [ObservableProperty]
     private string _sampleTitle = "XOR demo";
@@ -418,12 +419,17 @@ public partial class MainWindowViewModel : ViewModelBase
         _definition = effectiveDefinition;
         _patternSet = parsedPatterns;
         SampleTitle = effectiveDefinition.Name;
+        if (!IsBatchUpdateAvailable)
+        {
+            BatchUpdate = false;
+        }
 
         UpdatePatternOptions(parsedPatterns);
         UpdateWeightLayerOptions(_engine.Weights);
         NetworkSummary = BuildNetworkSummary(effectiveDefinition, parsedPatterns);
         WeightsText = BuildWeightsText(_engine.Weights);
         RefreshDiagram();
+        OnPropertyChanged(nameof(IsBatchUpdateAvailable));
     }
 
     partial void OnSelectedWeightLayerChanged(string value)
@@ -450,7 +456,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedMomentum = PickNearest(_momentumOptions, definition.Momentum);
         SelectedLearningSteps = PickNearest(_learningStepOptions, definition.MaxEpochs);
         SelectedWeightRange = PickWeightRange(definition.RandomWeightRange);
-        BatchUpdate = definition.UpdateMode == UpdateMode.Batch;
+        BatchUpdate = definition.NetworkKind == NetworkKind.FeedForward && definition.UpdateMode == UpdateMode.Batch;
         CrossEntropy = definition.CostFunction == CostFunction.CrossEntropy;
     }
 
@@ -473,7 +479,9 @@ public partial class MainWindowViewModel : ViewModelBase
             SigmoidPrimeOffset = definition.SigmoidPrimeOffset,
             MaxEpochs = GetLearningStepsValue(),
             ErrorThreshold = definition.ErrorThreshold,
-            UpdateMode = BatchUpdate ? UpdateMode.Batch : UpdateMode.Pattern,
+            UpdateMode = definition.NetworkKind == NetworkKind.SimpleRecurrent
+                ? UpdateMode.Pattern
+                : BatchUpdate ? UpdateMode.Batch : UpdateMode.Pattern,
             CostFunction = CrossEntropy ? CostFunction.CrossEntropy : CostFunction.SumSquaredError
         };
     }

@@ -246,6 +246,7 @@
 
                                 <CheckBox Grid.Row="4"
                                           Content="Batch Update"
+                                          IsEnabled="{Binding IsBatchUpdateAvailable}"
                                           IsChecked="{Binding BatchUpdate, Mode=TwoWay}" />
                                 <CheckBox Grid.Row="4"
                                           Grid.Column="1"
