@@ -54,6 +54,11 @@
                 <MenuItem Header="_Configure Network" Click="ConfigureNetwork_Click" />
                 <MenuItem Header="_Load Network" Click="LoadNetwork_Click" />
                 <MenuItem Header="_Save Network" Click="SaveNetwork_Click" />
+                <Separator />
+                <MenuItem Header="Load _Project" Click="LoadProject_Click" />
+                <MenuItem Header="Save P_roject" Click="SaveProject_Click" />
+                <MenuItem Header="Load C_heckpoint" Click="LoadCheckpoint_Click" />
+                <MenuItem Header="Save Ch_eckpoint" Click="SaveCheckpoint_Click" />
             </MenuItem>
             <MenuItem Header="_Weights">
                 <MenuItem Header="_Show Weights" Click="ShowWeightsWindow_Click" />

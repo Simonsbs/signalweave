@@ -1463,9 +1463,30 @@ public partial class MainWindowViewModel : ViewModelBase
         return $"{Slugify(SampleTitle)}.weights.json";
     }
 
+    public string GetSuggestedProjectFileName()
+    {
+        return $"{Slugify(SampleTitle)}.swproj.json";
+    }
+
+    public string GetSuggestedCheckpointFileName()
+    {
+        return $"{Slugify(SampleTitle)}.swcheckpoint.json";
+    }
+
     public string GetSuggestedHiddenActivationFileName()
     {
         return $"{Slugify(SampleTitle)}-hidden.dat";
+    }
+
+    public PatternSet GetLoadedPatternSet()
+    {
+        EnsureContext(resetWeights: false);
+        return _patternSet!;
+    }
+
+    public int GetCompletedCycles()
+    {
+        return _engine?.CompletedCycles ?? 0;
     }
 
     public void LoadNetworkText(string text, string? sourceName = null)
@@ -1549,6 +1570,40 @@ public partial class MainWindowViewModel : ViewModelBase
         RefreshDiagram();
         RebuildWeightMap();
         AnalysisText = "Weights loaded into the current network.";
+    }
+
+    public void LoadProject(SignalWeaveProject project)
+    {
+        SampleTitle = project.Definition.Name;
+        _patternListCaption = project.Definition.Name;
+        ConfigText = BasicPropNetworkConfigWriter.Write(project.Definition);
+        PatternText = PatternSetWriter.Write(project.Patterns);
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: null);
+
+        if (project.Weights is not null)
+        {
+            LoadWeights(project.Weights);
+        }
+    }
+
+    public void LoadCheckpoint(SignalWeaveCheckpoint checkpoint)
+    {
+        SampleTitle = checkpoint.Definition.Name;
+        _patternListCaption = checkpoint.Definition.Name;
+        ConfigText = BasicPropNetworkConfigWriter.Write(checkpoint.Definition);
+        PatternText = PatternSetWriter.Write(checkpoint.Patterns);
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: null);
+        LoadWeights(checkpoint.Weights);
+
+        _engine!.RestoreCompletedCycles(checkpoint.CompletedCycles);
+        if (checkpoint.CompletedCycles > 0)
+        {
+            ProgressMaximum = checkpoint.CompletedCycles;
+            ProgressValue = checkpoint.CompletedCycles;
+            ProgressLabel = checkpoint.CompletedCycles.ToString(CultureInfo.InvariantCulture);
+        }
+
+        AnalysisText = $"Checkpoint loaded:{Environment.NewLine}{checkpoint.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles";
     }
 
     public bool CanLoadWeightsFromMenu(bool forSrn)

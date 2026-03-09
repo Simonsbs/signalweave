@@ -80,6 +80,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
 - startup with a default feed-forward network, no loaded patterns, and the original BasicProp-style prompt to load patterns before running simulations
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
+- native desktop workflows for loading/saving `signalweave-project/v1` and `signalweave-checkpoint/v1` documents from the `Network` menu
 - progress state now follows cumulative completed training cycles more closely across repeated `Train` runs
 - right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
 - train/test actions now enter a real busy state so the control-panel labels, combos, pattern selector, and run buttons disable during active controller work more like BasicProp’s `SimControl.checkControls()`

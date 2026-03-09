@@ -67,3 +67,14 @@ dotnet run --project src/SignalWeave.Cli -- train --project xor.swproj.json --ch
 dotnet run --project src/SignalWeave.Cli -- test-all --checkpoint xor-trained.swcheckpoint.json
 dotnet run --project src/SignalWeave.Cli -- cluster --project xor.swproj.json --mode hidden
 ```
+
+## Desktop workflows
+
+The desktop app exposes the same native schema types under `Network`:
+
+- `Load Project`
+- `Save Project`
+- `Load Checkpoint`
+- `Save Checkpoint`
+
+Projects embed the current network, pattern set, and current weight snapshot. Checkpoints additionally persist the completed-cycle count.

@@ -174,6 +174,103 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void LoadProject_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var file = await PickOpenFileAsync(
+                "Load Project",
+                new FilePickerFileType("SignalWeave project") { Patterns = ["*.swproj.json"] },
+                new FilePickerFileType("JSON files") { Patterns = ["*.json"] },
+                new FilePickerFileType("All files") { Patterns = ["*.*"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var path = file.TryGetLocalPath()
+                ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected project file.");
+            var project = SignalWeaveProjectSerializer.LoadFile(path);
+            ViewModel.LoadProject(project);
+        });
+    }
+
+    private async void SaveProject_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var file = await PickSaveFileAsync(
+                "Save Project",
+                ViewModel.GetSuggestedProjectFileName(),
+                ".json",
+                new FilePickerFileType("SignalWeave project") { Patterns = ["*.swproj.json"] },
+                new FilePickerFileType("JSON files") { Patterns = ["*.json"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var path = file.TryGetLocalPath()
+                ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected project file.");
+            SignalWeaveProjectSerializer.SaveFile(
+                path,
+                ViewModel.GetLoadedDefinition(),
+                ViewModel.GetLoadedPatternSet(),
+                ViewModel.GetCurrentWeights());
+        });
+    }
+
+    private async void LoadCheckpoint_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var file = await PickOpenFileAsync(
+                "Load Checkpoint",
+                new FilePickerFileType("SignalWeave checkpoint") { Patterns = ["*.swcheckpoint.json"] },
+                new FilePickerFileType("JSON files") { Patterns = ["*.json"] },
+                new FilePickerFileType("All files") { Patterns = ["*.*"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var path = file.TryGetLocalPath()
+                ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected checkpoint file.");
+            var checkpoint = SignalWeaveCheckpointSerializer.LoadFile(path);
+            ViewModel.LoadCheckpoint(checkpoint);
+        });
+    }
+
+    private async void SaveCheckpoint_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var file = await PickSaveFileAsync(
+                "Save Checkpoint",
+                ViewModel.GetSuggestedCheckpointFileName(),
+                ".json",
+                new FilePickerFileType("SignalWeave checkpoint") { Patterns = ["*.swcheckpoint.json"] },
+                new FilePickerFileType("JSON files") { Patterns = ["*.json"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var path = file.TryGetLocalPath()
+                ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected checkpoint file.");
+            SignalWeaveCheckpointSerializer.SaveFile(
+                path,
+                ViewModel.GetLoadedDefinition(),
+                ViewModel.GetLoadedPatternSet(),
+                ViewModel.GetCurrentWeights(),
+                ViewModel.GetCompletedCycles());
+        });
+    }
+
     private async void LoadPatterns_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         await RunWithConsoleAsync(async () =>

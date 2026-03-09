@@ -35,6 +35,11 @@ public sealed class SignalWeaveEngine
     public WeightSet Weights { get; private set; }
     public int CompletedCycles { get; private set; }
 
+    public void RestoreCompletedCycles(int cycles)
+    {
+        CompletedCycles = Math.Max(cycles, 0);
+    }
+
     public TrainResult Train(PatternSet patternSet, int? maxEpochs = null)
     {
         patternSet.ValidateAgainst(_definition, requireTargets: true);
