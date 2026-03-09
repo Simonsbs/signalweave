@@ -102,6 +102,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `No can do!` modal feedback when train/test actions are attempted with zero loaded patterns
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
+- visible utility-menu access to output clustering, hidden-state clustering, and the compatibility summary through dedicated text-report windows
 - the visible menu labels now mirror the BasicProp wording more closely by removing extra ellipses and non-reference top-level actions
 - network configuration `Apply` now updates the live desktop state without closing the dialog
 - network configuration styling now follows the BasicProp dialog more closely, with centered `OK` / `Apply` / `Cancel` buttons and tighter slider/bias layout

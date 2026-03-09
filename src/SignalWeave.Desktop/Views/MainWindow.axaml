@@ -69,6 +69,10 @@
                 <MenuItem Header="_3D Plotting" Click="Show3DPlotWindow_Click" />
                 <MenuItem Header="_Time Series Plot" Click="ShowTimeSeriesPlotWindow_Click" />
                 <MenuItem Header="_Export hidden units activations" Click="ExportHiddenActivations_Click" />
+                <Separator />
+                <MenuItem Header="Cluster _Outputs" Click="ShowOutputClusterReport_Click" />
+                <MenuItem Header="Cluster _Hidden States" Click="ShowHiddenClusterReport_Click" />
+                <MenuItem Header="_Compatibility Summary" Click="ShowCompatibilityReport_Click" />
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_Open SignalWeave repository" Click="OpenRepository_Click" />

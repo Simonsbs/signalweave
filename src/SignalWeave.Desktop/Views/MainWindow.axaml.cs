@@ -312,6 +312,21 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void ShowOutputClusterReport_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ShowReportWindowAsync(ViewModel.CreateOutputClusterReport());
+    }
+
+    private async void ShowHiddenClusterReport_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ShowReportWindowAsync(ViewModel.CreateHiddenClusterReport());
+    }
+
+    private async void ShowCompatibilityReport_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await ShowReportWindowAsync(ViewModel.CreateCompatibilityReport());
+    }
+
     private async void ShowMessageWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         await RunWithConsoleAsync(() =>
@@ -355,6 +370,15 @@ public partial class MainWindow : Window
         {
             ViewModel.ConsoleText = exception.Message;
         }
+    }
+
+    private async Task ShowReportWindowAsync(TextReportSnapshot snapshot)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var window = new TextReportWindow(snapshot);
+            await window.ShowDialog(this);
+        });
     }
 
     private async Task<IStorageFile?> PickOpenFileAsync(string title, params FilePickerFileType[] fileTypes)

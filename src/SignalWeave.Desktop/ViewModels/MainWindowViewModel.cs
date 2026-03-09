@@ -1582,6 +1582,28 @@ public partial class MainWindowViewModel : ViewModelBase
         AnalysisText = $"Hidden activations exported:{Environment.NewLine}{path}";
     }
 
+    public TextReportSnapshot CreateOutputClusterReport()
+    {
+        EnsureContext(resetWeights: false);
+        var text = _engine!.ClusterOutputs(_patternSet!).ToDisplayText();
+        AnalysisText = text;
+        return new TextReportSnapshot("Output Clustering", text);
+    }
+
+    public TextReportSnapshot CreateHiddenClusterReport()
+    {
+        EnsureContext(resetWeights: false);
+        var text = _engine!.ClusterHiddenStates(_patternSet!).ToDisplayText();
+        AnalysisText = text;
+        return new TextReportSnapshot("Hidden-State Clustering", text);
+    }
+
+    public TextReportSnapshot CreateCompatibilityReport()
+    {
+        AnalysisText = CompatibilityProfile.ToDisplayText();
+        return new TextReportSnapshot("Compatibility Summary", AnalysisText);
+    }
+
     public WeightDisplaySession CreateWeightDisplaySession()
     {
         EnsureContext(resetWeights: false);
@@ -1988,6 +2010,7 @@ public sealed record PatternOutputRow(int Index, string Label, string Inputs, st
 public sealed record PlotMarkerItem(double X, double Y, double Width, double Height, string Fill, string Label);
 public sealed record TimeSeriesPlotOption(string Id, string Label, string Summary, IReadOnlyList<double> Values, string Stroke);
 public sealed record WeightDisplaySession(string Title, WeightSet Weights);
+public sealed record TextReportSnapshot(string Title, string Text);
 public sealed record PatternOutputsSnapshot(string Title, string Summary, IReadOnlyList<PatternOutputRow> Rows);
 public sealed record TimeSeriesPlotSession(
     string Title,

@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:SignalWeave.Desktop.ViewModels"
+        mc:Ignorable="d"
+        x:Class="SignalWeave.Desktop.Views.TextReportWindow"
+        x:DataType="vm:TextReportWindowViewModel"
+        Width="760"
+        Height="520"
+        Background="#E1E1E1"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:TextReportWindowViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="*,Auto"
+          Margin="10">
+        <Border Background="#F3F3F3"
+                BorderBrush="#B8C0CA"
+                BorderThickness="1">
+            <TextBox Margin="8"
+                     FontFamily="Courier New"
+                     Text="{Binding ReportText}"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap" />
+        </Border>
+
+        <Button Grid.Row="1"
+                Margin="0,10,0,0"
+                HorizontalAlignment="Right"
+                Content="Dismiss"
+                Click="Dismiss_Click" />
+    </Grid>
+</Window>
