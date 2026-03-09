@@ -73,6 +73,7 @@ dotnet run --project src/SignalWeave.Desktop
 The desktop app ships with built-in XOR and SRN demos and now exposes a BasicProp-like workflow surface:
 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
+- startup with a default feed-forward network, no loaded patterns, and the original BasicProp-style prompt to load patterns before running simulations
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
 - right-side training/test control panel with BasicProp-like defaults, button layout, and BasicProp-style `continue` text only during active training
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot

@@ -68,6 +68,7 @@ Source basis used for this implementation:
   - progress bar state with `Untrained` and cycle-count display
   - dedicated secondary windows for weights, plots, and patterns/outputs
   - popup plot axes/labels and BasicProp-style weight-layer controls
+  - startup now mirrors BasicProp more closely: a default feed-forward network is loaded with no patterns, and the initial desktop note prompts the user to load patterns before running simulations
   - dedicated time-series plot workflow aligned to the BasicProp `TimeSeriesPlotter` control surface
   - cumulative time-series `Add plot` behavior with `InputN`, `TargetN`, and `OutputN` selectors, plus the BasicProp-sized 600x300 frame
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
@@ -81,7 +82,7 @@ Source basis used for this implementation:
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: BasicProp-style `Note:` message output that appends to the desktop console for uninitialized patterns, plus a `No can do!` modal for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
   - screenshot-driven cleanup of the main window and configuration dialog to remove SignalWeave-specific chrome and move closer to the BasicProp 1.3 layout
-  - built-in XOR demo defaults aligned to the BasicProp reference control values (`0.3`, `0.8`, `5000`, `-1 - 1`)
+  - built-in XOR demo defaults aligned to the BasicProp reference control values (`0.3`, `0.8`, `5000`, `-1 - 1`) when loaded from the menu
   - `Configure Network...` now opens from the loaded network definition rather than reparsing the editor first
 
 ## Remaining parity work

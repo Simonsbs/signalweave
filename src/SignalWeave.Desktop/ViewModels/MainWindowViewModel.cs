@@ -16,6 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private const string InvalidValueDialogTitle = "Invalid value";
     private const string MissingPatternsDialogTitle = "No can do!";
     private const string MissingPatternsDialogMessage = "No training patterns have been provided!\nWhere are my patterns?";
+    private const string StartupPatternsNote = "You must load patterns before running any simulations or analyses";
     private const string PatternsNotInitializedNote = "SimControl.checkPatternsAvailable: Patterns have not been initialized";
     private const string LoadWeightsSrnNote = "Please select Load Weights (SRN) instead";
     private const string LoadWeightsFfNote = "Please select Load Weights (FF) instead";
@@ -29,7 +30,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private SignalWeaveEngine? _engine;
     private RunResult? _lastRun;
     private string? _engineSignature;
-    private string _patternListCaption = "XOR demo";
+    private string _patternListCaption = "Untitled";
     private bool _suppressMessageMirror;
 
     public MainWindowViewModel()
@@ -40,7 +41,8 @@ public partial class MainWindowViewModel : ViewModelBase
         WeightRangeOptions = new ReadOnlyCollection<string>(_weightRangeOptions);
         MessageWindow = new MessageWindowViewModel();
 
-        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: "Loaded XOR demo.");
+        ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: null);
+        Inform(StartupPatternsNote);
     }
 
     public IReadOnlyList<string> LearningRateOptions { get; }
@@ -57,13 +59,13 @@ public partial class MainWindowViewModel : ViewModelBase
     public MessageWindowViewModel MessageWindow { get; }
     public event EventHandler<FeedbackDialogRequestEventArgs>? FeedbackDialogRequested;
     [ObservableProperty]
-    private string _sampleTitle = "XOR demo";
+    private string _sampleTitle = "Untitled";
 
     [ObservableProperty]
-    private string _configText = SignalWeaveSamples.XorConfig;
+    private string _configText = SignalWeaveSamples.DefaultFeedForwardConfig;
 
     [ObservableProperty]
-    private string _patternText = SignalWeaveSamples.XorPatterns;
+    private string _patternText = SignalWeaveSamples.EmptyPatterns;
 
     [ObservableProperty]
     private string _selectedLearningRate = "0.3";
@@ -105,7 +107,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private int _progressValue;
 
     [ObservableProperty]
-    private string _consoleText = "Use the menu or editor tabs to configure a network, then train or test it.";
+    private string _consoleText = string.Empty;
 
     [ObservableProperty]
     private string _analysisText = CompatibilityProfile.ToDisplayText();
