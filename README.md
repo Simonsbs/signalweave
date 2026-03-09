@@ -93,6 +93,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - the `X-entropy` checkbox now stays enabled during controller activity, matching the BasicProp 1.3 control surface more closely
 - screenshot-verified four-panel main shell matching the original BasicProp layout more closely: `Network`, `Control panel`, `Console`, and `Error progress`
 - visible top-level menus now match the BasicProp 1.3 shell more closely, with only the original `Network`, `Weights`, `Patterns`, `Utilities`, and single-item `Help` surface
+- the four-panel main desktop workbench is now treated as complete parity surface; remaining gaps there are fidelity items, not missing shell workflow
 - main window title and weight legend now follow the BasicProp shell more closely instead of using SignalWeave-specific defaults
 - live network diagram colored by weight sign and magnitude, now verified from an actual rendered desktop screenshot
 - main network nodes now render as BasicProp-like unlabeled boxes instead of SignalWeave-style annotated editor nodes
@@ -116,6 +117,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `No can do!` modal feedback when train/test actions are attempted with zero loaded patterns
 - split `Weights` menu entries for feed-forward and SRN loading, with BasicProp-style wrong-menu notes
 - menu-driven pop-up windows for weights, patterns/outputs, time-series plots, and 3D plots
+- patterns and outputs are viewable both as a detailed table window and through the dedicated per-pattern chart workflow
 - visible utility-menu access to output clustering and hidden-state clustering through dedicated text-report windows
 - desktop pattern loading and clustering utilities are now fully reachable through the visible controller/menu workflow
 - the visible menu labels now mirror the BasicProp wording more closely by removing extra ellipses and non-reference top-level actions

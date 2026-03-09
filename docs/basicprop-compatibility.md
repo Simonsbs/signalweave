@@ -93,6 +93,7 @@ Source basis used for this implementation:
   - dedicated `Plot Setup` workflow aligned to the BasicProp `SurfacePlotter` control surface
   - dedicated `3D plot` result window using BasicProp-style unique-X/unique-Y grid semantics from `TargetN` or `OutputN`
   - dedicated per-pattern chart workflow aligned to the BasicProp `PatternPlot` control surface
+  - dedicated patterns-and-outputs viewing is available through both the table-style report window and the per-pattern chart workflow
   - JAR decompile verification now confirms the current `PatternPlot`, `TimeSeriesPlotter`, and `SurfacePlotter` window sizes, control labels, and selector/button workflows
   - `PatternPlot` window framing now follows the original layout more closely by removing the extra summary header and using separate white chart panels over the gray application background
   - utility-window launches no longer inject extra console status text for weight, pattern, time-series, or 3D plot windows, matching the original controller more closely

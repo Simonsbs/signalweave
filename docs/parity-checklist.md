@@ -48,7 +48,7 @@ Status legend:
 ## Main window
 
 - `[done]` menu bar
-- `[in-progress]` main workbench shell
+- `[done]` main workbench shell
 - `[done]` control panel defaults
 - `[done]` `Train` / `continue` state
 - `[done]` progress bar state
@@ -74,7 +74,7 @@ Status legend:
 - `[done]` pattern parsing with `reset`
 - `[done]` desktop pattern loading
 - `[done]` pattern plot window
-- `[in-progress]` patterns/outputs viewing
+- `[done]` patterns/outputs viewing
 - `[todo]` exact workflow and formatting parity
 
 ## Utilities
