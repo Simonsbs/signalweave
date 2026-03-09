@@ -49,10 +49,10 @@ Status legend:
 
 - `[done]` menu bar
 - `[in-progress]` main workbench shell
-- `[in-progress]` control panel defaults
+- `[done]` control panel defaults
 - `[done]` `Train` / `continue` state
 - `[done]` progress bar state
-- `[in-progress]` pattern combo `< 24` handling
+- `[done]` pattern combo `< 24` handling
 - `[todo]` full `SimControl.checkControls()` parity
 - `[todo]` BasicProp-identical network drawing
 - `[in-progress]` detached message window
