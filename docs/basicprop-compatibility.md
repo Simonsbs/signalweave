@@ -49,6 +49,7 @@ Source basis used for this implementation:
   - screenshot-driven control-panel defaults and layout closer to the BasicProp 1.3 shell
   - `Train` to `continue` state transitions and BasicProp-style control-value validation messages
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
+  - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating
   - test-one/test-all interaction
   - current weight inspection
   - screenshot-verified live network diagram with 2-layer, 3-layer, 4-layer, and SRN-aware weight routing
@@ -73,6 +74,7 @@ Source basis used for this implementation:
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages
   - screenshot-driven cleanup of the main window and configuration dialog to remove SignalWeave-specific chrome and move closer to the BasicProp 1.3 layout
   - built-in XOR demo defaults aligned to the BasicProp reference control values (`0.3`, `0.8`, `5000`, `-1 - 1`)
+  - `Configure Network...` now opens from the loaded network definition rather than reparsing the editor first
 
 ## Remaining parity work
 

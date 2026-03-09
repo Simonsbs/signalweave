@@ -242,7 +242,7 @@ public partial class MainWindowViewModel : ViewModelBase
             EnsurePatternsAvailable();
             var run = _engine!.TestAll(_patternSet!);
             _lastRun = run;
-            ConsoleText = $"Test all completed for {_definition!.Name}.{Environment.NewLine}Average error: {run.AverageError.ToString("0.000000", CultureInfo.InvariantCulture)}";
+            ConsoleText = $"Test All: Average per pattern error: {run.AverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
             AnalysisText = run.ToTable();
             WeightsText = BuildWeightsText(_engine.Weights);
             RefreshDiagram();
@@ -272,7 +272,9 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var result = _engine!.TestOne(_patternSet!, patternIndex);
-            ConsoleText = $"Test one completed for pattern '{result.Label}'.";
+            var selectorText = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
+            var resultText = BasicPropDisplayFormatter.FormatPattern(result.Outputs);
+            ConsoleText = $"Pattern: \"{selectorText}\"{Environment.NewLine}Result: \"{resultText}\"";
             AnalysisText = BuildSinglePatternResult(result);
             ResultsTabIndex = 0;
         });
