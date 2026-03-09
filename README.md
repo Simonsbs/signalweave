@@ -87,6 +87,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - BasicProp-style `Failed to load patterns` note for bad pattern files
 - network saving bound to the currently loaded configured network state rather than an editor reparse
 - successful network/pattern/weight file actions now stay quiet in the main console, matching BasicProp more closely
+- network-definition apply/load paths now clear stale console output instead of leaving old notes/results visible
 - BasicProp-style `Batch Update` behavior in the desktop control panel: still visible/enabled on the surface, but automatically cleared for SRNs in the applied runtime
 - BasicProp-style pattern selector text in the main control panel
 - cycle-based progress-bar behavior that no longer invents a separate `Loaded weights` state or use the selected learning-step count as the idle maximum

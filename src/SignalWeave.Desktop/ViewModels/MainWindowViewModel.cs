@@ -395,6 +395,10 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 ConsoleText = consoleMessage;
             }
+            else
+            {
+                ConsoleText = string.Empty;
+            }
         });
     }
 
