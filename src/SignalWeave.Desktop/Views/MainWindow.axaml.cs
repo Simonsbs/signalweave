@@ -289,6 +289,29 @@ public partial class MainWindow : Window
         });
     }
 
+    private async void ExportHiddenActivations_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await RunWithConsoleAsync(async () =>
+        {
+            var file = await PickSaveFileAsync(
+                "Export hidden units activations",
+                ViewModel.GetSuggestedHiddenActivationFileName(),
+                ".dat",
+                new FilePickerFileType("Data - Files") { Patterns = ["*.dat"] },
+                new FilePickerFileType("All files") { Patterns = ["*.*"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var text = ViewModel.BuildHiddenActivationExportText();
+            await WriteAllTextAsync(file, text);
+            var path = file.TryGetLocalPath() ?? file.Name;
+            ViewModel.ReportHiddenActivationExport(path);
+        });
+    }
+
     private async void ShowMessageWindow_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         await RunWithConsoleAsync(() =>

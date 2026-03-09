@@ -86,7 +86,7 @@ Source basis used for this implementation:
   - `Reset` and hidden-activation export now stay quiet in the main console, matching the original controller's silent action flow more closely
   - BasicProp-style pattern selector formatting using the original `PatternHolder` text shape (`[0]: ...    >>>...`)
   - BasicProp-style `PatternPlot` bar labels (`outputN`, `targetN`, `inputN`) and 800x600 window sizing
-  - hidden activation export
+  - hidden activation export through a save dialog using BasicProp-like raw `.dat` rows instead of the earlier SignalWeave temp-CSV flow
   - detached message-log window under `Help`, aligned to the BasicProp `MessageWindow` workflow
   - `SimControl.checkPatternsAvailable()`-style mixed feedback routing: BasicProp-style `Note:` message output that appends to the desktop console for uninitialized patterns, plus a `No can do!` modal for zero loaded patterns
   - split `Weights` menu with `Load Weights (FF)` and `Load Weights (SRN)`, including the original wrong-menu note messages

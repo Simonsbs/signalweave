@@ -110,7 +110,7 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 - in-place analysis/refresh actions also stay quiet unless they actually produce user-facing output or a note
 - reset and hidden-activation export no longer emit synthetic console lines
 - a detached message-log window under `Help`, mirroring the original BasicProp message-frame workflow
-- hidden-activation export to CSV from the desktop app
+- hidden-activation export from the desktop app through a save dialog using BasicProp-like raw `.dat` rows
 
 ## Samples
 

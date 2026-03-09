@@ -396,19 +396,6 @@ public partial class MainWindowViewModel : ViewModelBase
         });
     }
 
-    [RelayCommand]
-    private void ExportHiddenActivations()
-    {
-        RunSafe(() =>
-        {
-            EnsureContext(resetWeights: false);
-            var run = EnsureRun();
-            var path = Path.Combine(Path.GetTempPath(), $"signalweave-hidden-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
-            File.WriteAllText(path, BuildHiddenActivationCsv(run));
-            AnalysisText = $"Hidden activations exported:{Environment.NewLine}{path}";
-        });
-    }
-
     private void ParseEditorInternal(bool syncControlsFromEditor, bool resetWeights, string? consoleMessage)
     {
         RunSafe(() =>
@@ -994,31 +981,17 @@ public partial class MainWindowViewModel : ViewModelBase
         UtilityPlotSummary = "Projected 3D view using the first hidden/output dimensions.";
     }
 
-    private static string BuildHiddenActivationCsv(RunResult run)
+    private static string BuildHiddenActivationData(RunResult run)
     {
         var builder = new StringBuilder();
-        builder.Append("index,label");
-
-        var hiddenCount = run.Results.FirstOrDefault()?.HiddenActivations.Length ?? 0;
-        for (var index = 0; index < hiddenCount; index++)
-        {
-            builder.Append($",hidden_{index + 1}");
-        }
-
-        builder.AppendLine();
 
         foreach (var result in run.Results)
         {
-            builder.Append(result.Index + 1);
-            builder.Append(',');
-            builder.Append(result.Label);
+            builder.AppendLine(string.Join(" ", result.HiddenActivations.Select(hidden => hidden.ToString("R", CultureInfo.InvariantCulture))));
+        }
 
-            foreach (var hidden in result.HiddenActivations)
-            {
-                builder.Append(',');
-                builder.Append(hidden.ToString("0.000000000000", CultureInfo.InvariantCulture));
-            }
-
+        if (builder.Length == 0)
+        {
             builder.AppendLine();
         }
 
@@ -1490,6 +1463,11 @@ public partial class MainWindowViewModel : ViewModelBase
         return $"{Slugify(SampleTitle)}.weights.json";
     }
 
+    public string GetSuggestedHiddenActivationFileName()
+    {
+        return $"{Slugify(SampleTitle)}-hidden.dat";
+    }
+
     public void LoadNetworkText(string text, string? sourceName = null)
     {
         if (!string.IsNullOrWhiteSpace(sourceName))
@@ -1590,6 +1568,18 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         return true;
+    }
+
+    public string BuildHiddenActivationExportText()
+    {
+        EnsureContext(resetWeights: false);
+        var run = EnsureRun();
+        return BuildHiddenActivationData(run);
+    }
+
+    public void ReportHiddenActivationExport(string path)
+    {
+        AnalysisText = $"Hidden activations exported:{Environment.NewLine}{path}";
     }
 
     public WeightDisplaySession CreateWeightDisplaySession()
