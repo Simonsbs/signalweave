@@ -57,6 +57,7 @@ Source basis used for this implementation:
   - main frame title and default weight legend now read closer to the original shell chrome and legend markings
   - main network pane now renders unlabeled node boxes closer to the original BasicProp display instead of annotated editor-style node labels
   - BasicProp-style training console phrasing, control-value validation messages, and `continue` button text only while a training action is active
+  - explicit desktop controller activity states now separate learning, `Test one`, and `Test all`, so the `Train` button no longer flips to `continue` during test actions
   - train/test actions now drive a real busy-state control surface so learning/test buttons, control-panel combos, checkboxes, and pattern selection disable during active controller work more like `SimControl.checkControls()`
   - modal `Invalid value` dialogs for invalid learning-rate, momentum, learning-step, and empty-pattern conditions
   - BasicProp-style `Test All` / `Test One` console output text and test-one menu gating

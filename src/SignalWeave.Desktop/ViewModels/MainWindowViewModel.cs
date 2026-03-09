@@ -14,6 +14,14 @@ namespace SignalWeave.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private enum ControllerActivity
+    {
+        Idle,
+        Learning,
+        TestingOne,
+        TestingAll
+    }
+
     private const string InvalidValueDialogTitle = "Invalid value";
     private const string MissingPatternsDialogTitle = "No can do!";
     private const string MissingPatternsDialogMessage = "No training patterns have been provided!\nWhere are my patterns?";
@@ -164,9 +172,9 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _errorPlotBottomRightLabel = "5000";
 
-    [ObservableProperty]
-    private bool _isControllerIdle = true;
+    private ControllerActivity _controllerActivityState = ControllerActivity.Idle;
 
+    public bool IsControllerIdle => _controllerActivityState == ControllerActivity.Idle;
     public bool CanAdjustControls => IsControllerIdle;
     public bool CanRunReset => IsControllerIdle;
     public bool CanRunTrain => IsControllerIdle;
@@ -238,7 +246,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 ? "Untrained"
                 : engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
 
-            await WithBusyControllerAsync(async () =>
+            await WithBusyControllerAsync(ControllerActivity.Learning, async () =>
             {
                 var result = await Task.Run(() => engine.Train(patternSet, steps));
                 _lastRun = result.FinalRun;
@@ -270,7 +278,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var engine = _engine!;
             var patternSet = _patternSet!;
 
-            await WithBusyControllerAsync(async () =>
+            await WithBusyControllerAsync(ControllerActivity.TestingAll, async () =>
             {
                 var run = await Task.Run(() => engine.TestAll(patternSet));
                 _lastRun = run;
@@ -306,7 +314,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 patternIndex = 0;
             }
 
-            await WithBusyControllerAsync(async () =>
+            await WithBusyControllerAsync(ControllerActivity.TestingOne, async () =>
             {
                 var result = await Task.Run(() => engine.TestOne(patternSet, patternIndex));
                 var selectorText = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
@@ -1399,10 +1407,9 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private async Task WithBusyControllerAsync(Func<Task> action)
+    private async Task WithBusyControllerAsync(ControllerActivity activity, Func<Task> action)
     {
-        IsControllerIdle = false;
-        TrainButtonLabel = "continue";
+        SetControllerActivity(activity);
         await Task.Yield();
 
         try
@@ -1411,8 +1418,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         finally
         {
-            IsControllerIdle = true;
-            TrainButtonLabel = "Train";
+            SetControllerActivity(ControllerActivity.Idle);
         }
     }
 
@@ -1829,8 +1835,16 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(EffectiveCanTestOne));
     }
 
-    partial void OnIsControllerIdleChanged(bool value)
+    private void SetControllerActivity(ControllerActivity value)
     {
+        if (_controllerActivityState == value)
+        {
+            return;
+        }
+
+        _controllerActivityState = value;
+        TrainButtonLabel = value == ControllerActivity.Learning ? "continue" : "Train";
+        OnPropertyChanged(nameof(IsControllerIdle));
         OnPropertyChanged(nameof(CanAdjustControls));
         OnPropertyChanged(nameof(CanRunReset));
         OnPropertyChanged(nameof(CanRunTrain));

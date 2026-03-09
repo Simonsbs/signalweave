@@ -50,7 +50,7 @@ Status legend:
 - `[done]` menu bar
 - `[in-progress]` main workbench shell
 - `[in-progress]` control panel defaults
-- `[in-progress]` `Train` / `continue` state
+- `[done]` `Train` / `continue` state
 - `[in-progress]` progress bar state
 - `[in-progress]` pattern combo `< 24` handling
 - `[todo]` full `SimControl.checkControls()` parity
