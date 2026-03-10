@@ -83,7 +83,8 @@ public partial class MainWindow : Window
     {
         if (e.PropertyName is nameof(MainWindowViewModel.ErrorProgressPoints) or
             nameof(MainWindowViewModel.ErrorPlotTopLabel) or
-            nameof(MainWindowViewModel.ErrorPlotBottomRightLabel))
+            nameof(MainWindowViewModel.ErrorPlotBottomRightLabel) or
+            nameof(MainWindowViewModel.SelectedErrorPlotDisplayMode))
         {
             RenderErrorPlot();
         }
@@ -171,12 +172,30 @@ public partial class MainWindow : Window
         var points = ParseErrorPlotPoints(_attachedViewModel.ErrorProgressPoints, left, top, plotWidth, plotHeight);
         if (points.Count >= 2)
         {
-            ErrorPlotCanvas.Children.Add(new Polyline
+            if (string.Equals(_attachedViewModel.SelectedErrorPlotDisplayMode, "Dots", StringComparison.OrdinalIgnoreCase))
             {
-                Points = points,
-                Stroke = Brush.Parse("#4E7396"),
-                StrokeThickness = 2
-            });
+                foreach (var point in points)
+                {
+                    var dot = new Ellipse
+                    {
+                        Width = 4,
+                        Height = 4,
+                        Fill = Brush.Parse("#4E7396")
+                    };
+                    Canvas.SetLeft(dot, point.X - 2);
+                    Canvas.SetTop(dot, point.Y - 2);
+                    ErrorPlotCanvas.Children.Add(dot);
+                }
+            }
+            else
+            {
+                ErrorPlotCanvas.Children.Add(new Polyline
+                {
+                    Points = points,
+                    Stroke = Brush.Parse("#4E7396"),
+                    StrokeThickness = 2
+                });
+            }
         }
 
         var zeroLabel = new TextBlock

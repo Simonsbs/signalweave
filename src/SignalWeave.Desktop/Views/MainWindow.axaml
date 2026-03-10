@@ -309,11 +309,19 @@
                                 BorderBrush="#B8C7D6"
                                 BorderThickness="1"
                                 Padding="8">
-                            <Canvas x:Name="ErrorPlotCanvas"
-                                    MinWidth="220"
-                                    MinHeight="170"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch" />
+                            <Grid RowDefinitions="Auto,*"
+                                  RowSpacing="8">
+                                <ComboBox Width="92"
+                                          HorizontalAlignment="Right"
+                                          ItemsSource="{Binding ErrorPlotDisplayModeOptions}"
+                                          SelectedItem="{Binding SelectedErrorPlotDisplayMode, Mode=TwoWay}" />
+                                <Canvas x:Name="ErrorPlotCanvas"
+                                        Grid.Row="1"
+                                        MinWidth="220"
+                                        MinHeight="170"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch" />
+                            </Grid>
                         </Border>
                     </Grid>
                 </Border>

@@ -37,6 +37,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly string[] _momentumOptions = ["0", "0.2", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"];
     private readonly string[] _learningStepOptions = ["100", "200", "500", "1000", "2000", "5000", "10000", "20000", "50000", "100000"];
     private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
+    private readonly string[] _errorPlotDisplayModeOptions = ["Line", "Dots"];
 
     private NetworkDefinition? _definition;
     private PatternSet? _patternSet;
@@ -54,6 +55,7 @@ public partial class MainWindowViewModel : ViewModelBase
         MomentumOptions = new ReadOnlyCollection<string>(_momentumOptions);
         LearningStepOptions = new ReadOnlyCollection<string>(_learningStepOptions);
         WeightRangeOptions = new ReadOnlyCollection<string>(_weightRangeOptions);
+        ErrorPlotDisplayModeOptions = new ReadOnlyCollection<string>(_errorPlotDisplayModeOptions);
         MessageWindow = new MessageWindowViewModel();
 
         ParseEditorInternal(syncControlsFromEditor: true, resetWeights: true, consoleMessage: null);
@@ -64,6 +66,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<string> MomentumOptions { get; }
     public IReadOnlyList<string> LearningStepOptions { get; }
     public IReadOnlyList<string> WeightRangeOptions { get; }
+    public IReadOnlyList<string> ErrorPlotDisplayModeOptions { get; }
     public ObservableCollection<string> PatternOptions { get; } = [];
     public ObservableCollection<string> WeightLayerOptions { get; } = [];
     public ObservableCollection<DiagramEdgeItem> DiagramEdges { get; } = [];
@@ -177,6 +180,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _errorPlotBottomRightLabel = "5000";
+
+    [ObservableProperty]
+    private string _selectedErrorPlotDisplayMode = "Line";
 
     private ControllerActivity _controllerActivityState = ControllerActivity.Idle;
 
