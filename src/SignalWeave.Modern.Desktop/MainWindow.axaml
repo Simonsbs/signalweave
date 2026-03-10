@@ -101,7 +101,7 @@
                             MinHeight="220" />
 
                     <Grid Grid.Row="2"
-                          ColumnDefinitions="Auto,*,Auto,Auto"
+                          ColumnDefinitions="Auto,*,Auto"
                           ColumnSpacing="10"
                           VerticalAlignment="Center">
                         <TextBlock x:Name="WeightLegendMinTextBlock"
@@ -121,13 +121,8 @@
                                 </LinearGradientBrush>
                             </Border.Background>
                         </Border>
-                        <TextBlock x:Name="WeightLegendZeroTextBlock"
-                                   Grid.Column="2"
-                                   Classes="muted"
-                                   VerticalAlignment="Center"
-                                   Text="0" />
                         <TextBlock x:Name="WeightLegendMaxTextBlock"
-                                   Grid.Column="3"
+                                   Grid.Column="2"
                                    Classes="muted"
                                    VerticalAlignment="Center"
                                    Text="1.0" />

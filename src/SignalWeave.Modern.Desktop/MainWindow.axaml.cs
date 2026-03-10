@@ -2350,14 +2350,13 @@ public partial class MainWindow : Window
 
     private void UpdateWeightLegend(NetworkDefinition definition)
     {
-        if (WeightLegendMinTextBlock is null || WeightLegendMaxTextBlock is null || WeightLegendZeroTextBlock is null)
+        if (WeightLegendMinTextBlock is null || WeightLegendMaxTextBlock is null)
         {
             return;
         }
 
         var range = definition.RandomWeightRange;
         WeightLegendMinTextBlock.Text = $"-{FormatGraphValue(range)}";
-        WeightLegendZeroTextBlock.Text = "0";
         WeightLegendMaxTextBlock.Text = FormatGraphValue(range);
     }
 
