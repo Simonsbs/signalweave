@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignalWeave</title>
+  <meta name="description" content="SignalWeave downloads and product overview for the Classic and Modern desktop apps." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">SignalWeave</p>
+        <h1>Cross-platform neural-network tooling with two desktop experiences.</h1>
+        <p class="lead">
+          Download the current BasicProp-style <strong>Classic</strong> app or the project-first <strong>Modern</strong> app.
+          Both share the same .NET engine, but each ships as a separate desktop bundle.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#modern">Get Modern</a>
+          <a class="button secondary" href="#classic">Get Classic</a>
+          <a class="button secondary" href="https://github.com/Simonsbs/signalweave" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+      </div>
+      <aside class="hero-panel">
+        <h2>Included today</h2>
+        <ul class="feature-list">
+          <li>Windows, Linux, and macOS desktop bundles</li>
+          <li>Shared .NET 8 engine across product lines</li>
+          <li>Project save/load, training, testing, and analysis</li>
+          <li>Time-series, surface plotting, and clustering tools</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="products">
+      <article class="product-card featured" id="modern">
+        <div class="product-header">
+          <div>
+            <p class="product-kicker">Recommended</p>
+            <h2>SignalWeave Modern</h2>
+          </div>
+          <span class="badge">Current workflow</span>
+        </div>
+        <p class="product-copy">
+          The project-file-first desktop line. Network settings, patterns, weights, training history, and analysis
+          live in one workflow instead of being spread across separate files and popup windows.
+        </p>
+        <div class="release-meta" data-product="modern">
+          <p class="loading">Loading latest Modern release…</p>
+        </div>
+        <div class="downloads" data-product="modern"></div>
+        <div class="product-links">
+          <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Modern guide</a>
+          <a href="https://github.com/Simonsbs/signalweave/tree/modern-ui/samples" target="_blank" rel="noreferrer">Samples</a>
+        </div>
+      </article>
+
+      <article class="product-card" id="classic">
+        <div class="product-header">
+          <div>
+            <p class="product-kicker">Reference workflow</p>
+            <h2>SignalWeave Classic</h2>
+          </div>
+          <span class="badge muted">BasicProp-style</span>
+        </div>
+        <p class="product-copy">
+          The BasicProp-inspired desktop line. Use this if you want the classic workflow surface and compatibility-oriented
+          analysis flow.
+        </p>
+        <div class="release-meta" data-product="classic">
+          <p class="loading">Loading latest Classic release…</p>
+        </div>
+        <div class="downloads" data-product="classic"></div>
+        <div class="product-links">
+          <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/product-lines.md" target="_blank" rel="noreferrer">Product lines</a>
+          <a href="https://github.com/Simonsbs/signalweave/releases" target="_blank" rel="noreferrer">All releases</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="help">
+      <div class="help-card">
+        <h2>Quick start</h2>
+        <ol>
+          <li>Download the bundle for your OS.</li>
+          <li>Extract the ZIP locally.</li>
+          <li>Launch the desktop executable inside the extracted folder.</li>
+          <li>For Modern, load <code>samples/seventeen-patterns-7x7-modern.swproj.json</code> and start with <code>Train #1</code>.</li>
+        </ol>
+      </div>
+      <div class="help-card">
+        <h2>Docs</h2>
+        <ul>
+          <li><a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/README.md" target="_blank" rel="noreferrer">Repository overview</a></li>
+          <li><a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Modern user guide</a></li>
+          <li><a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/basicprop-compatibility.md" target="_blank" rel="noreferrer">Compatibility basis</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
