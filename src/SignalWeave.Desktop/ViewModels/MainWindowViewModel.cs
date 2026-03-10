@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SignalWeave.Core;
@@ -248,6 +249,8 @@ public partial class MainWindowViewModel : ViewModelBase
             var steps = GetLearningStepsValue();
             var startingCycles = engine.CompletedCycles;
             var liveHistory = new List<TrainingPoint>(steps);
+            var progressStride = Math.Max(1, steps / 100);
+            var progressUpdateStopwatch = Stopwatch.StartNew();
             ProgressMaximum = Math.Max(engine.CompletedCycles + steps, 1);
             ProgressValue = engine.CompletedCycles;
             ProgressLabel = engine.CompletedCycles == 0
@@ -256,6 +259,18 @@ public partial class MainWindowViewModel : ViewModelBase
             var progress = new Progress<TrainingPoint>(point =>
             {
                 liveHistory.Add(point);
+                var shouldRefreshUi =
+                    point.Epoch == 1 ||
+                    point.Epoch == steps ||
+                    point.Epoch % progressStride == 0 ||
+                    progressUpdateStopwatch.ElapsedMilliseconds >= 120;
+
+                if (!shouldRefreshUi)
+                {
+                    return;
+                }
+
+                progressUpdateStopwatch.Restart();
                 var completedCycles = startingCycles + point.Epoch;
                 ProgressValue = completedCycles;
                 ProgressLabel = completedCycles.ToString(CultureInfo.InvariantCulture);
