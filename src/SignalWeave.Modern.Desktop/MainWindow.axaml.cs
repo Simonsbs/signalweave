@@ -456,6 +456,13 @@ public partial class MainWindow : Window
             AddPatternHeaderText(grid, $"I{index + 1}", column);
         }
 
+        var hasTargets = outputCount > 0;
+        if (hasTargets)
+        {
+            AddPatternSectionSeparator(grid, column, true);
+            column++;
+        }
+
         for (var index = 0; index < outputCount; index++, column++)
         {
             AddPatternHeaderText(grid, $"O{index + 1}", column);
@@ -476,6 +483,20 @@ public partial class MainWindow : Window
         };
         Grid.SetColumn(header, column);
         grid.Children.Add(header);
+    }
+
+    private static void AddPatternSectionSeparator(Grid grid, int column, bool isHeader)
+    {
+        var separator = new Border
+        {
+            Width = isHeader ? 12 : 10,
+            MinHeight = isHeader ? 24 : 34,
+            Background = Brush.Parse(isHeader ? "#D0C7BC" : "#E2DCD4"),
+            CornerRadius = new CornerRadius(3),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        Grid.SetColumn(separator, column);
+        grid.Children.Add(separator);
     }
 
     private Grid BuildPatternTableRow(PatternExample example, int rowIndex, int inputCount, int outputCount)
@@ -509,13 +530,20 @@ public partial class MainWindow : Window
         var column = 2;
         for (var index = 0; index < inputCount; index++, column++)
         {
-            grid.Children.Add(BuildPatternNumericCell(example.Inputs.ElementAtOrDefault(index), rowIndex, PatternCellKind.Input, index, column));
+            grid.Children.Add(BuildPatternBinaryCell(example.Inputs.ElementAtOrDefault(index), rowIndex, PatternCellKind.Input, index, column));
+        }
+
+        var hasTargets = outputCount > 0;
+        if (hasTargets)
+        {
+            AddPatternSectionSeparator(grid, column, false);
+            column++;
         }
 
         var targets = example.Targets ?? new double[outputCount];
         for (var index = 0; index < outputCount; index++, column++)
         {
-            grid.Children.Add(BuildPatternNumericCell(targets.ElementAtOrDefault(index), rowIndex, PatternCellKind.Target, index, column));
+            grid.Children.Add(BuildPatternBinaryCell(targets.ElementAtOrDefault(index), rowIndex, PatternCellKind.Target, index, column));
         }
 
         var deleteButton = new Button
@@ -531,18 +559,23 @@ public partial class MainWindow : Window
         return grid;
     }
 
-    private TextBox BuildPatternNumericCell(double value, int rowIndex, PatternCellKind kind, int vectorIndex, int column)
+    private Button BuildPatternBinaryCell(double value, int rowIndex, PatternCellKind kind, int vectorIndex, int column)
     {
-        var textBox = new TextBox
+        var button = new Button
         {
-            Text = FormatNumber(value),
-            Width = 42,
-            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Content = ToBinaryCellText(value),
+            Width = 38,
+            Height = 30,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brush.Parse(kind == PatternCellKind.Input ? "#E9F1FA" : "#F7EEE0"),
+            BorderBrush = Brush.Parse(kind == PatternCellKind.Input ? "#8BAFD0" : "#C9A36B"),
+            BorderThickness = new Thickness(1),
             Tag = new PatternCellTag(rowIndex, kind, vectorIndex)
         };
-        textBox.LostFocus += PatternTableTextBox_LostFocus;
-        Grid.SetColumn(textBox, column);
-        return textBox;
+        button.Click += PatternToggleButton_Click;
+        Grid.SetColumn(button, column);
+        return button;
     }
 
     private static ColumnDefinitions BuildPatternColumnDefinitions(int inputCount, int outputCount)
@@ -556,6 +589,11 @@ public partial class MainWindow : Window
         for (var index = 0; index < inputCount + outputCount; index++)
         {
             columns.Add(new ColumnDefinition(GridLength.Auto));
+        }
+
+        if (outputCount > 0)
+        {
+            columns.Insert(2 + inputCount, new ColumnDefinition(GridLength.Auto));
         }
 
         columns.Add(new ColumnDefinition(GridLength.Auto));
@@ -599,6 +637,17 @@ public partial class MainWindow : Window
 
     private void PatternTableTextBox_LostFocus(object? sender, RoutedEventArgs e)
     {
+        CommitPatternTableFromGraphic();
+    }
+
+    private void PatternToggleButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isSyncingPatternTable || sender is not Button button)
+        {
+            return;
+        }
+
+        button.Content = string.Equals(button.Content?.ToString(), "1", StringComparison.Ordinal) ? "0" : "1";
         CommitPatternTableFromGraphic();
     }
 
@@ -657,18 +706,14 @@ public partial class MainWindow : Window
             var inputs = new double[inputCount];
             var targets = new double[outputCount];
 
-            foreach (var box in rowGrid.Children.OfType<TextBox>())
+            foreach (var button in rowGrid.Children.OfType<Button>())
             {
-                if (box.Tag is not PatternCellTag tag || tag.Kind == PatternCellKind.Label)
+                if (button.Tag is not PatternCellTag tag)
                 {
                     continue;
                 }
 
-                if (!double.TryParse(box.Text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var value))
-                {
-                    patternSet = new PatternSet([]);
-                    return false;
-                }
+                var value = string.Equals(button.Content?.ToString(), "1", StringComparison.Ordinal) ? 1.0 : 0.0;
 
                 if (tag.Kind == PatternCellKind.Input && tag.Index >= 0 && tag.Index < inputs.Length)
                 {
@@ -685,6 +730,11 @@ public partial class MainWindow : Window
 
         patternSet = new PatternSet(examples);
         return true;
+    }
+
+    private static string ToBinaryCellText(double value)
+    {
+        return value >= 0.5 ? "1" : "0";
     }
 
     private enum PatternCellKind
