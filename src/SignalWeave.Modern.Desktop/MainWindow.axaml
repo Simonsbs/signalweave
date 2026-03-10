@@ -34,6 +34,30 @@
             <Setter Property="MinWidth" Value="110" />
             <Setter Property="Padding" Value="14,10" />
         </Style>
+        <!-- Tab styles: reduce tab title size by 20% and make bottom line continuous -->
+        <Style Selector="TabControl">
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="Background" Value="#FFFDF9" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="13.6" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="CornerRadius" Value="6,6,0,0" />
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="FontSize" Value="13.6" />
+            <Setter Property="Background" Value="#FFFDF9" />
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6,6,0,0" />
+        </Style>
     </Window.Styles>
 
     <DockPanel>
