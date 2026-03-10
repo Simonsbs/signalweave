@@ -4,9 +4,9 @@ SignalWeave uses stable JSON documents for its native project and checkpoint for
 
 ## Project schema
 
-- schema id: `signalweave-project/v1`
+- schema id: `signalweave-project/v2`
 - suggested extension: `.swproj.json`
-- purpose: store a runnable SignalWeave workspace with embedded network definition, patterns, and optional weights
+- purpose: store a runnable SignalWeave workspace with embedded network definition, patterns, optional weights, completed-cycle count, and optional UI workspace state
 
 Top-level fields:
 
@@ -14,6 +14,14 @@ Top-level fields:
 - `definition`
 - `patterns`
 - `weights` optional
+- `completedCycles`
+- `workspace` optional
+
+Workspace fields:
+
+- `learningSteps`
+- `selectedPatternIndex`
+- `errorPlotDisplayMode`
 
 Each pattern entry stores:
 
@@ -70,11 +78,25 @@ dotnet run --project src/SignalWeave.Cli -- cluster --project xor.swproj.json --
 
 ## Desktop workflows
 
-The desktop app exposes the same native schema types under `Network`:
+The desktop apps expose the same native schema types, but the workflow differs by product line:
 
-- `Load Project`
-- `Save Project`
-- `Load Checkpoint`
-- `Save Checkpoint`
+- `Classic`
+  - still exposes both project and checkpoint workflows
+  - `Load Project`
+  - `Save Project`
+  - `Load Checkpoint`
+  - `Save Checkpoint`
 
-Projects embed the current network, pattern set, and current weight snapshot. Checkpoints additionally persist the completed-cycle count.
+- `Modern`
+  - uses a single project-driven workflow from `File`
+  - `New Project`
+  - `Load Project`
+  - `Save Project`
+  - `Save Project As`
+
+Projects now embed the current network, pattern set, current weight snapshot, completed-cycle count, and optional workspace state. Checkpoints remain available for the Classic line and CLI.
+
+Compatibility:
+
+- `signalweave-project/v2` is the current save format
+- legacy `signalweave-project/v1` documents still load

@@ -54,14 +54,20 @@ Implemented now:
 Deliberate differences:
 
 - legacy BasicProp file compatibility is out of scope by project decision
-- SignalWeave uses native `signalweave-project/v1` and `signalweave-checkpoint/v1` formats instead of the retired BasicProp file formats
+- SignalWeave uses native `signalweave-project/v2` and `signalweave-checkpoint/v1` formats instead of the retired BasicProp file formats
 
 ## Product lines
 
 - `Classic`: the current BasicProp-style desktop experience in `src/SignalWeave.Classic.Desktop`
-- `Modern`: a separate desktop product line for the next workflow/UI in `src/SignalWeave.Modern.Desktop`
+- `Modern`: a separate desktop product line for the next workflow/UI in `src/SignalWeave.Modern.Desktop`, centered on a single project-file workflow
 
 Both apps share the same engine and general logic through `src/SignalWeave.Core`.
+
+Modern workflow direction:
+
+- one project file stores network settings, embedded patterns, current weights, completed cycles, and Modern control-panel state
+- Modern no longer needs separate load/save actions for network settings, weights, or patterns
+- the network settings surface lives inside the main window as a control-panel tab instead of a popup dialog
 
 ## Projects
 
@@ -97,7 +103,7 @@ The Classic desktop app ships with built-in XOR and SRN demos and now exposes a 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
 - startup with a default feed-forward network, no loaded patterns, and the original BasicProp-style prompt to load patterns before running simulations
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
-- native desktop workflows for loading/saving `signalweave-project/v1` and `signalweave-checkpoint/v1` documents from the `Network` menu
+- native desktop workflows for loading/saving `signalweave-project/v2` and `signalweave-checkpoint/v1` documents
 - progress state now follows cumulative completed training cycles more closely across repeated `Train` runs
 - per-step training progress now updates the progress display during active learning instead of only changing at the start and end of a run
 - the error-progress plot now updates live during active learning instead of only after the run completes
