@@ -659,12 +659,14 @@ public partial class MainWindowViewModel : ViewModelBase
         var hiddenRowTop = layerCount >= 3 ? layerYs[layerCount - 2] : 0;
         var inputRowTop = layerYs[^1];
 
-        var inputXs = BuildHorizontalNodeLane(_definition.InputUnits, graphLeft, graphRight, nodeWidth);
-        var hiddenXs = BuildHorizontalNodeLane(_definition.HiddenUnits, graphLeft, graphRight, nodeWidth);
+        var laneLeft = Math.Max(graphLeft, biasX + biasWidth + Math.Max(18, nodeWidth * 0.45));
+
+        var inputXs = BuildHorizontalNodeLane(_definition.InputUnits, laneLeft, graphRight, nodeWidth);
+        var hiddenXs = BuildHorizontalNodeLane(_definition.HiddenUnits, laneLeft, graphRight, nodeWidth);
         var secondHiddenXs = _definition.HasSecondHiddenLayer
-            ? BuildHorizontalNodeLane(_definition.SecondHiddenUnits, graphLeft, graphRight, nodeWidth)
+            ? BuildHorizontalNodeLane(_definition.SecondHiddenUnits, laneLeft, graphRight, nodeWidth)
             : [];
-        var outputXs = BuildHorizontalNodeLane(_definition.OutputUnits, graphLeft, graphRight, nodeWidth);
+        var outputXs = BuildHorizontalNodeLane(_definition.OutputUnits, laneLeft, graphRight, nodeWidth);
         var hasOverlay =
             _diagramResult is not null &&
             _diagramResult.Inputs.Length == _definition.InputUnits &&

@@ -289,14 +289,17 @@ public partial class MainWindow : Window
 
             if (!string.IsNullOrWhiteSpace(node.Label) || node.FillFraction > 0)
             {
-                var innerGrid = new Grid();
+                var innerGrid = new Grid
+                {
+                    ClipToBounds = true
+                };
 
                 if (node.FillFraction > 0)
                 {
                     innerGrid.Children.Add(new Border
                     {
                         Background = Brush.Parse(node.FillHighlight),
-                        Height = Math.Max(0, node.Height - 2) * Math.Clamp(node.FillFraction, 0.0, 1.0),
+                        Height = Math.Max(0, node.Height - 4) * Math.Clamp(node.FillFraction, 0.0, 1.0),
                         Margin = new Thickness(1),
                         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom
                     });
