@@ -35,7 +35,8 @@ public partial class MainWindow : Window
     private readonly string[] _learningStepOptions = ["100", "500", "1000", "5000", "10000", "50000"];
     private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
     private readonly string[] _weightInspectorViewModes = ["Heatmap", "Magnitude", "Values"];
-    private readonly string[] _analysisReportTypes = ["Output clustering", "Hidden-state clustering", "Compatibility summary"];
+    private readonly string[] _analysisReportTypes = ["Output clustering", "Hidden-state clustering", "Compatibility summary", "Time series"];
+    private readonly string[] _analysisTimeSeriesKinds = ["Input", "Target", "Output", "Hidden"];
     private readonly object _trainingProgressGate = new();
     private readonly List<TrainingPoint> _trainingHistory = [];
     private readonly StringBuilder _consoleMarkdown = new();
@@ -56,8 +57,11 @@ public partial class MainWindow : Window
     private bool _isInitializingUi = true;
     private bool _isSyncingPatternText;
     private bool _isSyncingPatternTable;
+    private bool _isUpdatingAnalysisControls;
     private string _lastAnalysisReportTitle = "Run an analysis report.";
     private string _lastAnalysisReportText = string.Empty;
+    private string _lastAnalysisExportText = string.Empty;
+    private IReadOnlyList<double>? _lastAnalysisSeriesValues;
 
     public MainWindow()
     {
@@ -78,6 +82,11 @@ public partial class MainWindow : Window
         if (WeightInspectorCanvas is not null)
         {
             WeightInspectorCanvas.SizeChanged += (_, _) => RenderWeightInspector();
+        }
+
+        if (AnalysisTimeSeriesCanvas is not null)
+        {
+            AnalysisTimeSeriesCanvas.SizeChanged += (_, _) => RenderAnalysisTimeSeries();
         }
 
         LoadProjectState(CreateDefaultProject(), null, "Loaded the default Modern sample project.");
@@ -133,6 +142,8 @@ public partial class MainWindow : Window
         WeightInspectorViewModeComboBox.SelectedIndex = 0;
         AnalysisReportTypeComboBox.ItemsSource = _analysisReportTypes;
         AnalysisReportTypeComboBox.SelectedIndex = 0;
+        AnalysisTimeSeriesKindComboBox.ItemsSource = _analysisTimeSeriesKinds;
+        AnalysisTimeSeriesKindComboBox.SelectedIndex = 2;
     }
 
     private static SignalWeaveProject CreateDefaultProject()
@@ -508,12 +519,12 @@ public partial class MainWindow : Window
 
         if (CopyAnalysisButton is not null)
         {
-            CopyAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisReportText);
+            CopyAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisExportText);
         }
 
         if (SaveAnalysisButton is not null)
         {
-            SaveAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisReportText);
+            SaveAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisExportText);
         }
     }
 
@@ -628,6 +639,7 @@ public partial class MainWindow : Window
 
         AnalysisSourceComboBox.ItemsSource = options;
         AnalysisSourceComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
+        UpdateAnalysisTimeSeriesIndexOptions();
     }
 
     private List<WeightLayerOption> BuildWeightLayerOptions(NetworkDefinition definition, WeightSet weights)
@@ -1275,6 +1287,20 @@ public partial class MainWindow : Window
 
     private void AnalysisSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (_isUpdatingAnalysisControls)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(sender, AnalysisReportTypeComboBox) || ReferenceEquals(sender, AnalysisTimeSeriesKindComboBox))
+        {
+            UpdateAnalysisTimeSeriesIndexOptions();
+        }
+        else
+        {
+            UpdateAnalysisModeVisibility();
+        }
+
         ClearAnalysisReport();
         UpdateActionAvailability();
     }
@@ -1283,6 +1309,8 @@ public partial class MainWindow : Window
     {
         _lastAnalysisReportTitle = "Run an analysis report.";
         _lastAnalysisReportText = string.Empty;
+        _lastAnalysisExportText = string.Empty;
+        _lastAnalysisSeriesValues = null;
         if (AnalysisReportTitleTextBlock is not null)
         {
             AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
@@ -1292,6 +1320,19 @@ public partial class MainWindow : Window
         {
             AnalysisReportTextBox.Text = string.Empty;
         }
+
+        if (AnalysisChartTitleTextBlock is not null)
+        {
+            AnalysisChartTitleTextBlock.Text = "Run a time-series analysis.";
+        }
+
+        if (AnalysisChartSummaryTextBlock is not null)
+        {
+            AnalysisChartSummaryTextBlock.Text = string.Empty;
+        }
+
+        UpdateAnalysisModeVisibility();
+        RenderAnalysisTimeSeries();
     }
 
     private void RollbackTrainingSession_Click(object? sender, RoutedEventArgs e)
@@ -1908,30 +1949,40 @@ public partial class MainWindow : Window
     private async void CopyAnalysis_Click(object? sender, RoutedEventArgs e)
     {
         var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.Clipboard is null || string.IsNullOrWhiteSpace(_lastAnalysisReportText))
+        if (topLevel?.Clipboard is null || string.IsNullOrWhiteSpace(_lastAnalysisExportText))
         {
             return;
         }
 
-        await topLevel.Clipboard.SetTextAsync(_lastAnalysisReportText);
-        SetStatus("Analysis report copied to clipboard.");
+        await topLevel.Clipboard.SetTextAsync(_lastAnalysisExportText);
+        SetStatus(IsTimeSeriesAnalysisSelected() ? "Time series copied to clipboard." : "Analysis report copied to clipboard.");
     }
 
     private async void SaveAnalysis_Click(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(_lastAnalysisReportText))
+        if (string.IsNullOrWhiteSpace(_lastAnalysisExportText))
         {
             return;
         }
 
         try
         {
+            var isTimeSeries = IsTimeSeriesAnalysisSelected();
+            var fileTypes = isTimeSeries
+                ? new FilePickerFileType[]
+                {
+                    new("CSV files") { Patterns = ["*.csv"] }
+                }
+                : new FilePickerFileType[]
+                {
+                    new("Text files") { Patterns = ["*.txt"] },
+                    new("Markdown files") { Patterns = ["*.md"] }
+                };
             var file = await PickSaveFileAsync(
-                "Save analysis report",
-                GetSuggestedArtifactFileName("analysis-report", "txt"),
-                "txt",
-                new FilePickerFileType("Text files") { Patterns = ["*.txt"] },
-                new FilePickerFileType("Markdown files") { Patterns = ["*.md"] });
+                isTimeSeries ? "Save time series" : "Save analysis report",
+                GetSuggestedArtifactFileName(isTimeSeries ? "time-series" : "analysis-report", isTimeSeries ? "csv" : "txt"),
+                isTimeSeries ? "csv" : "txt",
+                fileTypes);
 
             if (file is null)
             {
@@ -1940,13 +1991,13 @@ public partial class MainWindow : Window
 
             await using var stream = await file.OpenWriteAsync();
             await using var writer = new StreamWriter(stream);
-            await writer.WriteAsync(_lastAnalysisReportText);
-            SetStatus($"Saved analysis report: {file.Name}");
+            await writer.WriteAsync(_lastAnalysisExportText);
+            SetStatus(isTimeSeries ? $"Saved time series: {file.Name}" : $"Saved analysis report: {file.Name}");
         }
         catch (Exception ex)
         {
-            AppendConsole($"Save analysis report failed: {ex.Message}");
-            SetStatus("Save analysis report failed.");
+            AppendConsole($"{(IsTimeSeriesAnalysisSelected() ? "Save time series" : "Save analysis report")} failed: {ex.Message}");
+            SetStatus(IsTimeSeriesAnalysisSelected() ? "Save time series failed." : "Save analysis report failed.");
         }
     }
 
@@ -1962,21 +2013,54 @@ public partial class MainWindow : Window
             ApplyUiToRuntime(preserveWeights: true);
             var reportType = AnalysisReportTypeComboBox?.SelectedItem?.ToString() ?? _analysisReportTypes[0];
             var source = AnalysisSourceComboBox?.SelectedItem as AnalysisSourceOption;
-            _lastAnalysisReportText = BuildAnalysisReportText(reportType, source);
-            _lastAnalysisReportTitle = $"{reportType} · {(source?.Label ?? "Current")}";
-
-            if (AnalysisReportTitleTextBlock is not null)
+            if (string.Equals(reportType, "Time series", StringComparison.Ordinal))
             {
-                AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
+                var series = BuildAnalysisTimeSeries(source);
+                _lastAnalysisSeriesValues = series.Values;
+                _lastAnalysisReportText = string.Empty;
+                _lastAnalysisExportText = BuildAnalysisTimeSeriesCsv(series);
+                _lastAnalysisReportTitle = $"{reportType} · {series.SeriesLabel} · {(source?.Label ?? "Current")}";
+
+                if (AnalysisChartTitleTextBlock is not null)
+                {
+                    AnalysisChartTitleTextBlock.Text = _lastAnalysisReportTitle;
+                }
+
+                if (AnalysisChartSummaryTextBlock is not null)
+                {
+                    AnalysisChartSummaryTextBlock.Text =
+                        $"Points: {series.Values.Count}  |  Min: {series.Values.Min().ToString("0.000", CultureInfo.InvariantCulture)}  |  Max: {series.Values.Max().ToString("0.000", CultureInfo.InvariantCulture)}";
+                }
+
+                if (AnalysisReportTextBox is not null)
+                {
+                    AnalysisReportTextBox.Text = string.Empty;
+                }
+
+                RenderAnalysisTimeSeries();
             }
-
-            if (AnalysisReportTextBox is not null)
+            else
             {
-                AnalysisReportTextBox.Text = _lastAnalysisReportText;
+                _lastAnalysisReportText = BuildAnalysisReportText(reportType, source);
+                _lastAnalysisExportText = _lastAnalysisReportText;
+                _lastAnalysisSeriesValues = null;
+                _lastAnalysisReportTitle = $"{reportType} · {(source?.Label ?? "Current")}";
+
+                if (AnalysisReportTitleTextBlock is not null)
+                {
+                    AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
+                }
+
+                if (AnalysisReportTextBox is not null)
+                {
+                    AnalysisReportTextBox.Text = _lastAnalysisReportText;
+                }
+
+                RenderAnalysisTimeSeries();
             }
 
             UpdateActionAvailability();
-            SetStatus("Analysis report ready.");
+            SetStatus(string.Equals(reportType, "Time series", StringComparison.Ordinal) ? "Time series ready." : "Analysis report ready.");
         }
         catch (Exception ex)
         {
@@ -3430,6 +3514,231 @@ public partial class MainWindow : Window
         return string.Equals(reportType, "Hidden-state clustering", StringComparison.Ordinal)
             ? engine.ClusterHiddenStates(_patterns).ToDisplayText()
             : engine.ClusterOutputs(_patterns).ToDisplayText();
+    }
+
+    private void UpdateAnalysisModeVisibility()
+    {
+        var isTimeSeries = IsTimeSeriesAnalysisSelected();
+        if (AnalysisTimeSeriesControlsGrid is not null)
+        {
+            AnalysisTimeSeriesControlsGrid.IsVisible = isTimeSeries;
+        }
+
+        if (AnalysisTextPanel is not null)
+        {
+            AnalysisTextPanel.IsVisible = !isTimeSeries;
+        }
+
+        if (AnalysisChartPanel is not null)
+        {
+            AnalysisChartPanel.IsVisible = isTimeSeries;
+        }
+    }
+
+    private bool IsTimeSeriesAnalysisSelected()
+    {
+        return string.Equals(AnalysisReportTypeComboBox?.SelectedItem?.ToString(), "Time series", StringComparison.Ordinal);
+    }
+
+    private void UpdateAnalysisTimeSeriesIndexOptions()
+    {
+        UpdateAnalysisModeVisibility();
+
+        if (AnalysisTimeSeriesIndexComboBox is null || _definition is null)
+        {
+            return;
+        }
+
+        var selectedKind = AnalysisTimeSeriesKindComboBox?.SelectedItem?.ToString() ?? _analysisTimeSeriesKinds[0];
+        var selectedIndex = AnalysisTimeSeriesIndexComboBox.SelectedIndex;
+        var count = selectedKind switch
+        {
+            "Input" => _definition.InputUnits,
+            "Target" => _definition.OutputUnits,
+            "Output" => _definition.OutputUnits,
+            "Hidden" => GetHiddenActivationCount(_definition),
+            _ => 0
+        };
+
+        var options = Enumerable.Range(0, Math.Max(count, 0))
+            .Select(index => $"{selectedKind} {index + 1}")
+            .ToList();
+        _isUpdatingAnalysisControls = true;
+        try
+        {
+            AnalysisTimeSeriesIndexComboBox.ItemsSource = options;
+            AnalysisTimeSeriesIndexComboBox.SelectedIndex = options.Count == 0
+                ? -1
+                : Math.Clamp(selectedIndex < 0 ? 0 : selectedIndex, 0, options.Count - 1);
+        }
+        finally
+        {
+            _isUpdatingAnalysisControls = false;
+        }
+    }
+
+    private sealed record AnalysisTimeSeriesResult(string SeriesLabel, IReadOnlyList<double> Values);
+
+    private AnalysisTimeSeriesResult BuildAnalysisTimeSeries(AnalysisSourceOption? source)
+    {
+        if (_definition is null)
+        {
+            throw new InvalidOperationException("Load a project before running analysis.");
+        }
+
+        EnsurePatternsAvailable();
+        var selectedKind = AnalysisTimeSeriesKindComboBox?.SelectedItem?.ToString() ?? _analysisTimeSeriesKinds[0];
+        var selectedIndex = AnalysisTimeSeriesIndexComboBox?.SelectedIndex ?? -1;
+        if (selectedIndex < 0)
+        {
+            throw new InvalidOperationException("Select a series index.");
+        }
+
+        var engine = source?.Weights is null
+            ? _engine ?? new SignalWeaveEngine(_definition)
+            : new SignalWeaveEngine(_definition, source.Weights.Clone());
+        var run = engine.TestAll(_patterns);
+        var values = new List<double>(run.Results.Count);
+
+        foreach (var result in run.Results)
+        {
+            values.Add(selectedKind switch
+            {
+                "Input" => selectedIndex < result.Inputs.Length ? result.Inputs[selectedIndex] : 0,
+                "Target" => result.Targets is not null && selectedIndex < result.Targets.Length ? result.Targets[selectedIndex] : 0,
+                "Output" => selectedIndex < result.Outputs.Length ? result.Outputs[selectedIndex] : 0,
+                "Hidden" => selectedIndex < result.HiddenActivations.Length ? result.HiddenActivations[selectedIndex] : 0,
+                _ => 0
+            });
+        }
+
+        return new AnalysisTimeSeriesResult($"{selectedKind} {selectedIndex + 1}", values);
+    }
+
+    private string BuildAnalysisTimeSeriesCsv(AnalysisTimeSeriesResult series)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("step,series,value");
+
+        for (var index = 0; index < series.Values.Count; index++)
+        {
+            builder
+                .Append(index.ToString(CultureInfo.InvariantCulture))
+                .Append(',')
+                .Append(EscapeCsv(series.SeriesLabel))
+                .Append(',')
+                .AppendLine(series.Values[index].ToString("0.############", CultureInfo.InvariantCulture));
+        }
+
+        return builder.ToString();
+    }
+
+    private static int GetHiddenActivationCount(NetworkDefinition definition)
+    {
+        return definition.HasSecondHiddenLayer
+            ? definition.HiddenUnits + definition.SecondHiddenUnits
+            : definition.HiddenUnits;
+    }
+
+    private void RenderAnalysisTimeSeries()
+    {
+        if (AnalysisTimeSeriesCanvas is null)
+        {
+            return;
+        }
+
+        AnalysisTimeSeriesCanvas.Children.Clear();
+        if (_lastAnalysisSeriesValues is null || _lastAnalysisSeriesValues.Count == 0 || !IsTimeSeriesAnalysisSelected())
+        {
+            return;
+        }
+
+        var width = Math.Max(AnalysisTimeSeriesCanvas.Bounds.Width, 280);
+        var height = Math.Max(AnalysisTimeSeriesCanvas.Bounds.Height, 200);
+        var left = 44d;
+        var right = width - 14d;
+        var top = 10d;
+        var bottom = height - 28d;
+        var plotWidth = Math.Max(1, right - left);
+        var plotHeight = Math.Max(1, bottom - top);
+        var minValue = _lastAnalysisSeriesValues.Min();
+        var maxValue = _lastAnalysisSeriesValues.Max();
+
+        if (Math.Abs(maxValue - minValue) < 1e-9)
+        {
+            minValue -= 0.5;
+            maxValue += 0.5;
+        }
+
+        AnalysisTimeSeriesCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, bottom),
+            EndPoint = new Point(right, bottom),
+            Stroke = new SolidColorBrush(Color.Parse("#B59E87")),
+            StrokeThickness = 1
+        });
+        AnalysisTimeSeriesCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, top),
+            EndPoint = new Point(left, bottom),
+            Stroke = new SolidColorBrush(Color.Parse("#B59E87")),
+            StrokeThickness = 1
+        });
+
+        AddAnalysisAxisLabel(left - 38, top - 6, maxValue.ToString("0.000", CultureInfo.InvariantCulture));
+        AddAnalysisAxisLabel(left - 38, bottom - 12, minValue.ToString("0.000", CultureInfo.InvariantCulture));
+        AddAnalysisAxisLabel(Math.Max(left, right - 34), bottom + 4, "step");
+
+        Point? previous = null;
+        for (var index = 0; index < _lastAnalysisSeriesValues.Count; index++)
+        {
+            var x = _lastAnalysisSeriesValues.Count == 1
+                ? left + (plotWidth / 2.0)
+                : left + (plotWidth * index / (_lastAnalysisSeriesValues.Count - 1));
+            var normalized = (_lastAnalysisSeriesValues[index] - minValue) / (maxValue - minValue);
+            var y = top + ((1 - normalized) * plotHeight);
+            var point = new Point(x, y);
+
+            if (previous is Point prior)
+            {
+                AnalysisTimeSeriesCanvas.Children.Add(new Line
+                {
+                    StartPoint = prior,
+                    EndPoint = point,
+                    Stroke = new SolidColorBrush(Color.Parse("#B7312C")),
+                    StrokeThickness = 1.25
+                });
+            }
+
+            var dot = new Ellipse
+            {
+                Width = 4,
+                Height = 4,
+                Fill = new SolidColorBrush(Color.Parse("#B7312C"))
+            };
+            Canvas.SetLeft(dot, x - 2);
+            Canvas.SetTop(dot, y - 2);
+            AnalysisTimeSeriesCanvas.Children.Add(dot);
+            previous = point;
+        }
+    }
+
+    private void AddAnalysisAxisLabel(double x, double y, string text)
+    {
+        if (AnalysisTimeSeriesCanvas is null)
+        {
+            return;
+        }
+
+        var label = new TextBlock
+        {
+            Text = text,
+            FontSize = 10,
+            Foreground = new SolidColorBrush(Color.Parse("#5E5348"))
+        };
+        Canvas.SetLeft(label, x);
+        Canvas.SetTop(label, y);
+        AnalysisTimeSeriesCanvas.Children.Add(label);
     }
 
     private static string EscapeCsv(string value)

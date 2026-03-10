@@ -726,62 +726,106 @@
 							</Grid>
 						</TabItem>
 
-						<TabItem Header="Analysis">
-							<Grid Margin="16"
-                                  RowDefinitions="Auto,Auto,*"
-                                  RowSpacing="12">
-                                <TextBlock Text="Analysis reports"
-                                           Classes="section" />
+							<TabItem Header="Analysis">
+								<Grid Margin="16"
+                                      RowDefinitions="Auto,Auto,Auto,*"
+                                      RowSpacing="12">
+                                    <TextBlock Text="Analysis reports"
+                                               Classes="section" />
 
-                                <Grid Grid.Row="1"
-                                      ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto"
-                                      ColumnSpacing="10">
-                                    <TextBlock Text="Report"
-                                               VerticalAlignment="Center" />
-                                    <ComboBox x:Name="AnalysisReportTypeComboBox"
-                                              Grid.Column="1"
-                                              SelectionChanged="AnalysisSelectionChanged" />
+                                    <Grid Grid.Row="1"
+                                          ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto"
+                                          ColumnSpacing="10">
+                                        <TextBlock Text="Mode"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisReportTypeComboBox"
+                                                  Grid.Column="1"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
 
-                                    <TextBlock Grid.Column="2"
-                                               Text="Source"
-                                               VerticalAlignment="Center" />
-                                    <ComboBox x:Name="AnalysisSourceComboBox"
-                                              Grid.Column="3"
-                                              SelectionChanged="AnalysisSelectionChanged" />
+                                        <TextBlock Grid.Column="2"
+                                                   Text="Source"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisSourceComboBox"
+                                                  Grid.Column="3"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
 
-                                    <Button x:Name="RunAnalysisButton"
-                                            Grid.Column="4"
-                                            Content="Run"
-                                            Click="RunAnalysis_Click" />
-                                    <Button x:Name="CopyAnalysisButton"
-                                            Grid.Column="5"
-                                            Content="⧉"
-                                            Width="36"
-                                            ToolTip.Tip="Copy analysis report"
-                                            Click="CopyAnalysis_Click" />
-                                    <Button x:Name="SaveAnalysisButton"
-                                            Grid.Column="6"
-                                            Content="🖫"
-                                            Width="36"
-                                            ToolTip.Tip="Save analysis report"
-                                            Click="SaveAnalysis_Click" />
-                                </Grid>
+                                        <Button x:Name="RunAnalysisButton"
+                                                Grid.Column="4"
+                                                Content="Run"
+                                                Click="RunAnalysis_Click" />
+                                        <Button x:Name="CopyAnalysisButton"
+                                                Grid.Column="5"
+                                                Content="⧉"
+                                                Width="36"
+                                                ToolTip.Tip="Copy analysis content"
+                                                Click="CopyAnalysis_Click" />
+                                        <Button x:Name="SaveAnalysisButton"
+                                                Grid.Column="6"
+                                                Content="🖫"
+                                                Width="36"
+                                                ToolTip.Tip="Save analysis content"
+                                                Click="SaveAnalysis_Click" />
+                                    </Grid>
 
-                                <Grid Grid.Row="2"
-                                      RowDefinitions="Auto,*"
-                                      RowSpacing="8">
-                                    <TextBlock x:Name="AnalysisReportTitleTextBlock"
-                                               Classes="muted"
-                                               Text="Run an analysis report." />
-                                    <TextBox x:Name="AnalysisReportTextBox"
-                                             Grid.Row="1"
-                                             IsReadOnly="True"
-                                             AcceptsReturn="True"
-                                             TextWrapping="NoWrap"
-                                             FontFamily="Cascadia Mono, Consolas, monospace" />
-                                </Grid>
-							</Grid>
-						</TabItem>
+                                    <Grid Grid.Row="2"
+                                          x:Name="AnalysisTimeSeriesControlsGrid"
+                                          ColumnDefinitions="Auto,*,Auto,*"
+                                          ColumnSpacing="10"
+                                          IsVisible="False">
+                                        <TextBlock Text="Series"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisTimeSeriesKindComboBox"
+                                                  Grid.Column="1"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
+
+                                        <TextBlock Grid.Column="2"
+                                                   Text="Index"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisTimeSeriesIndexComboBox"
+                                                  Grid.Column="3"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
+                                    </Grid>
+
+                                    <Grid Grid.Row="3"
+                                          x:Name="AnalysisTextPanel"
+                                          RowDefinitions="Auto,*"
+                                          RowSpacing="8">
+                                        <TextBlock x:Name="AnalysisReportTitleTextBlock"
+                                                   Classes="muted"
+                                                   Text="Run an analysis report." />
+                                        <TextBox x:Name="AnalysisReportTextBox"
+                                                 Grid.Row="1"
+                                                 IsReadOnly="True"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="NoWrap"
+                                                 FontFamily="Cascadia Mono, Consolas, monospace" />
+                                    </Grid>
+
+                                    <Grid Grid.Row="3"
+                                          x:Name="AnalysisChartPanel"
+                                          RowDefinitions="Auto,*,Auto"
+                                          RowSpacing="8"
+                                          IsVisible="False">
+                                        <TextBlock x:Name="AnalysisChartTitleTextBlock"
+                                                   Classes="muted"
+                                                   Text="Run a time-series analysis." />
+                                        <Border Grid.Row="1"
+                                                BorderBrush="#D7CCBD"
+                                                BorderThickness="1"
+                                                CornerRadius="10"
+                                                Background="#FFF9F1"
+                                                Padding="8">
+                                            <Canvas x:Name="AnalysisTimeSeriesCanvas"
+                                                    MinHeight="260"
+                                                    ClipToBounds="True" />
+                                        </Border>
+                                        <TextBlock x:Name="AnalysisChartSummaryTextBlock"
+                                                   Grid.Row="2"
+                                                   Classes="muted"
+                                                   Text="" />
+                                    </Grid>
+								</Grid>
+							</TabItem>
 
 					</TabControl>
 	            </Border>
