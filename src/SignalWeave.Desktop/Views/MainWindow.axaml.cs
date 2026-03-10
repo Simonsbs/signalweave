@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Specialized;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -25,6 +27,10 @@ public partial class MainWindow : Window
         {
             NetworkDiagramCanvas.SizeChanged += HandleNetworkDiagramCanvasSizeChanged;
         }
+        if (ErrorPlotCanvas is not null)
+        {
+            ErrorPlotCanvas.SizeChanged += HandleErrorPlotCanvasSizeChanged;
+        }
 
         DataContextChanged += HandleDataContextChanged;
         AttachViewModel(DataContext as MainWindowViewModel);
@@ -44,6 +50,7 @@ public partial class MainWindow : Window
             _attachedViewModel.FeedbackDialogRequested -= HandleFeedbackDialogRequested;
             _attachedViewModel.DiagramNodes.CollectionChanged -= HandleDiagramCollectionChanged;
             _attachedViewModel.DiagramEdges.CollectionChanged -= HandleDiagramCollectionChanged;
+            _attachedViewModel.PropertyChanged -= HandleViewModelPropertyChanged;
         }
 
         _attachedViewModel = viewModel;
@@ -53,10 +60,12 @@ public partial class MainWindow : Window
             _attachedViewModel.FeedbackDialogRequested += HandleFeedbackDialogRequested;
             _attachedViewModel.DiagramNodes.CollectionChanged += HandleDiagramCollectionChanged;
             _attachedViewModel.DiagramEdges.CollectionChanged += HandleDiagramCollectionChanged;
+            _attachedViewModel.PropertyChanged += HandleViewModelPropertyChanged;
             SyncDiagramViewport();
         }
 
         RenderDiagram();
+        RenderErrorPlot();
     }
 
     private async void HandleFeedbackDialogRequested(object? sender, FeedbackDialogRequestEventArgs e)
@@ -68,6 +77,16 @@ public partial class MainWindow : Window
     private void HandleDiagramCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RenderDiagram();
+    }
+
+    private void HandleViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MainWindowViewModel.ErrorProgressPoints) or
+            nameof(MainWindowViewModel.ErrorPlotTopLabel) or
+            nameof(MainWindowViewModel.ErrorPlotBottomRightLabel))
+        {
+            RenderErrorPlot();
+        }
     }
 
     private void HandleNetworkDiagramCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
@@ -85,6 +104,132 @@ public partial class MainWindow : Window
         _attachedViewModel.UpdateDiagramViewport(
             NetworkDiagramCanvas.Bounds.Width,
             NetworkDiagramCanvas.Bounds.Height);
+    }
+
+    private void HandleErrorPlotCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        RenderErrorPlot();
+    }
+
+    private void RenderErrorPlot()
+    {
+        if (ErrorPlotCanvas is null)
+        {
+            return;
+        }
+
+        ErrorPlotCanvas.Children.Clear();
+
+        if (_attachedViewModel is null)
+        {
+            return;
+        }
+
+        var width = Math.Max(220, ErrorPlotCanvas.Bounds.Width);
+        var height = Math.Max(170, ErrorPlotCanvas.Bounds.Height);
+        var left = 28.0;
+        var top = 12.0;
+        var right = width - 12.0;
+        var bottom = height - 28.0;
+        var plotWidth = Math.Max(20, right - left);
+        var plotHeight = Math.Max(20, bottom - top);
+
+        ErrorPlotCanvas.Children.Add(new TextBlock
+        {
+            Text = _attachedViewModel.ErrorPlotTopLabel,
+            Foreground = Brush.Parse("#5E5E5E")
+        });
+
+        ErrorPlotCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, top),
+            EndPoint = new Point(left, bottom),
+            Stroke = Brush.Parse("#5A5A5A"),
+            StrokeThickness = 1.5
+        });
+
+        ErrorPlotCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, bottom),
+            EndPoint = new Point(right, bottom),
+            Stroke = Brush.Parse("#5A5A5A"),
+            StrokeThickness = 1.5
+        });
+
+        for (var tick = 1; tick <= 4; tick++)
+        {
+            var x = left + ((plotWidth * tick) / 5.0);
+            ErrorPlotCanvas.Children.Add(new Line
+            {
+                StartPoint = new Point(x, bottom - 4),
+                EndPoint = new Point(x, bottom + 4),
+                Stroke = Brush.Parse("#5A5A5A"),
+                StrokeThickness = 1.2
+            });
+        }
+
+        var points = ParseErrorPlotPoints(_attachedViewModel.ErrorProgressPoints, left, top, plotWidth, plotHeight);
+        if (points.Count >= 2)
+        {
+            ErrorPlotCanvas.Children.Add(new Polyline
+            {
+                Points = points,
+                Stroke = Brush.Parse("#4E7396"),
+                StrokeThickness = 2
+            });
+        }
+
+        var zeroLabel = new TextBlock
+        {
+            Text = "0",
+            Foreground = Brush.Parse("#5E5E5E")
+        };
+        Canvas.SetLeft(zeroLabel, 4);
+        Canvas.SetTop(zeroLabel, bottom - 2);
+        ErrorPlotCanvas.Children.Add(zeroLabel);
+
+        var maxLabel = new TextBlock
+        {
+            Text = _attachedViewModel.ErrorPlotBottomRightLabel,
+            Foreground = Brush.Parse("#5E5E5E"),
+            Width = 52,
+            TextAlignment = TextAlignment.Right
+        };
+        Canvas.SetLeft(maxLabel, right - 48);
+        Canvas.SetTop(maxLabel, bottom - 2);
+        ErrorPlotCanvas.Children.Add(maxLabel);
+    }
+
+    private static Avalonia.Collections.AvaloniaList<Point> ParseErrorPlotPoints(string pointsText, double left, double top, double width, double height)
+    {
+        var points = new Avalonia.Collections.AvaloniaList<Point>();
+        var sourceLeft = 24.0;
+        var sourceTop = 8.0;
+        var sourceWidth = 226.0;
+        var sourceHeight = 108.0;
+
+        foreach (var token in pointsText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var commaIndex = token.IndexOf(',');
+            if (commaIndex <= 0 || commaIndex >= token.Length - 1)
+            {
+                continue;
+            }
+
+            if (!double.TryParse(token[..commaIndex], out var x) ||
+                !double.TryParse(token[(commaIndex + 1)..], out var y))
+            {
+                continue;
+            }
+
+            var normalizedX = (x - sourceLeft) / sourceWidth;
+            var normalizedY = (y - sourceTop) / sourceHeight;
+            points.Add(new Point(
+                left + (normalizedX * width),
+                top + (normalizedY * height)));
+        }
+
+        return points;
     }
 
     private void RenderDiagram()

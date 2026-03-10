@@ -86,7 +86,7 @@
             </MenuItem>
         </Menu>
 
-        <Grid RowDefinitions="*,170"
+        <Grid RowDefinitions="*,220"
               RowSpacing="8">
             <Grid ColumnDefinitions="*,258"
                   ColumnSpacing="8">
@@ -309,54 +309,11 @@
                                 BorderBrush="#B8C7D6"
                                 BorderThickness="1"
                                 Padding="8">
-                            <Grid RowDefinitions="Auto,*"
-                                  ColumnDefinitions="Auto,*">
-                                <TextBlock Text="{Binding ErrorPlotTopLabel}"
-                                           Foreground="#5E5E5E"
-                                           Margin="0,0,4,0" />
-                                <Canvas Width="240"
-                                        Height="132"
-                                        Grid.Row="1"
-                                        Grid.ColumnSpan="2"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center">
-                                    <shapes:Line StartPoint="24,8"
-                                                 EndPoint="24,116"
-                                                 Stroke="#5A5A5A"
-                                                 StrokeThickness="1.5" />
-                                    <shapes:Line StartPoint="24,116"
-                                                 EndPoint="250,116"
-                                                 Stroke="#5A5A5A"
-                                                 StrokeThickness="1.5" />
-                                    <shapes:Line StartPoint="69,112"
-                                                 EndPoint="69,120"
-                                                 Stroke="#5A5A5A"
-                                                 StrokeThickness="1.2" />
-                                    <shapes:Line StartPoint="114,112"
-                                                 EndPoint="114,120"
-                                                 Stroke="#5A5A5A"
-                                                 StrokeThickness="1.2" />
-                                    <shapes:Line StartPoint="159,112"
-                                                 EndPoint="159,120"
-                                                 Stroke="#5A5A5A"
-                                                 StrokeThickness="1.2" />
-                                    <shapes:Line StartPoint="204,112"
-                                                 EndPoint="204,120"
-                                                 Stroke="#5A5A5A"
-                                                 StrokeThickness="1.2" />
-                                    <shapes:Polyline Points="{Binding ErrorProgressPoints}"
-                                                     Stroke="#4E7396"
-                                                     StrokeThickness="2" />
-                                    <TextBlock Canvas.Left="4"
-                                               Canvas.Top="116"
-                                               Text="0"
-                                               Foreground="#5E5E5E" />
-                                    <TextBlock Canvas.Left="214"
-                                               Canvas.Top="116"
-                                               Text="{Binding ErrorPlotBottomRightLabel}"
-                                               Foreground="#5E5E5E" />
-                                </Canvas>
-                            </Grid>
+                            <Canvas x:Name="ErrorPlotCanvas"
+                                    MinWidth="220"
+                                    MinHeight="170"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch" />
                         </Border>
                     </Grid>
                 </Border>
