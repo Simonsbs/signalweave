@@ -102,62 +102,270 @@
               ColumnDefinitions="2.15*,6,1*">
             <Border Grid.Row="0"
                     Grid.Column="0"
-                    x:Name="NetworkGraphPanelBorder"
                     Classes="card"
                     Padding="0">
-                <Grid RowDefinitions="Auto,*,Auto"
-                      RowSpacing="10"
-                      Margin="16">
-                    <Grid ColumnDefinitions="*,Auto,Auto"
-                          ColumnSpacing="12">
-                        <TextBlock Text="Network graph"
-                                   Classes="section" />
-                        <TextBlock x:Name="NetworkGraphSummaryTextBlock"
-                                   Grid.Column="1"
-                                   Classes="muted"
-                                   HorizontalAlignment="Right"
-                                   Text="Topology view" />
-                        <Button Grid.Column="2"
-                                Content="🖫"
-                                Width="36"
-                                ToolTip.Tip="Save network graph as PNG"
-                                Click="SaveNetworkGraph_Click" />
-                    </Grid>
+                <TabControl Margin="0"
+                            TabStripPlacement="Top">
+                    <TabItem Header="Network Graph">
+                        <Border x:Name="NetworkGraphPanelBorder"
+                                Background="Transparent"
+                                Padding="0">
+                            <Grid RowDefinitions="Auto,*,Auto"
+                                  RowSpacing="10"
+                                  Margin="16">
+                                <Grid ColumnDefinitions="*,Auto,Auto"
+                                      ColumnSpacing="12">
+                                    <TextBlock Text="Network graph"
+                                               Classes="section" />
+                                    <TextBlock x:Name="NetworkGraphSummaryTextBlock"
+                                               Grid.Column="1"
+                                               Classes="muted"
+                                               HorizontalAlignment="Right"
+                                               Text="Topology view" />
+                                    <Button Grid.Column="2"
+                                            Content="🖫"
+                                            Width="36"
+                                            ToolTip.Tip="Save network graph as PNG"
+                                            Click="SaveNetworkGraph_Click" />
+                                </Grid>
 
-                    <Canvas Grid.Row="1"
-                            x:Name="NetworkGraphCanvas"
-                            Background="#FFF9F1"
-                            ClipToBounds="True"
-                            MinHeight="220" />
+                                <Canvas Grid.Row="1"
+                                        x:Name="NetworkGraphCanvas"
+                                        Background="#FFF9F1"
+                                        ClipToBounds="True"
+                                        MinHeight="220" />
 
-                    <Grid Grid.Row="2"
-                          ColumnDefinitions="Auto,*,Auto"
-                          ColumnSpacing="10"
-                          VerticalAlignment="Center">
-                        <TextBlock x:Name="WeightLegendMinTextBlock"
-                                   Classes="muted"
-                                   VerticalAlignment="Center"
-                                   Text="-1.0" />
-                        <Border Grid.Column="1"
-                                Height="12"
-                                CornerRadius="3"
-                                BorderBrush="#3C372F"
-                                BorderThickness="1">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
-                                    <GradientStop Offset="0.0" Color="#C13A3A" />
-                                    <GradientStop Offset="0.5" Color="#111111" />
-                                    <GradientStop Offset="1.0" Color="#2F9B57" />
-                                </LinearGradientBrush>
-                            </Border.Background>
+                                <Grid Grid.Row="2"
+                                      ColumnDefinitions="Auto,*,Auto"
+                                      ColumnSpacing="10"
+                                      VerticalAlignment="Center">
+                                    <TextBlock x:Name="WeightLegendMinTextBlock"
+                                               Classes="muted"
+                                               VerticalAlignment="Center"
+                                               Text="-1.0" />
+                                    <Border Grid.Column="1"
+                                            Height="12"
+                                            CornerRadius="3"
+                                            BorderBrush="#3C372F"
+                                            BorderThickness="1">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                                <GradientStop Offset="0.0" Color="#C13A3A" />
+                                                <GradientStop Offset="0.5" Color="#111111" />
+                                                <GradientStop Offset="1.0" Color="#2F9B57" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                    <TextBlock x:Name="WeightLegendMaxTextBlock"
+                                               Grid.Column="2"
+                                               Classes="muted"
+                                               VerticalAlignment="Center"
+                                               Text="1.0" />
+                                </Grid>
+                            </Grid>
                         </Border>
-                        <TextBlock x:Name="WeightLegendMaxTextBlock"
-                                   Grid.Column="2"
-                                   Classes="muted"
-                                   VerticalAlignment="Center"
-                                   Text="1.0" />
-                    </Grid>
-                </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Weights">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,Auto,Auto,*"
+                              RowSpacing="12">
+                            <TextBlock Text="Weight inspector"
+                                       Classes="section" />
+
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="Auto,*,Auto,*,Auto,*"
+                                  ColumnSpacing="10"
+                                  RowSpacing="8">
+                                <TextBlock Text="Source"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightInspectorSourceComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="WeightInspectorSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Layer"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightInspectorLayerComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="WeightInspectorSelectionChanged" />
+
+                                <TextBlock Grid.Column="4"
+                                           Text="View"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightInspectorViewModeComboBox"
+                                          Grid.Column="5"
+                                          SelectionChanged="WeightInspectorSelectionChanged" />
+                            </Grid>
+
+                            <Border Grid.Row="2"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Padding="12">
+                                <TextBlock x:Name="WeightInspectorStatsTextBlock"
+                                           Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="No weight data available." />
+                            </Border>
+
+                            <Border Grid.Row="3"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Background="#FFFDF9"
+                                    Padding="12">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Auto">
+                                    <Canvas x:Name="WeightInspectorCanvas"
+                                            ClipToBounds="True"
+                                            MinWidth="260"
+                                            MinHeight="220"
+                                            Background="#FFF9F1" />
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Analysis">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,Auto,Auto,*"
+                              RowSpacing="12">
+                            <TextBlock Text="Analysis reports"
+                                       Classes="section" />
+
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="10">
+                                <TextBlock Text="Mode"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisReportTypeComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Source"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSourceComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <Button x:Name="RunAnalysisButton"
+                                        Grid.Column="4"
+                                        Content="Run"
+                                        Click="RunAnalysis_Click" />
+                                <Button x:Name="CopyAnalysisButton"
+                                        Grid.Column="5"
+                                        Content="⧉"
+                                        Width="36"
+                                        ToolTip.Tip="Copy analysis content"
+                                        Click="CopyAnalysis_Click" />
+                                <Button x:Name="SaveAnalysisButton"
+                                        Grid.Column="6"
+                                        Content="🖫"
+                                        Width="36"
+                                        ToolTip.Tip="Save analysis content"
+                                        Click="SaveAnalysis_Click" />
+                                <Button x:Name="SaveAnalysisChartButton"
+                                        Grid.Column="7"
+                                        Content="🖼"
+                                        Width="36"
+                                        ToolTip.Tip="Save analysis chart as PNG"
+                                        Click="SaveAnalysisChart_Click" />
+                            </Grid>
+
+                            <Grid Grid.Row="2"
+                                  x:Name="AnalysisTimeSeriesControlsGrid"
+                                  ColumnDefinitions="Auto,*,Auto,*"
+                                  ColumnSpacing="10"
+                                  IsVisible="False">
+                                <TextBlock Text="Series"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisTimeSeriesKindComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Index"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisTimeSeriesIndexComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+                            </Grid>
+
+                            <Grid Grid.Row="2"
+                                  x:Name="AnalysisSurfaceControlsGrid"
+                                  ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*"
+                                  ColumnSpacing="10"
+                                  IsVisible="False">
+                                <TextBlock Text="X input"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceXComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Y input"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceYComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="4"
+                                           Text="Z series"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceZKindComboBox"
+                                          Grid.Column="5"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="6"
+                                           Text="Index"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceZIndexComboBox"
+                                          Grid.Column="7"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+                            </Grid>
+
+                            <Grid Grid.Row="3"
+                                  x:Name="AnalysisTextPanel"
+                                  RowDefinitions="Auto,*"
+                                  RowSpacing="8">
+                                <TextBlock x:Name="AnalysisReportTitleTextBlock"
+                                           Classes="muted"
+                                           Text="Run an analysis report." />
+                                <TextBox x:Name="AnalysisReportTextBox"
+                                         Grid.Row="1"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Cascadia Mono, Consolas, monospace" />
+                            </Grid>
+
+                            <Grid Grid.Row="3"
+                                  x:Name="AnalysisChartPanel"
+                                  RowDefinitions="Auto,*,Auto"
+                                  RowSpacing="8"
+                                  IsVisible="False">
+                                <TextBlock x:Name="AnalysisChartTitleTextBlock"
+                                           Classes="muted"
+                                           Text="Run a time-series analysis." />
+                                <Border Grid.Row="1"
+                                        x:Name="AnalysisChartBorder"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Background="#FFF9F1"
+                                        Padding="8">
+                                    <Canvas x:Name="AnalysisTimeSeriesCanvas"
+                                            MinHeight="260"
+                                            ClipToBounds="True" />
+                                </Border>
+                                <TextBlock x:Name="AnalysisChartSummaryTextBlock"
+                                           Grid.Row="2"
+                                           Classes="muted"
+                                           Text="" />
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
             </Border>
 
             <GridSplitter Grid.Row="0"
@@ -667,208 +875,8 @@
 							</ScrollViewer>
 						</TabItem>
 
-						<TabItem Header="Weights">
-							<Grid Margin="16"
-                                  RowDefinitions="Auto,Auto,Auto,*"
-                                  RowSpacing="12">
-                                <TextBlock Text="Weight inspector"
-                                           Classes="section" />
-
-                                <Grid Grid.Row="1"
-                                      ColumnDefinitions="Auto,*,Auto,*,Auto,*"
-                                      ColumnSpacing="10"
-                                      RowSpacing="8">
-                                    <TextBlock Text="Source"
-                                               VerticalAlignment="Center" />
-                                    <ComboBox x:Name="WeightInspectorSourceComboBox"
-                                              Grid.Column="1"
-                                              SelectionChanged="WeightInspectorSelectionChanged" />
-
-                                    <TextBlock Grid.Column="2"
-                                               Text="Layer"
-                                               VerticalAlignment="Center" />
-                                    <ComboBox x:Name="WeightInspectorLayerComboBox"
-                                              Grid.Column="3"
-                                              SelectionChanged="WeightInspectorSelectionChanged" />
-
-                                    <TextBlock Grid.Column="4"
-                                               Text="View"
-                                               VerticalAlignment="Center" />
-                                    <ComboBox x:Name="WeightInspectorViewModeComboBox"
-                                              Grid.Column="5"
-                                              SelectionChanged="WeightInspectorSelectionChanged" />
-                                </Grid>
-
-                                <Border Grid.Row="2"
-                                        BorderBrush="#D7CCBD"
-                                        BorderThickness="1"
-                                        Padding="12">
-                                    <TextBlock x:Name="WeightInspectorStatsTextBlock"
-                                               Classes="muted"
-                                               TextWrapping="Wrap"
-                                               Text="No weight data available." />
-                                </Border>
-
-                                <Border Grid.Row="3"
-                                        BorderBrush="#D7CCBD"
-                                        BorderThickness="1"
-                                        Background="#FFFDF9"
-                                        Padding="12">
-                                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                                  VerticalScrollBarVisibility="Auto">
-                                        <Canvas x:Name="WeightInspectorCanvas"
-                                                ClipToBounds="True"
-                                                MinWidth="260"
-                                                MinHeight="220"
-                                                Background="#FFF9F1" />
-                                    </ScrollViewer>
-                                </Border>
-							</Grid>
-						</TabItem>
-
-							<TabItem Header="Analysis">
-								<Grid Margin="16"
-                                      RowDefinitions="Auto,Auto,Auto,*"
-                                      RowSpacing="12">
-                                    <TextBlock Text="Analysis reports"
-                                               Classes="section" />
-
-                                    <Grid Grid.Row="1"
-                                          ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto,Auto"
-                                          ColumnSpacing="10">
-                                        <TextBlock Text="Mode"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisReportTypeComboBox"
-                                                  Grid.Column="1"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-
-                                        <TextBlock Grid.Column="2"
-                                                   Text="Source"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisSourceComboBox"
-                                                  Grid.Column="3"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-
-                                        <Button x:Name="RunAnalysisButton"
-                                                Grid.Column="4"
-                                                Content="Run"
-                                                Click="RunAnalysis_Click" />
-                                        <Button x:Name="CopyAnalysisButton"
-                                                Grid.Column="5"
-                                                Content="⧉"
-                                                Width="36"
-                                                ToolTip.Tip="Copy analysis content"
-                                                Click="CopyAnalysis_Click" />
-                                        <Button x:Name="SaveAnalysisButton"
-                                                Grid.Column="6"
-                                                Content="🖫"
-                                                Width="36"
-                                                ToolTip.Tip="Save analysis content"
-                                                Click="SaveAnalysis_Click" />
-                                        <Button x:Name="SaveAnalysisChartButton"
-                                                Grid.Column="7"
-                                                Content="🖼"
-                                                Width="36"
-                                                ToolTip.Tip="Save analysis chart as PNG"
-                                                Click="SaveAnalysisChart_Click" />
-                                    </Grid>
-
-                                    <Grid Grid.Row="2"
-                                          x:Name="AnalysisTimeSeriesControlsGrid"
-                                          ColumnDefinitions="Auto,*,Auto,*"
-                                          ColumnSpacing="10"
-                                          IsVisible="False">
-                                        <TextBlock Text="Series"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisTimeSeriesKindComboBox"
-                                                  Grid.Column="1"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-
-                                        <TextBlock Grid.Column="2"
-                                                   Text="Index"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisTimeSeriesIndexComboBox"
-                                                  Grid.Column="3"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-                                    </Grid>
-
-                                    <Grid Grid.Row="2"
-                                          x:Name="AnalysisSurfaceControlsGrid"
-                                          ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*"
-                                          ColumnSpacing="10"
-                                          IsVisible="False">
-                                        <TextBlock Text="X input"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisSurfaceXComboBox"
-                                                  Grid.Column="1"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-
-                                        <TextBlock Grid.Column="2"
-                                                   Text="Y input"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisSurfaceYComboBox"
-                                                  Grid.Column="3"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-
-                                        <TextBlock Grid.Column="4"
-                                                   Text="Z series"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisSurfaceZKindComboBox"
-                                                  Grid.Column="5"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-
-                                        <TextBlock Grid.Column="6"
-                                                   Text="Index"
-                                                   VerticalAlignment="Center" />
-                                        <ComboBox x:Name="AnalysisSurfaceZIndexComboBox"
-                                                  Grid.Column="7"
-                                                  SelectionChanged="AnalysisSelectionChanged" />
-                                    </Grid>
-
-                                    <Grid Grid.Row="3"
-                                          x:Name="AnalysisTextPanel"
-                                          RowDefinitions="Auto,*"
-                                          RowSpacing="8">
-                                        <TextBlock x:Name="AnalysisReportTitleTextBlock"
-                                                   Classes="muted"
-                                                   Text="Run an analysis report." />
-                                        <TextBox x:Name="AnalysisReportTextBox"
-                                                 Grid.Row="1"
-                                                 IsReadOnly="True"
-                                                 AcceptsReturn="True"
-                                                 TextWrapping="NoWrap"
-                                                 FontFamily="Cascadia Mono, Consolas, monospace" />
-                                    </Grid>
-
-                                    <Grid Grid.Row="3"
-                                          x:Name="AnalysisChartPanel"
-                                          RowDefinitions="Auto,*,Auto"
-                                          RowSpacing="8"
-                                          IsVisible="False">
-                                        <TextBlock x:Name="AnalysisChartTitleTextBlock"
-                                                   Classes="muted"
-                                                   Text="Run a time-series analysis." />
-                                        <Border Grid.Row="1"
-                                                x:Name="AnalysisChartBorder"
-                                                BorderBrush="#D7CCBD"
-                                                BorderThickness="1"
-                                                CornerRadius="10"
-                                                Background="#FFF9F1"
-                                                Padding="8">
-                                            <Canvas x:Name="AnalysisTimeSeriesCanvas"
-                                                    MinHeight="260"
-                                                    ClipToBounds="True" />
-                                        </Border>
-                                        <TextBlock x:Name="AnalysisChartSummaryTextBlock"
-                                                   Grid.Row="2"
-                                                   Classes="muted"
-                                                   Text="" />
-                                    </Grid>
-								</Grid>
-							</TabItem>
-
-					</TabControl>
-	            </Border>
+						</TabControl>
+		            </Border>
 
             <GridSplitter Grid.Row="1"
                           Grid.ColumnSpan="3"
