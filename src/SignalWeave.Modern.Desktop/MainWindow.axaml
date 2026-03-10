@@ -387,57 +387,6 @@
                         </Grid>
                     </TabItem>
 
-                    <TabItem Header="Summary">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <Grid Margin="16"
-                                  RowDefinitions="Auto,Auto,*"
-                                  RowSpacing="14">
-                                <TextBlock Text="Summary and weights"
-                                           Classes="section" />
-
-                                <TextBlock Grid.Row="1"
-                                           x:Name="LatestRunSummaryTextBlock"
-                                           Classes="muted"
-                                           TextWrapping="Wrap"
-                                           Text="No run executed yet." />
-
-                                <Grid Grid.Row="2"
-                                      RowDefinitions="Auto,*"
-                                      RowSpacing="12">
-                                    <Grid ColumnDefinitions="1.1*,1*"
-                                          ColumnSpacing="16">
-                                        <StackPanel Spacing="6">
-                                            <TextBlock Text="Project summary"
-                                                       FontWeight="SemiBold" />
-                                            <TextBlock x:Name="ProjectSummaryTextBlock"
-                                                       Classes="muted"
-                                                       TextWrapping="Wrap" />
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="1"
-                                                    Spacing="6">
-                                            <TextBlock Text="Weights"
-                                                       FontWeight="SemiBold" />
-                                            <TextBlock x:Name="WeightsSummaryTextBlock"
-                                                       Classes="muted"
-                                                       TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <Border Grid.Row="1"
-                                            BorderBrush="#D7CCBD"
-                                            BorderThickness="1"
-                                            Padding="12">
-                                        <TextBlock x:Name="ProjectStateTextBlock"
-                                                   Classes="muted"
-                                                   TextWrapping="Wrap"
-                                                   Text="Save the project to persist the current network settings, weights, and control-panel state." />
-                                    </Border>
-                                </Grid>
-                            </Grid>
-                        </ScrollViewer>
-                    </TabItem>
-
                     <TabItem Header="Patterns">
                         <Border Background="#FFFDF9"
                                 Padding="0">
@@ -489,7 +438,59 @@
                             </Grid>
                         </Border>
                     </TabItem>
-                </TabControl>
+
+					<TabItem Header="Summary">
+						<ScrollViewer VerticalScrollBarVisibility="Auto">
+							<Grid Margin="16"
+                                  RowDefinitions="Auto,Auto,*"
+                                  RowSpacing="14">
+								<TextBlock Text="Summary and weights"
+                                           Classes="section" />
+
+								<TextBlock Grid.Row="1"
+                                           x:Name="LatestRunSummaryTextBlock"
+                                           Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="No run executed yet." />
+
+								<Grid Grid.Row="2"
+                                      RowDefinitions="Auto,*"
+                                      RowSpacing="12">
+									<Grid ColumnDefinitions="1.1*,1*"
+                                          ColumnSpacing="16">
+										<StackPanel Spacing="6">
+											<TextBlock Text="Project summary"
+                                                       FontWeight="SemiBold" />
+											<TextBlock x:Name="ProjectSummaryTextBlock"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap" />
+										</StackPanel>
+
+										<StackPanel Grid.Column="1"
+                                                    Spacing="6">
+											<TextBlock Text="Weights"
+                                                       FontWeight="SemiBold" />
+											<TextBlock x:Name="WeightsSummaryTextBlock"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap" />
+										</StackPanel>
+									</Grid>
+
+									<Border Grid.Row="1"
+                                            BorderBrush="#D7CCBD"
+                                            BorderThickness="1"
+                                            Padding="12">
+										<TextBlock x:Name="ProjectStateTextBlock"
+                                                   Classes="muted"
+                                                   TextWrapping="Wrap"
+                                                   Text="Save the project to persist the current network settings, weights, and control-panel state." />
+									</Border>
+								</Grid>
+							</Grid>
+						</ScrollViewer>
+					</TabItem>
+
+				</TabControl>
             </Border>
 
             <GridSplitter Grid.Row="1"
