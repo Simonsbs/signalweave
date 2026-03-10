@@ -468,11 +468,13 @@
                                     Click="ClearConsole_Click" />
                         </Grid>
 
-                        <TextBox Grid.Row="1"
-                                 x:Name="ConsoleTextBox"
-                                 IsReadOnly="True"
-                                 AcceptsReturn="True"
-                                 TextWrapping="Wrap" />
+                        <ScrollViewer Grid.Row="1"
+                                      x:Name="ConsoleScrollViewer"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="ConsoleContentHost"
+                                        Spacing="8" />
+                        </ScrollViewer>
                     </Grid>
                 </Border>
 

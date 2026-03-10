@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
@@ -959,7 +960,7 @@ public partial class MainWindow : Window
 
     private void ClearConsole_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        ConsoleTextBox.Text = string.Empty;
+        ConsoleContentHost.Children.Clear();
     }
 
     private void Reset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -1339,10 +1340,16 @@ public partial class MainWindow : Window
 
     private void AppendConsole(string message)
     {
-        var next = string.IsNullOrWhiteSpace(ConsoleTextBox.Text)
-            ? message
-            : $"{ConsoleTextBox.Text}{Environment.NewLine}{message}";
-        ConsoleTextBox.Text = next;
+        if (ConsoleContentHost is null)
+        {
+            return;
+        }
+
+        foreach (var control in BuildMarkdownConsoleEntry(message))
+        {
+            ConsoleContentHost.Children.Add(control);
+        }
+
         ScrollConsoleToEnd();
     }
 
@@ -1350,15 +1357,233 @@ public partial class MainWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
-            ConsoleTextBox.CaretIndex = ConsoleTextBox.Text?.Length ?? 0;
-            var lineCount = string.IsNullOrEmpty(ConsoleTextBox.Text)
-                ? 0
-                : ConsoleTextBox.Text.Split(["\r\n", "\n"], StringSplitOptions.None).Length;
-            if (lineCount > 0)
+            if (ConsoleScrollViewer is not null)
             {
-                ConsoleTextBox.ScrollToLine(lineCount - 1);
+                ConsoleScrollViewer.Offset = new Vector(ConsoleScrollViewer.Offset.X, ConsoleScrollViewer.Extent.Height);
             }
         });
+    }
+
+    private IEnumerable<Control> BuildMarkdownConsoleEntry(string markdown)
+    {
+        var lines = (markdown ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var controls = new List<Control>();
+        var fencedCodeLines = new List<string>();
+        var inCodeFence = false;
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine ?? string.Empty;
+            var trimmed = line.Trim();
+
+            if (trimmed.StartsWith("```", StringComparison.Ordinal))
+            {
+                if (inCodeFence)
+                {
+                    controls.Add(BuildConsoleCodeBlock(string.Join(Environment.NewLine, fencedCodeLines)));
+                    fencedCodeLines.Clear();
+                    inCodeFence = false;
+                }
+                else
+                {
+                    inCodeFence = true;
+                }
+
+                continue;
+            }
+
+            if (inCodeFence)
+            {
+                fencedCodeLines.Add(line);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                controls.Add(new Border { Height = 6, Background = Brushes.Transparent });
+                continue;
+            }
+
+            if (trimmed.StartsWith("### ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleTextBlock(trimmed[4..], 16, FontWeight.SemiBold));
+                continue;
+            }
+
+            if (trimmed.StartsWith("## ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleTextBlock(trimmed[3..], 18, FontWeight.SemiBold));
+                continue;
+            }
+
+            if (trimmed.StartsWith("# ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleTextBlock(trimmed[2..], 20, FontWeight.Bold));
+                continue;
+            }
+
+            if (trimmed.StartsWith("- ", StringComparison.Ordinal) || trimmed.StartsWith("* ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleParagraph($"• {trimmed[2..]}"));
+                continue;
+            }
+
+            var orderedPrefixLength = GetOrderedListPrefixLength(trimmed);
+            if (orderedPrefixLength > 0)
+            {
+                controls.Add(BuildConsoleParagraph(trimmed));
+                continue;
+            }
+
+            if (trimmed.All(character => character == '-' || character == '*') && trimmed.Length >= 3)
+            {
+                controls.Add(new Border
+                {
+                    Height = 1,
+                    Margin = new Thickness(0, 4),
+                    Background = Brush.Parse("#D7CCBD")
+                });
+                continue;
+            }
+
+            controls.Add(BuildConsoleParagraph(line));
+        }
+
+        if (fencedCodeLines.Count > 0)
+        {
+            controls.Add(BuildConsoleCodeBlock(string.Join(Environment.NewLine, fencedCodeLines)));
+        }
+
+        return controls;
+    }
+
+    private static int GetOrderedListPrefixLength(string text)
+    {
+        var digitCount = 0;
+        while (digitCount < text.Length && char.IsDigit(text[digitCount]))
+        {
+            digitCount++;
+        }
+
+        return digitCount > 0 &&
+               digitCount + 1 < text.Length &&
+               text[digitCount] == '.' &&
+               text[digitCount + 1] == ' '
+            ? digitCount + 2
+            : 0;
+    }
+
+    private static Control BuildConsoleTextBlock(string text, double fontSize, FontWeight fontWeight)
+    {
+        return new SelectableTextBlock
+        {
+            Text = text,
+            FontSize = fontSize,
+            FontWeight = fontWeight,
+            Foreground = Brush.Parse("#211D19"),
+            TextWrapping = TextWrapping.Wrap
+        };
+    }
+
+    private static Control BuildConsoleParagraph(string text)
+    {
+        var block = new SelectableTextBlock
+        {
+            Foreground = Brush.Parse("#2D2924"),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        if (block.Inlines is { } inlines)
+        {
+            AppendMarkdownInlines(inlines, text);
+        }
+        else
+        {
+            block.Text = text;
+        }
+
+        return block;
+    }
+
+    private static Control BuildConsoleCodeBlock(string text)
+    {
+        return new Border
+        {
+            Background = Brush.Parse("#F1E8DA"),
+            BorderBrush = Brush.Parse("#D7CCBD"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10, 8),
+            Child = new SelectableTextBlock
+            {
+                Text = text,
+                FontFamily = FontFamily.Parse("Consolas, Menlo, monospace"),
+                Foreground = Brush.Parse("#3B3025"),
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
+    }
+
+    private static void AppendMarkdownInlines(InlineCollection inlines, string text)
+    {
+        var index = 0;
+        while (index < text.Length)
+        {
+            if (TryConsumeInline(text, ref index, "**", content => new Run(content) { FontWeight = FontWeight.Bold }, inlines))
+            {
+                continue;
+            }
+
+            if (TryConsumeInline(text, ref index, "`", content =>
+            {
+                var run = new Run(content) { Background = Brush.Parse("#F1E8DA") };
+                return run;
+            }, inlines))
+            {
+                continue;
+            }
+
+            if (TryConsumeInline(text, ref index, "*", content => new Run(content) { FontStyle = FontStyle.Italic }, inlines))
+            {
+                continue;
+            }
+
+            var nextMarker = FindNextMarker(text, index);
+            var length = nextMarker < 0 ? text.Length - index : nextMarker - index;
+            inlines.Add(new Run(text.Substring(index, length)));
+            index += length;
+        }
+    }
+
+    private static bool TryConsumeInline(string text, ref int index, string marker, Func<string, Inline> inlineFactory, InlineCollection inlines)
+    {
+        if (!text.AsSpan(index).StartsWith(marker, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var start = index + marker.Length;
+        var end = text.IndexOf(marker, start, StringComparison.Ordinal);
+        if (end < 0)
+        {
+            return false;
+        }
+
+        inlines.Add(inlineFactory(text[start..end]));
+        index = end + marker.Length;
+        return true;
+    }
+
+    private static int FindNextMarker(string text, int start)
+    {
+        var candidates = new[]
+        {
+            text.IndexOf("**", start, StringComparison.Ordinal),
+            text.IndexOf('*', start),
+            text.IndexOf('`', start)
+        };
+
+        return candidates.Where(candidate => candidate >= 0).DefaultIfEmpty(-1).Min();
     }
 
     private void EnsurePatternsAvailable()
