@@ -84,6 +84,13 @@ public partial class MainWindow : Window
         }
     }
 
+    private enum PatternTestStatus
+    {
+        Unknown,
+        Pass,
+        Fail
+    }
+
     private sealed record RecentProjectOption(string Path, string Label)
     {
         public override string ToString()
@@ -585,12 +592,12 @@ public partial class MainWindow : Window
 
         if (options.Count == 0)
         {
-            TestPatternListBox.ItemsSource = options;
+            TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
             TestPatternListBox.SelectedIndex = -1;
             return;
         }
 
-        TestPatternListBox.ItemsSource = options;
+        TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
         TestPatternListBox.SelectedIndex = Math.Clamp(preferredIndex, 0, options.Count - 1);
     }
 
@@ -611,6 +618,81 @@ public partial class MainWindow : Window
         var outputs = string.Join(" ", result.Outputs.Select(FormatGraphValue));
         var targets = result.Targets is null ? "-" : string.Join(" ", result.Targets.Select(FormatGraphValue));
         return $"last: out {outputs} | target {targets} | err {FormatGraphValue(result.Error)}";
+    }
+
+    private Control BuildPatternListItem(PatternOption option)
+    {
+        var status = GetPatternTestStatus(option.Index);
+        var (icon, color) = status switch
+        {
+            PatternTestStatus.Pass => ("✓", "#2F9B57"),
+            PatternTestStatus.Fail => ("✕", "#C13A3A"),
+            _ => ("•", "#8B8278")
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            RowSpacing = 3,
+            Margin = new Thickness(0, 2)
+        };
+
+        var label = new TextBlock
+        {
+            Text = option.Label,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetColumn(label, 0);
+        Grid.SetRow(label, 0);
+        grid.Children.Add(label);
+
+        var iconBlock = new TextBlock
+        {
+            Text = icon,
+            Foreground = Brush.Parse(color),
+            FontWeight = FontWeight.Bold,
+            FontSize = 18,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(10, 0, 0, 0)
+        };
+        Grid.SetColumn(iconBlock, 1);
+        Grid.SetRowSpan(iconBlock, 2);
+        grid.Children.Add(iconBlock);
+
+        var summary = new TextBlock
+        {
+            Text = option.ResultSummary,
+            Classes = { "muted" },
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetColumn(summary, 0);
+        Grid.SetRow(summary, 1);
+        grid.Children.Add(summary);
+
+        return grid;
+    }
+
+    private PatternTestStatus GetPatternTestStatus(int patternIndex)
+    {
+        if (!_lastTestResults.TryGetValue(patternIndex, out var result) || result.Targets is null)
+        {
+            return PatternTestStatus.Unknown;
+        }
+
+        for (var index = 0; index < Math.Min(result.Outputs.Length, result.Targets.Length); index++)
+        {
+            var predicted = result.Outputs[index] >= 0.5 ? 1.0 : 0.0;
+            var expected = result.Targets[index] >= 0.5 ? 1.0 : 0.0;
+            if (!predicted.Equals(expected))
+            {
+                return PatternTestStatus.Fail;
+            }
+        }
+
+        return PatternTestStatus.Pass;
     }
 
     private void TestPatternListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)

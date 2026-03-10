@@ -402,15 +402,7 @@
 
                             <ListBox x:Name="TestPatternListBox"
                                      Grid.Row="1"
-                                     SelectionChanged="TestPatternListBox_SelectionChanged">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,2" />
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                     SelectionChanged="TestPatternListBox_SelectionChanged" />
                         </Grid>
                     </TabItem>
 
