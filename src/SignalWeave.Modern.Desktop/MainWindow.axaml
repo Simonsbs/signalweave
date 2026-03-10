@@ -285,12 +285,12 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <TabItem Header="Control">
+                    <TabItem Header="Training">
                         <Grid Margin="16"
                               RowDefinitions="Auto,Auto,Auto,*"
                               RowSpacing="14">
                             <Grid ColumnDefinitions="Auto,*"
-                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto,Auto"
                                   ColumnSpacing="12"
                                   RowSpacing="10">
                                 <TextBlock Text="Learning steps" VerticalAlignment="Center" />
@@ -298,25 +298,20 @@
                                           Grid.Column="1"
                                           IsEditable="True" />
 
-                                <TextBlock Grid.Row="1" Text="Pattern" VerticalAlignment="Center" />
-                                <ComboBox x:Name="PatternSelectorComboBox"
-                                          Grid.Row="1"
-                                          Grid.Column="1" />
-
-                                <TextBlock Grid.Row="2" Text="Training mode" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="1" Text="Training mode" VerticalAlignment="Center" />
                                 <CheckBox x:Name="BatchUpdateCheckBox"
-                                          Grid.Row="2"
+                                          Grid.Row="1"
                                           Grid.Column="1"
                                           Content="Batch update" />
 
-                                <TextBlock Grid.Row="3" Text="Error function" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="2" Text="Error function" VerticalAlignment="Center" />
                                 <CheckBox x:Name="CrossEntropyCheckBox"
-                                          Grid.Row="3"
+                                          Grid.Row="2"
                                           Grid.Column="1"
                                           Content="Cross entropy" />
 
-                                <TextBlock Grid.Row="4" Text="Plot mode" VerticalAlignment="Center" />
-                                <TextBlock Grid.Row="4"
+                                <TextBlock Grid.Row="3" Text="Plot mode" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="3"
                                            Grid.Column="1"
                                            Classes="muted"
                                            Text="Dots only" />
@@ -324,7 +319,7 @@
 
                             <UniformGrid Grid.Row="1"
                                          Columns="2"
-                                         Rows="2"
+                                         Rows="1"
                                          ColumnSpacing="10"
                                          RowSpacing="10">
                                 <Button x:Name="ResetButton"
@@ -335,14 +330,6 @@
                                         Classes="action"
                                         Content="Train"
                                         Click="Train_Click" />
-                                <Button x:Name="TestOneButton"
-                                        Classes="action"
-                                        Content="Test One"
-                                        Click="TestOne_Click" />
-                                <Button x:Name="TestAllButton"
-                                        Classes="action"
-                                        Content="Test All"
-                                        Click="TestAll_Click" />
                             </UniformGrid>
 
                             <Border Grid.Row="2"
@@ -389,6 +376,33 @@
                                              MinHeight="120" />
                                 </Grid>
                             </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Tests">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,*"
+                              RowSpacing="12">
+                            <Grid ColumnDefinitions="Auto,Auto,*"
+                                  ColumnSpacing="10">
+                                <Button x:Name="TestSelectedButton"
+                                        Classes="action"
+                                        Content="Test selected"
+                                        Click="TestOne_Click" />
+                                <Button x:Name="TestAllButton"
+                                        Grid.Column="1"
+                                        Classes="action"
+                                        Content="Test all"
+                                        Click="TestAll_Click" />
+                                <TextBlock Grid.Column="2"
+                                           Classes="muted"
+                                           VerticalAlignment="Center"
+                                           Text="Select a pattern to show its last test result in the network graph." />
+                            </Grid>
+
+                            <ListBox x:Name="TestPatternListBox"
+                                     Grid.Row="1"
+                                     SelectionChanged="TestPatternListBox_SelectionChanged" />
                         </Grid>
                     </TabItem>
 

@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     private readonly StringBuilder _consoleMarkdown = new();
     private readonly List<string> _recentProjectPaths = [];
     private readonly List<TrainingSessionSnapshot> _trainingSessions = [];
+    private readonly Dictionary<int, TestResult> _lastTestResults = [];
 
     private SignalWeaveEngine? _engine;
     private NetworkDefinition? _definition;
@@ -75,12 +76,19 @@ public partial class MainWindow : Window
         _isInitializingUi = false;
     }
 
-    private sealed record PatternOption(int Index, string Label)
+    private sealed record PatternOption(int Index, string Label, string ResultSummary)
     {
         public override string ToString()
         {
-            return Label;
+            return $"{Label}{Environment.NewLine}{ResultSummary}";
         }
+    }
+
+    private enum PatternTestStatus
+    {
+        Unknown,
+        Pass,
+        Fail
     }
 
     private sealed record RecentProjectOption(string Path, string Label)
@@ -212,6 +220,7 @@ public partial class MainWindow : Window
         _trainingHistory.Clear();
         _latestTrainingPoint = null;
         _liveTrainingHistory.Clear();
+        _lastTestResults.Clear();
         _trainingSessions.Clear();
         if (project.Workspace?.TrainingSessions is not null)
         {
@@ -344,7 +353,7 @@ public partial class MainWindow : Window
             : $"Showing activations for pattern {_diagramResult.Index + 1}: {_diagramResult.Label}";
         ProjectStateTextBlock.Text =
             $"Project saves persist current weights, {_engine.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles, " +
-            $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, selected pattern {Math.Max(PatternSelectorComboBox.SelectedIndex, 0) + 1}, and {_trainingSessions.Count.ToString(CultureInfo.InvariantCulture)} training checkpoints.";
+            $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, selected pattern {Math.Max(GetSelectedPatternIndex(), 0) + 1}, and {_trainingSessions.Count.ToString(CultureInfo.InvariantCulture)} training checkpoints.";
 
         UpdateActionAvailability();
     }
@@ -372,7 +381,7 @@ public partial class MainWindow : Window
         {
             _patterns = NormalizePatternSetForDefinition(parsed);
             RenderPatternGraphicTable(_patterns);
-            UpdatePatternSelector(Math.Max(PatternSelectorComboBox.SelectedIndex, 0));
+            UpdatePatternSelector(Math.Max(GetSelectedPatternIndex(), 0));
             SetPatternEditorStatus($"Pattern text parsed: {_patterns.Examples.Count} rows");
         }
         else
@@ -386,7 +395,7 @@ public partial class MainWindow : Window
         return PatternEditorTextBox is not null &&
                PatternEditorStatusTextBlock is not null &&
                PatternTableHost is not null &&
-               PatternSelectorComboBox is not null;
+               TestPatternListBox is not null;
     }
 
     private void SetPatternEditorStatus(string text)
@@ -510,10 +519,11 @@ public partial class MainWindow : Window
     {
         var hasPatterns = _patterns.Examples.Count > 0;
         var hasPatternTargets = hasPatterns && _patterns.Examples.All(example => example.Targets is not null);
+        var selectedPatternIndex = GetSelectedPatternIndex();
 
-        if (PatternSelectorComboBox is not null)
+        if (TestPatternListBox is not null)
         {
-            PatternSelectorComboBox.IsEnabled = !_isBusy && hasPatterns;
+            TestPatternListBox.IsEnabled = !_isBusy && hasPatterns;
         }
 
         if (ResetButton is not null)
@@ -532,13 +542,9 @@ public partial class MainWindow : Window
             TestAllButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
         }
 
-        if (TestOneButton is not null)
+        if (TestSelectedButton is not null)
         {
-            TestOneButton.IsEnabled = !_isBusy &&
-                                      _definition is not null &&
-                                      hasPatterns &&
-                                      PatternSelectorComboBox is not null &&
-                                      PatternSelectorComboBox.SelectedIndex >= 0;
+            TestSelectedButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns && selectedPatternIndex >= 0;
         }
 
         if (RollbackButton is not null)
@@ -576,18 +582,126 @@ public partial class MainWindow : Window
     private void UpdatePatternSelector(int preferredIndex)
     {
         var options = _patterns.Examples
-            .Select((example, index) => new PatternOption(index, BuildPatternLabel(example, index)))
+            .Select((example, index) => new PatternOption(index, BuildPatternLabel(example, index), BuildPatternResultSummary(index)))
             .ToList();
 
-        PatternSelectorComboBox.ItemsSource = options;
-
-        if (options.Count == 0)
+        if (TestPatternListBox is null)
         {
-            PatternSelectorComboBox.SelectedIndex = -1;
             return;
         }
 
-        PatternSelectorComboBox.SelectedIndex = Math.Clamp(preferredIndex, 0, options.Count - 1);
+        if (options.Count == 0)
+        {
+            TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
+            TestPatternListBox.SelectedIndex = -1;
+            return;
+        }
+
+        TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
+        TestPatternListBox.SelectedIndex = Math.Clamp(preferredIndex, 0, options.Count - 1);
+    }
+
+    private int GetSelectedPatternIndex()
+    {
+        return TestPatternListBox?.SelectedItem is PatternOption option
+            ? option.Index
+            : TestPatternListBox?.SelectedIndex ?? -1;
+    }
+
+    private string BuildPatternResultSummary(int patternIndex)
+    {
+        if (!_lastTestResults.TryGetValue(patternIndex, out var result))
+        {
+            return "Not tested yet";
+        }
+
+        var outputs = string.Join(" ", result.Outputs.Select(FormatGraphValue));
+        var targets = result.Targets is null ? "-" : string.Join(" ", result.Targets.Select(FormatGraphValue));
+        return $"last: out {outputs} | target {targets} | err {FormatGraphValue(result.Error)}";
+    }
+
+    private Control BuildPatternListItem(PatternOption option)
+    {
+        var status = GetPatternTestStatus(option.Index);
+        var (icon, color) = status switch
+        {
+            PatternTestStatus.Pass => ("✓", "#2F9B57"),
+            PatternTestStatus.Fail => ("✕", "#C13A3A"),
+            _ => ("•", "#8B8278")
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            RowSpacing = 3,
+            Margin = new Thickness(0, 2)
+        };
+
+        var label = new TextBlock
+        {
+            Text = option.Label,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetColumn(label, 0);
+        Grid.SetRow(label, 0);
+        grid.Children.Add(label);
+
+        var iconBlock = new TextBlock
+        {
+            Text = icon,
+            Foreground = Brush.Parse(color),
+            FontWeight = FontWeight.Bold,
+            FontSize = 18,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(10, 0, 0, 0)
+        };
+        Grid.SetColumn(iconBlock, 1);
+        Grid.SetRowSpan(iconBlock, 2);
+        grid.Children.Add(iconBlock);
+
+        var summary = new TextBlock
+        {
+            Text = option.ResultSummary,
+            Classes = { "muted" },
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetColumn(summary, 0);
+        Grid.SetRow(summary, 1);
+        grid.Children.Add(summary);
+
+        return grid;
+    }
+
+    private PatternTestStatus GetPatternTestStatus(int patternIndex)
+    {
+        if (!_lastTestResults.TryGetValue(patternIndex, out var result) || result.Targets is null)
+        {
+            return PatternTestStatus.Unknown;
+        }
+
+        for (var index = 0; index < Math.Min(result.Outputs.Length, result.Targets.Length); index++)
+        {
+            var predicted = result.Outputs[index] >= 0.5 ? 1.0 : 0.0;
+            var expected = result.Targets[index] >= 0.5 ? 1.0 : 0.0;
+            if (!predicted.Equals(expected))
+            {
+                return PatternTestStatus.Fail;
+            }
+        }
+
+        return PatternTestStatus.Pass;
+    }
+
+    private void TestPatternListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var selectedPatternIndex = GetSelectedPatternIndex();
+        _diagramResult = _lastTestResults.TryGetValue(selectedPatternIndex, out var result) ? result : null;
+        RenderNetworkGraph();
+        UpdateWorkspaceSummary();
+        UpdateActionAvailability();
     }
 
     private void RenderPatternGraphicTable(PatternSet patternSet)
@@ -853,6 +967,7 @@ public partial class MainWindow : Window
         _engine.RestoreCompletedCycles(session.CompletedCycles);
         _trainingSessions.RemoveAll(existing => existing.SessionNumber > session.SessionNumber);
         _diagramResult = null;
+        _lastTestResults.Clear();
         _trainingHistory.Clear();
         if (session.History is not null)
         {
@@ -890,9 +1005,9 @@ public partial class MainWindow : Window
     {
         _patterns = NormalizePatternSetForDefinition(patternSet);
         RenderPatternGraphicTable(_patterns);
-        if (PatternSelectorComboBox is not null)
+        if (TestPatternListBox is not null)
         {
-            var selection = Math.Max(PatternSelectorComboBox.SelectedIndex, 0);
+            var selection = Math.Max(GetSelectedPatternIndex(), 0);
             UpdatePatternSelector(selection);
         }
 
@@ -1232,6 +1347,7 @@ public partial class MainWindow : Window
         {
             ApplyUiToRuntime(preserveWeights: false);
             _diagramResult = null;
+            _lastTestResults.Clear();
             _trainingHistory.Clear();
             _latestTrainingPoint = null;
             _trainingSessions.Clear();
@@ -1298,6 +1414,7 @@ public partial class MainWindow : Window
             }, TaskCreationOptions.LongRunning);
 
             StopTrainingProgressPump();
+            _lastTestResults.Clear();
             _trainingHistory.Clear();
             _trainingHistory.AddRange(result.History);
             TrainingProgressBar.Value = result.History.Count > 0 ? result.History[^1].Epoch : 0;
@@ -1345,9 +1462,11 @@ public partial class MainWindow : Window
             ApplyUiToRuntime(preserveWeights: true);
             EnsurePatternSelectionAvailable();
 
-            var index = PatternSelectorComboBox.SelectedIndex;
+            var index = GetSelectedPatternIndex();
             var result = _engine!.TestOne(_patterns, index);
             _diagramResult = result;
+            _lastTestResults[index] = result;
+            UpdatePatternSelector(index);
             LatestRunSummaryTextBlock.Text = $"Tested pattern {index + 1}: {result.Label}";
             AppendConsole(BuildSingleResultMarkdown(result));
             RenderNetworkGraph();
@@ -1374,8 +1493,15 @@ public partial class MainWindow : Window
             EnsurePatternsAvailable();
 
             var result = _engine!.TestAll(_patterns);
-            var selectedIndex = Math.Clamp(PatternSelectorComboBox.SelectedIndex, 0, result.Results.Count - 1);
+            _lastTestResults.Clear();
+            foreach (var entry in result.Results)
+            {
+                _lastTestResults[entry.Index] = entry;
+            }
+
+            var selectedIndex = Math.Clamp(GetSelectedPatternIndex(), 0, result.Results.Count - 1);
             _diagramResult = result.Results.Count == 0 ? null : result.Results[selectedIndex];
+            UpdatePatternSelector(selectedIndex);
             LatestRunSummaryTextBlock.Text = $"Test all complete. Displayed average error: {FormatNumber(result.DisplayAverageError)}";
             AppendConsole(BuildRunResultMarkdown("## Test all", result));
             RenderNetworkGraph();
@@ -1407,7 +1533,7 @@ public partial class MainWindow : Window
         _diagramResult = canReuseWeights ? _diagramResult : null;
         _graphPreviewDefinition = null;
 
-        var selectedIndex = Math.Max(PatternSelectorComboBox.SelectedIndex, 0);
+        var selectedIndex = Math.Max(GetSelectedPatternIndex(), 0);
         UpdatePatternSelector(selectedIndex);
         UpdateWorkspaceSummary();
         UpdateTrainingSessionLog();
@@ -1416,6 +1542,7 @@ public partial class MainWindow : Window
         if (definitionChanged || patternsChanged || !canReuseWeights)
         {
             _trainingHistory.Clear();
+            _lastTestResults.Clear();
             _trainingSessions.Clear();
             RenderErrorPlot(_trainingHistory);
             LatestRunSummaryTextBlock.Text = "Project settings updated.";
@@ -1427,7 +1554,7 @@ public partial class MainWindow : Window
     {
         return new ProjectWorkspaceState(
             ParseLearningStepsFromControls(),
-            Math.Max(PatternSelectorComboBox.SelectedIndex, 0),
+            Math.Max(GetSelectedPatternIndex(), 0),
             "Dots",
             _trainingSessions.Select(session => session with { Weights = session.Weights.Clone() }).ToArray());
     }
@@ -1932,7 +2059,7 @@ public partial class MainWindow : Window
     {
         EnsurePatternsAvailable();
 
-        if (PatternSelectorComboBox.SelectedIndex < 0)
+        if (GetSelectedPatternIndex() < 0)
         {
             throw new InvalidOperationException("Select a pattern before running Test One.");
         }
