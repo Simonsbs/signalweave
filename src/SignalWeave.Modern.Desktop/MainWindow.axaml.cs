@@ -241,6 +241,11 @@ public partial class MainWindow : Window
 
     private void RefreshGraphPreview()
     {
+        if (!AreDefinitionControlsReady())
+        {
+            return;
+        }
+
         if (TryBuildPreviewDefinition(out var previewDefinition))
         {
             _graphPreviewDefinition = previewDefinition;
@@ -251,6 +256,12 @@ public partial class MainWindow : Window
 
     private bool TryBuildPreviewDefinition(out NetworkDefinition definition)
     {
+        if (!AreDefinitionControlsReady())
+        {
+            definition = null!;
+            return false;
+        }
+
         try
         {
             definition = BuildDefinitionFromControls();
@@ -679,6 +690,11 @@ public partial class MainWindow : Window
 
     private NetworkDefinition BuildDefinitionFromControls()
     {
+        if (!AreDefinitionControlsReady())
+        {
+            throw new InvalidOperationException("Network controls are not initialized yet.");
+        }
+
         var networkKind = GetSelectedNetworkKind();
         var secondHiddenUnits = networkKind == NetworkKind.FeedForward
             ? ReadSliderValue(SecondHiddenUnitsSlider)
@@ -707,6 +723,25 @@ public partial class MainWindow : Window
 
         definition.Validate();
         return definition;
+    }
+
+    private bool AreDefinitionControlsReady()
+    {
+        return ProjectNameTextBox is not null &&
+               InputUnitsSlider is not null &&
+               HiddenUnitsSlider is not null &&
+               SecondHiddenUnitsSlider is not null &&
+               OutputUnitsSlider is not null &&
+               InputBiasCheckBox is not null &&
+               HiddenBiasCheckBox is not null &&
+               SecondHiddenBiasCheckBox is not null &&
+               LearningRateComboBox is not null &&
+               MomentumComboBox is not null &&
+               WeightRangeComboBox is not null &&
+               ErrorThresholdTextBox is not null &&
+               BatchUpdateCheckBox is not null &&
+               CrossEntropyCheckBox is not null &&
+               LearningStepsComboBox is not null;
     }
 
     private static bool CanReuseWeights(NetworkDefinition? current, NetworkDefinition next)
