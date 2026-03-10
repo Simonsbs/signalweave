@@ -646,6 +646,7 @@ public partial class MainWindow : Window
 
         TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
         TestPatternListBox.SelectedIndex = Math.Clamp(preferredIndex, 0, options.Count - 1);
+        UpdatePatternInspector();
     }
 
     private int GetSelectedPatternIndex()
@@ -747,8 +748,174 @@ public partial class MainWindow : Window
         var selectedPatternIndex = GetSelectedPatternIndex();
         _diagramResult = _lastTestResults.TryGetValue(selectedPatternIndex, out var result) ? result : null;
         RenderNetworkGraph();
+        UpdatePatternInspector();
         UpdateWorkspaceSummary();
         UpdateActionAvailability();
+    }
+
+    private void UpdatePatternInspector()
+    {
+        if (PatternInspectorTitleTextBlock is null ||
+            PatternInspectorStatusTextBlock is null ||
+            PatternInspectorResultBadgeTextBlock is null ||
+            PatternInspectorErrorTextBlock is null ||
+            PatternInspectorMetaTextBlock is null ||
+            PatternInspectorInputsHost is null ||
+            PatternInspectorTargetsHost is null ||
+            PatternInspectorOutputsHost is null ||
+            PatternInspectorDeltaHost is null ||
+            PatternInspectorHiddenHost is null)
+        {
+            return;
+        }
+
+        PatternInspectorInputsHost.Children.Clear();
+        PatternInspectorTargetsHost.Children.Clear();
+        PatternInspectorOutputsHost.Children.Clear();
+        PatternInspectorDeltaHost.Children.Clear();
+        PatternInspectorHiddenHost.Children.Clear();
+
+        var selectedIndex = GetSelectedPatternIndex();
+        if (selectedIndex < 0 || selectedIndex >= _patterns.Examples.Count)
+        {
+            PatternInspectorTitleTextBlock.Text = "Pattern inspector";
+            PatternInspectorStatusTextBlock.Text = "No pattern selected.";
+            PatternInspectorResultBadgeTextBlock.Text = "Not tested";
+            PatternInspectorResultBadgeTextBlock.Foreground = Brush.Parse("#6A6258");
+            PatternInspectorErrorTextBlock.Text = "Error: -";
+            PatternInspectorMetaTextBlock.Text = "Select a pattern to inspect the current result.";
+            return;
+        }
+
+        var example = _patterns.Examples[selectedIndex];
+        _lastTestResults.TryGetValue(selectedIndex, out var result);
+        var status = GetPatternTestStatus(selectedIndex);
+        var (badgeText, badgeForeground) = status switch
+        {
+            PatternTestStatus.Pass => ("PASS", "#2F9B57"),
+            PatternTestStatus.Fail => ("FAIL", "#C13A3A"),
+            _ => ("NOT TESTED", "#6A6258")
+        };
+
+        PatternInspectorTitleTextBlock.Text = $"{selectedIndex + 1}. {example.Label}";
+        PatternInspectorStatusTextBlock.Text = result is null
+            ? "Pattern selected. No cached test result yet."
+            : "Showing latest cached test result and graph overlay.";
+        PatternInspectorResultBadgeTextBlock.Text = badgeText;
+        PatternInspectorResultBadgeTextBlock.Foreground = Brush.Parse(badgeForeground);
+        PatternInspectorErrorTextBlock.Text = result is null
+            ? "Error: -"
+            : $"Error: {FormatNumber(result.Error)}";
+        PatternInspectorMetaTextBlock.Text =
+            $"Reset after pattern: {(example.ResetsContextAfter ? "Yes" : "No")}  |  " +
+            $"Inputs: {example.Inputs.Length}  |  Targets: {example.Targets?.Length ?? 0}  |  " +
+            $"Hidden values: {result?.HiddenActivations.Length ?? 0}";
+
+        PopulateInspectorVector(PatternInspectorInputsHost, "I", example.Inputs, null);
+        PopulateInspectorVector(PatternInspectorTargetsHost, "T", example.Targets ?? Array.Empty<double>(), null);
+        PopulateInspectorVector(PatternInspectorOutputsHost, "O", result?.Outputs ?? Array.Empty<double>(), example.Targets);
+        PopulateInspectorVector(PatternInspectorDeltaHost, "Δ", BuildDeltaValues(result), example.Targets is null ? null : BuildZeroVector(example.Targets.Length));
+        PopulateInspectorVector(PatternInspectorHiddenHost, "H", result?.HiddenActivations ?? Array.Empty<double>(), null);
+    }
+
+    private void PopulateInspectorVector(StackPanel host, string prefix, IReadOnlyList<double> values, IReadOnlyList<double>? reference)
+    {
+        if (values.Count == 0)
+        {
+            host.Children.Add(new TextBlock
+            {
+                Text = "No data",
+                Foreground = Brush.Parse("#6A6258")
+            });
+            return;
+        }
+
+        for (var index = 0; index < values.Count; index++)
+        {
+            host.Children.Add(BuildInspectorValueRow(
+                $"{prefix}{index + 1}",
+                values[index],
+                reference is not null && index < reference.Count ? reference[index] : null));
+        }
+    }
+
+    private Control BuildInspectorValueRow(string label, double value, double? reference)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+            ColumnSpacing = 8
+        };
+
+        var labelBlock = new TextBlock
+        {
+            Text = label,
+            Foreground = Brush.Parse("#6A6258"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(labelBlock, 0);
+        grid.Children.Add(labelBlock);
+
+        var barHost = new Border
+        {
+            Background = Brush.Parse("#F1E8DC"),
+            BorderBrush = Brush.Parse("#E2D8CA"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            Height = 16
+        };
+        Grid.SetColumn(barHost, 1);
+
+        var barGrid = new Grid();
+        var normalized = Math.Clamp(value, 0.0, 1.0);
+        barGrid.Children.Add(new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Width = normalized * 120.0,
+            Background = Brush.Parse("#7CCB74"),
+            CornerRadius = new CornerRadius(2)
+        });
+        barHost.Child = barGrid;
+        grid.Children.Add(barHost);
+
+        var valueText = reference.HasValue
+            ? $"{FormatGraphValue(value)} / {FormatGraphValue(reference.Value)}"
+            : FormatGraphValue(value);
+
+        var valueBlock = new TextBlock
+        {
+            Text = valueText,
+            Foreground = reference.HasValue && Math.Abs(value - reference.Value) > 0.49
+                ? Brush.Parse("#C13A3A")
+                : Brush.Parse("#2F2B26"),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace")
+        };
+        Grid.SetColumn(valueBlock, 2);
+        grid.Children.Add(valueBlock);
+
+        return grid;
+    }
+
+    private static double[] BuildDeltaValues(TestResult? result)
+    {
+        if (result?.Targets is null)
+        {
+            return Array.Empty<double>();
+        }
+
+        var deltas = new double[Math.Min(result.Outputs.Length, result.Targets.Length)];
+        for (var index = 0; index < deltas.Length; index++)
+        {
+            deltas[index] = result.Outputs[index] - result.Targets[index];
+        }
+
+        return deltas;
+    }
+
+    private static double[] BuildZeroVector(int length)
+    {
+        return new double[length];
     }
 
     private void RenderPatternGraphicTable(PatternSet patternSet)

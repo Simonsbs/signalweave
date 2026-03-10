@@ -410,12 +410,151 @@
                                 <TextBlock Grid.Column="2"
                                            Classes="muted"
                                            VerticalAlignment="Center"
-                                           Text="Select a pattern to show its last test result in the network graph." />
+                                           Text="Select a pattern to inspect its inputs, targets, outputs, hidden activations, and latest graph result." />
                             </Grid>
 
-                            <ListBox x:Name="TestPatternListBox"
-                                     Grid.Row="1"
-                                     SelectionChanged="TestPatternListBox_SelectionChanged" />
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="1.05*,6,1.15*">
+                                <ListBox x:Name="TestPatternListBox"
+                                         SelectionChanged="TestPatternListBox_SelectionChanged" />
+
+                                <GridSplitter Grid.Column="1"
+                                              Width="6"
+                                              HorizontalAlignment="Stretch"
+                                              ResizeDirection="Columns"
+                                              ResizeBehavior="PreviousAndNext"
+                                              Background="#D7CCBD"
+                                              ShowsPreview="True" />
+
+                                <Border Grid.Column="2"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        Background="#FFFDF9"
+                                        Padding="12">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled">
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
+                                              RowSpacing="12">
+                                            <TextBlock x:Name="PatternInspectorTitleTextBlock"
+                                                       Text="Pattern inspector"
+                                                       Classes="section" />
+
+                                            <Grid Grid.Row="1"
+                                                  ColumnDefinitions="1.2*,Auto,Auto"
+                                                  ColumnSpacing="10">
+                                                <TextBlock x:Name="PatternInspectorStatusTextBlock"
+                                                           Classes="muted"
+                                                           VerticalAlignment="Center"
+                                                           Text="No pattern selected." />
+                                                <Border Grid.Column="1"
+                                                        Background="#EFE8DD"
+                                                        CornerRadius="10"
+                                                        Padding="8,3">
+                                                    <TextBlock x:Name="PatternInspectorResultBadgeTextBlock"
+                                                               Classes="muted"
+                                                               Text="Not tested" />
+                                                </Border>
+                                                <TextBlock x:Name="PatternInspectorErrorTextBlock"
+                                                           Grid.Column="2"
+                                                           Classes="muted"
+                                                           VerticalAlignment="Center"
+                                                           Text="Error: -" />
+                                            </Grid>
+
+                                            <Border Grid.Row="2"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <TextBlock x:Name="PatternInspectorMetaTextBlock"
+                                                           Classes="muted"
+                                                           TextWrapping="Wrap"
+                                                           Text="Select a pattern to inspect the current result." />
+                                            </Border>
+
+                                            <Grid Grid.Row="3"
+                                                  ColumnDefinitions="1*,1*"
+                                                  ColumnSpacing="12">
+                                                <Border BorderBrush="#E2D8CA"
+                                                        BorderThickness="1"
+                                                        Padding="10">
+                                                    <Grid RowDefinitions="Auto,*"
+                                                          RowSpacing="8">
+                                                        <TextBlock Text="Inputs"
+                                                                   FontWeight="SemiBold" />
+                                                        <StackPanel x:Name="PatternInspectorInputsHost"
+                                                                    Grid.Row="1"
+                                                                    Spacing="4" />
+                                                    </Grid>
+                                                </Border>
+
+                                                <Border Grid.Column="1"
+                                                        BorderBrush="#E2D8CA"
+                                                        BorderThickness="1"
+                                                        Padding="10">
+                                                    <Grid RowDefinitions="Auto,*"
+                                                          RowSpacing="8">
+                                                        <TextBlock Text="Targets"
+                                                                   FontWeight="SemiBold" />
+                                                        <StackPanel x:Name="PatternInspectorTargetsHost"
+                                                                    Grid.Row="1"
+                                                                    Spacing="4" />
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+
+                                            <Grid Grid.Row="4"
+                                                  ColumnDefinitions="1*,1*"
+                                                  ColumnSpacing="12">
+                                                <Border BorderBrush="#E2D8CA"
+                                                        BorderThickness="1"
+                                                        Padding="10">
+                                                    <Grid RowDefinitions="Auto,*"
+                                                          RowSpacing="8">
+                                                        <TextBlock Text="Outputs"
+                                                                   FontWeight="SemiBold" />
+                                                        <StackPanel x:Name="PatternInspectorOutputsHost"
+                                                                    Grid.Row="1"
+                                                                    Spacing="4" />
+                                                    </Grid>
+                                                </Border>
+
+                                                <Border Grid.Column="1"
+                                                        BorderBrush="#E2D8CA"
+                                                        BorderThickness="1"
+                                                        Padding="10">
+                                                    <Grid RowDefinitions="Auto,*"
+                                                          RowSpacing="8">
+                                                        <TextBlock Text="Delta"
+                                                                   FontWeight="SemiBold" />
+                                                        <StackPanel x:Name="PatternInspectorDeltaHost"
+                                                                    Grid.Row="1"
+                                                                    Spacing="4" />
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+
+                                            <Border Grid.Row="5"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <Grid RowDefinitions="Auto,*"
+                                                      RowSpacing="8">
+                                                    <TextBlock Text="Hidden activations"
+                                                               FontWeight="SemiBold" />
+                                                    <StackPanel x:Name="PatternInspectorHiddenHost"
+                                                                Grid.Row="1"
+                                                                Spacing="4" />
+                                                </Grid>
+                                            </Border>
+
+                                            <TextBlock Grid.Row="6"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap"
+                                                       Text="Selecting a pattern updates the network graph with its latest cached test result." />
+                                        </Grid>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
                         </Grid>
                     </TabItem>
 
