@@ -1170,6 +1170,7 @@ public partial class MainWindow : Window
         }
 
         UpdateTopologyControlState();
+        InvalidateCachedTestVisuals();
         _patterns = NormalizePatternSetForDefinition(_patterns);
         RenderPatternGraphicTable(_patterns);
         SetPatternEditorText(PatternSetWriter.Write(_patterns));
@@ -1183,10 +1184,20 @@ public partial class MainWindow : Window
             return;
         }
 
+        InvalidateCachedTestVisuals();
         _patterns = NormalizePatternSetForDefinition(_patterns);
         RenderPatternGraphicTable(_patterns);
         SetPatternEditorText(PatternSetWriter.Write(_patterns));
         RefreshGraphPreview();
+    }
+
+    private void InvalidateCachedTestVisuals()
+    {
+        _diagramResult = null;
+        _lastTestResults.Clear();
+        LatestRunSummaryTextBlock.Text = "Topology updated. Run a test to view activations.";
+        UpdatePatternSelector(Math.Max(GetSelectedPatternIndex(), 0));
+        UpdateWorkspaceSummary();
     }
 
     private void ClearConsole_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -2287,19 +2298,21 @@ public partial class MainWindow : Window
 
     private IReadOnlyList<GraphRow> BuildGraphRows(NetworkDefinition definition, TestResult? diagramResult)
     {
+        var outputValues = NormalizeVector(diagramResult?.Outputs ?? Array.Empty<double>(), definition.OutputUnits);
         var rows = new List<GraphRow>
         {
             new(
                 "Outputs",
-                diagramResult?.Outputs ?? new double[definition.OutputUnits],
+                outputValues,
                 Enumerable.Range(1, definition.OutputUnits).Select(index => $"O{index}").ToArray(),
                 false)
         };
 
         if (definition.HasSecondHiddenLayer)
         {
-            var firstHidden = diagramResult?.HiddenActivations.Take(definition.HiddenUnits).ToArray() ?? new double[definition.HiddenUnits];
-            var secondHidden = diagramResult?.HiddenActivations.Skip(definition.HiddenUnits).Take(definition.SecondHiddenUnits).ToArray() ?? new double[definition.SecondHiddenUnits];
+            var hiddenActivations = diagramResult?.HiddenActivations ?? Array.Empty<double>();
+            var firstHidden = NormalizeVector(hiddenActivations.Take(definition.HiddenUnits).ToArray(), definition.HiddenUnits);
+            var secondHidden = NormalizeVector(hiddenActivations.Skip(definition.HiddenUnits).Take(definition.SecondHiddenUnits).ToArray(), definition.SecondHiddenUnits);
             rows.Add(new GraphRow(
                 "Hidden 2",
                 secondHidden,
@@ -2315,14 +2328,14 @@ public partial class MainWindow : Window
         {
             rows.Add(new GraphRow(
                 definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Hidden / Context" : "Hidden",
-                diagramResult?.HiddenActivations ?? new double[definition.HiddenUnits],
+                NormalizeVector(diagramResult?.HiddenActivations ?? Array.Empty<double>(), definition.HiddenUnits),
                 Enumerable.Range(1, definition.HiddenUnits).Select(index => $"H{index}").ToArray(),
                 definition.UseHiddenBias));
         }
 
         rows.Add(new GraphRow(
             "Inputs",
-            diagramResult?.Inputs ?? new double[definition.InputUnits],
+            NormalizeVector(diagramResult?.Inputs ?? Array.Empty<double>(), definition.InputUnits),
             Enumerable.Range(1, definition.InputUnits).Select(index => $"I{index}").ToArray(),
             definition.UseInputBias));
 
