@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SignalWeave.Core;
@@ -258,42 +257,52 @@ public partial class MainWindowViewModel : ViewModelBase
             var steps = GetLearningStepsValue();
             var startingCycles = engine.CompletedCycles;
             var liveHistory = new List<TrainingPoint>(steps);
-            var progressStride = Math.Max(1, steps / 100);
-            var progressUpdateStopwatch = Stopwatch.StartNew();
+            var progressSync = new object();
+            TrainingPoint? latestPoint = null;
             ProgressMaximum = Math.Max(engine.CompletedCycles + steps, 1);
             ProgressValue = engine.CompletedCycles;
             ProgressLabel = engine.CompletedCycles == 0
                 ? "Untrained"
                 : engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
-            var progress = new Progress<TrainingPoint>(point =>
+            var progress = new InlineProgress<TrainingPoint>(point =>
             {
-                liveHistory.Add(point);
-                var shouldRefreshUi =
-                    point.Epoch == 1 ||
-                    point.Epoch == steps ||
-                    point.Epoch % progressStride == 0 ||
-                    progressUpdateStopwatch.ElapsedMilliseconds >= 120;
-
-                if (!shouldRefreshUi)
+                lock (progressSync)
                 {
-                    return;
+                    liveHistory.Add(point);
+                    latestPoint = point;
                 }
-
-                progressUpdateStopwatch.Restart();
-                var completedCycles = startingCycles + point.Epoch;
-                ProgressValue = completedCycles;
-                ProgressLabel = completedCycles.ToString(CultureInfo.InvariantCulture);
-                ErrorProgressPoints = BuildErrorPolyline(liveHistory, 600);
-                UpdateErrorPlotScale(liveHistory);
             });
 
             await WithBusyControllerAsync(ControllerActivity.Learning, async () =>
             {
-                var result = await Task.Factory.StartNew(
+                var trainingTask = Task.Factory.StartNew(
                     () => engine.Train(patternSet, steps, progress),
                     CancellationToken.None,
                     TaskCreationOptions.LongRunning,
                     TaskScheduler.Default);
+
+                while (!trainingTask.IsCompleted)
+                {
+                    await Task.Delay(120);
+
+                    TrainingPoint? pointSnapshot;
+                    lock (progressSync)
+                    {
+                        pointSnapshot = latestPoint;
+                        latestPoint = null;
+                    }
+
+                    if (pointSnapshot is null)
+                    {
+                        continue;
+                    }
+
+                    var completedCycles = startingCycles + pointSnapshot.Epoch;
+                    ProgressValue = completedCycles;
+                    ProgressLabel = completedCycles.ToString(CultureInfo.InvariantCulture);
+                }
+
+                var result = await trainingTask;
                 _lastRun = result.FinalRun;
                 _diagramResult = null;
 
@@ -577,6 +586,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void UpdatePatternOptions(PatternSet patternSet)
     {
+        var currentSelection = SelectedPattern;
         PatternOptions.Clear();
 
         if (patternSet.Examples.Count < 24)
@@ -587,12 +597,16 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             CanTestOne = patternSet.Examples.Count > 0;
-            SelectedPattern = PatternOptions.FirstOrDefault() ?? string.Empty;
+            SelectedPattern = PatternOptions.Contains(currentSelection)
+                ? currentSelection
+                : PatternOptions.FirstOrDefault() ?? string.Empty;
             return;
         }
 
         PatternOptions.Add(_patternListCaption);
-        SelectedPattern = PatternOptions[0];
+        SelectedPattern = PatternOptions.Contains(currentSelection)
+            ? currentSelection
+            : PatternOptions[0];
         CanTestOne = patternSet.Examples.Count is > 0 and <= 24;
     }
 
@@ -2318,3 +2332,11 @@ public sealed record PlotWindowSnapshot(
     string XAxisTitle,
     string YAxisTitle,
     IReadOnlyList<PlotMarkerItem> Markers);
+
+internal sealed class InlineProgress<T>(Action<T> handler) : IProgress<T>
+{
+    public void Report(T value)
+    {
+        handler(value);
+    }
+}
