@@ -5,7 +5,16 @@ namespace SignalWeave.Core;
 public sealed record ProjectWorkspaceState(
     int LearningSteps = 5000,
     int SelectedPatternIndex = 0,
-    string ErrorPlotDisplayMode = "Line");
+    string ErrorPlotDisplayMode = "Line",
+    IReadOnlyList<TrainingSessionSnapshot>? TrainingSessions = null);
+
+public sealed record TrainingSessionSnapshot(
+    int SessionNumber,
+    int StepsExecuted,
+    int CompletedCycles,
+    double DisplayAverageError,
+    DateTimeOffset CompletedAtUtc,
+    WeightSet Weights);
 
 public sealed record SignalWeaveProject(
     NetworkDefinition Definition,
@@ -23,7 +32,8 @@ public sealed record SignalWeaveCheckpoint(
 
 public static class SignalWeaveProjectSerializer
 {
-    public const string SchemaId = "signalweave-project/v2";
+    public const string SchemaId = "signalweave-project/v3";
+    public const string CompatibilitySchemaId = "signalweave-project/v2";
     public const string LegacySchemaId = "signalweave-project/v1";
 
     public static void SaveFile(string path, NetworkDefinition definition, PatternSet patterns, WeightSet? weights = null)
@@ -52,7 +62,18 @@ public static class SignalWeaveProjectSerializer
                 {
                     LearningSteps = workspace.LearningSteps,
                     SelectedPatternIndex = workspace.SelectedPatternIndex,
-                    ErrorPlotDisplayMode = workspace.ErrorPlotDisplayMode
+                    ErrorPlotDisplayMode = workspace.ErrorPlotDisplayMode,
+                    TrainingSessions = workspace.TrainingSessions?
+                        .Select(session => new TrainingSessionDocument
+                        {
+                            SessionNumber = session.SessionNumber,
+                            StepsExecuted = session.StepsExecuted,
+                            CompletedCycles = session.CompletedCycles,
+                            DisplayAverageError = session.DisplayAverageError,
+                            CompletedAtUtc = session.CompletedAtUtc,
+                            Weights = WeightSetDocumentMapper.ToDocument(session.Weights)
+                        })
+                        .ToList()
                 }
         };
 
@@ -62,7 +83,7 @@ public static class SignalWeaveProjectSerializer
     public static SignalWeaveProject LoadFile(string path)
     {
         var document = ReadDocument<ProjectDocument>(path);
-        EnsureSchema(document.Schema, [SchemaId, LegacySchemaId], "project");
+        EnsureSchema(document.Schema, [SchemaId, CompatibilitySchemaId, LegacySchemaId], "project");
 
         return new SignalWeaveProject(
             document.Definition ?? throw new InvalidOperationException("Project file is missing the network definition."),
@@ -74,7 +95,17 @@ public static class SignalWeaveProjectSerializer
                 : new ProjectWorkspaceState(
                     document.Workspace.LearningSteps,
                     document.Workspace.SelectedPatternIndex,
-                    document.Workspace.ErrorPlotDisplayMode ?? "Line"));
+                    document.Workspace.ErrorPlotDisplayMode ?? "Line",
+                    document.Workspace.TrainingSessions?
+                        .Where(static session => session.Weights is not null)
+                        .Select(session => new TrainingSessionSnapshot(
+                            session.SessionNumber,
+                            session.StepsExecuted,
+                            session.CompletedCycles,
+                            session.DisplayAverageError,
+                            session.CompletedAtUtc,
+                            WeightSetDocumentMapper.FromDocument(session.Weights!)))
+                        .ToArray()));
     }
 
     private static List<PatternExampleDocument> ToDocumentPatterns(PatternSet patterns)
@@ -144,6 +175,17 @@ internal sealed class WorkspaceDocument
     public int LearningSteps { get; set; } = 5000;
     public int SelectedPatternIndex { get; set; }
     public string? ErrorPlotDisplayMode { get; set; } = "Line";
+    public List<TrainingSessionDocument>? TrainingSessions { get; set; }
+}
+
+internal sealed class TrainingSessionDocument
+{
+    public int SessionNumber { get; set; }
+    public int StepsExecuted { get; set; }
+    public int CompletedCycles { get; set; }
+    public double DisplayAverageError { get; set; }
+    public DateTimeOffset CompletedAtUtc { get; set; }
+    public WeightDocument? Weights { get; set; }
 }
 
 public static class SignalWeaveCheckpointSerializer

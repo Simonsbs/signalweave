@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private readonly List<TrainingPoint> _trainingHistory = [];
     private readonly StringBuilder _consoleMarkdown = new();
     private readonly List<string> _recentProjectPaths = [];
+    private readonly List<TrainingSessionSnapshot> _trainingSessions = [];
 
     private SignalWeaveEngine? _engine;
     private NetworkDefinition? _definition;
@@ -91,6 +92,14 @@ public partial class MainWindow : Window
     }
 
     private sealed record RecentProjectsState(List<string> Paths);
+
+    private sealed record TrainingSessionOption(TrainingSessionSnapshot Snapshot)
+    {
+        public override string ToString()
+        {
+            return $"Train #{Snapshot.SessionNumber}  |  +{Snapshot.StepsExecuted} steps  |  cycles {Snapshot.CompletedCycles}  |  error {Snapshot.DisplayAverageError.ToString("0.000", CultureInfo.InvariantCulture)}";
+        }
+    }
 
     private void PopulateStaticOptions()
     {
@@ -203,6 +212,11 @@ public partial class MainWindow : Window
         _trainingHistory.Clear();
         _latestTrainingPoint = null;
         _liveTrainingHistory.Clear();
+        _trainingSessions.Clear();
+        if (project.Workspace?.TrainingSessions is not null)
+        {
+            _trainingSessions.AddRange(project.Workspace.TrainingSessions.Select(session => session with { Weights = session.Weights.Clone() }));
+        }
 
         ApplyDefinitionToControls(project.Definition);
         SetPatternEditorText(PatternSetWriter.Write(project.Patterns));
@@ -220,6 +234,7 @@ public partial class MainWindow : Window
 
         SyncNetworkKindControls();
         UpdateWorkspaceSummary();
+        UpdateTrainingSessionLog();
         RenderErrorPlot(_trainingHistory);
         RenderNetworkGraph();
         AppendConsole(consoleMessage);
@@ -325,7 +340,7 @@ public partial class MainWindow : Window
             : $"Showing activations for pattern {_diagramResult.Index + 1}: {_diagramResult.Label}";
         ProjectStateTextBlock.Text =
             $"Project saves persist current weights, {_engine.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles, " +
-            $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, and selected pattern {Math.Max(PatternSelectorComboBox.SelectedIndex, 0) + 1}.";
+            $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, selected pattern {Math.Max(PatternSelectorComboBox.SelectedIndex, 0) + 1}, and {_trainingSessions.Count.ToString(CultureInfo.InvariantCulture)} training checkpoints.";
 
         UpdateActionAvailability();
     }
@@ -492,11 +507,62 @@ public partial class MainWindow : Window
         var hasPatterns = _patterns.Examples.Count > 0;
         var hasPatternTargets = hasPatterns && _patterns.Examples.All(example => example.Targets is not null);
 
-        PatternSelectorComboBox.IsEnabled = !_isBusy && hasPatterns;
-        ResetButton.IsEnabled = !_isBusy && _definition is not null;
-        TrainButton.IsEnabled = !_isBusy && _definition is not null && hasPatternTargets;
-        TestAllButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
-        TestOneButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns && PatternSelectorComboBox.SelectedIndex >= 0;
+        if (PatternSelectorComboBox is not null)
+        {
+            PatternSelectorComboBox.IsEnabled = !_isBusy && hasPatterns;
+        }
+
+        if (ResetButton is not null)
+        {
+            ResetButton.IsEnabled = !_isBusy && _definition is not null;
+        }
+
+        if (TrainButton is not null)
+        {
+            TrainButton.IsEnabled = !_isBusy && _definition is not null && hasPatternTargets;
+            TrainButton.Content = $"Train #{(_trainingSessions.Count + 1).ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        if (TestAllButton is not null)
+        {
+            TestAllButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
+        }
+
+        if (TestOneButton is not null)
+        {
+            TestOneButton.IsEnabled = !_isBusy &&
+                                      _definition is not null &&
+                                      hasPatterns &&
+                                      PatternSelectorComboBox is not null &&
+                                      PatternSelectorComboBox.SelectedIndex >= 0;
+        }
+
+        if (RollbackButton is not null)
+        {
+            RollbackButton.IsEnabled = !_isBusy && TrainingSessionsListBox?.SelectedItem is TrainingSessionOption;
+        }
+    }
+
+    private void UpdateTrainingSessionLog()
+    {
+        if (TrainingSessionsListBox is null)
+        {
+            return;
+        }
+
+        var selectedSessionNumber = (TrainingSessionsListBox.SelectedItem as TrainingSessionOption)?.Snapshot.SessionNumber;
+        var options = _trainingSessions
+            .Select(session => new TrainingSessionOption(session))
+            .Reverse()
+            .ToList();
+
+        TrainingSessionsListBox.ItemsSource = options;
+        if (selectedSessionNumber.HasValue)
+        {
+            TrainingSessionsListBox.SelectedItem = options.FirstOrDefault(option => option.Snapshot.SessionNumber == selectedSessionNumber.Value);
+        }
+
+        UpdateActionAvailability();
     }
 
     private void UpdatePatternSelector(int preferredIndex)
@@ -751,6 +817,36 @@ public partial class MainWindow : Window
 
         button.Content = string.Equals(button.Content?.ToString(), "1", StringComparison.Ordinal) ? "0" : "1";
         CommitPatternTableFromGraphic();
+    }
+
+    private void TrainingSessionsListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        UpdateActionAvailability();
+    }
+
+    private void RollbackTrainingSession_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy || _engine is null || TrainingSessionsListBox.SelectedItem is not TrainingSessionOption option)
+        {
+            return;
+        }
+
+        var session = option.Snapshot;
+        _engine = new SignalWeaveEngine(_definition!, session.Weights.Clone());
+        _engine.RestoreCompletedCycles(session.CompletedCycles);
+        _trainingSessions.RemoveAll(existing => existing.SessionNumber > session.SessionNumber);
+        _diagramResult = null;
+        _trainingHistory.Clear();
+        _latestTrainingPoint = null;
+        LatestRunSummaryTextBlock.Text = $"Rolled back to Train #{session.SessionNumber}.";
+        ProgressLabelTextBlock.Text = $"{session.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles";
+        TrainingProgressBar.Value = 0;
+        RenderErrorPlot(_trainingHistory);
+        RenderNetworkGraph();
+        UpdateWorkspaceSummary();
+        UpdateTrainingSessionLog();
+        AppendConsole($"## Rollback{Environment.NewLine}{Environment.NewLine}- Restored checkpoint: `Train #{session.SessionNumber}`{Environment.NewLine}- Completed cycles: `{session.CompletedCycles}`{Environment.NewLine}- Displayed average error: `{FormatNumber(session.DisplayAverageError)}`");
+        SetStatus($"Rolled back to Train #{session.SessionNumber}.");
     }
 
     private void CommitPatternTableFromGraphic()
@@ -1117,12 +1213,14 @@ public partial class MainWindow : Window
             _diagramResult = null;
             _trainingHistory.Clear();
             _latestTrainingPoint = null;
+            _trainingSessions.Clear();
             LatestRunSummaryTextBlock.Text = "Weights reset.";
             TrainingProgressBar.Value = 0;
             ProgressLabelTextBlock.Text = "Idle";
             RenderErrorPlot(_trainingHistory);
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
+            UpdateTrainingSessionLog();
             AppendConsole("Reset network weights from the current project settings.");
             SetStatus("Weights reset.");
         }
@@ -1187,10 +1285,18 @@ public partial class MainWindow : Window
                 : "Idle";
             LatestRunSummaryTextBlock.Text =
                 $"Training complete. Final displayed average error: {FormatNumber(result.FinalRun.DisplayAverageError)}";
+            _trainingSessions.Add(new TrainingSessionSnapshot(
+                _trainingSessions.Count + 1,
+                result.History.Count,
+                _engine!.CompletedCycles,
+                result.FinalRun.DisplayAverageError,
+                DateTimeOffset.UtcNow,
+                _engine.Weights.Clone()));
             AppendConsole(BuildTrainingResultMarkdown(result));
             RenderErrorPlot(_trainingHistory);
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
+            UpdateTrainingSessionLog();
             SetStatus("Training complete.");
         }
         catch (Exception ex)
@@ -1282,13 +1388,16 @@ public partial class MainWindow : Window
         var selectedIndex = Math.Max(PatternSelectorComboBox.SelectedIndex, 0);
         UpdatePatternSelector(selectedIndex);
         UpdateWorkspaceSummary();
+        UpdateTrainingSessionLog();
         RenderNetworkGraph();
 
         if (definitionChanged || patternsChanged || !canReuseWeights)
         {
             _trainingHistory.Clear();
+            _trainingSessions.Clear();
             RenderErrorPlot(_trainingHistory);
             LatestRunSummaryTextBlock.Text = "Project settings updated.";
+            UpdateTrainingSessionLog();
         }
     }
 
@@ -1297,7 +1406,8 @@ public partial class MainWindow : Window
         return new ProjectWorkspaceState(
             ParseLearningStepsFromControls(),
             Math.Max(PatternSelectorComboBox.SelectedIndex, 0),
-            "Dots");
+            "Dots",
+            _trainingSessions.Select(session => session with { Weights = session.Weights.Clone() }).ToArray());
     }
 
     private NetworkDefinition BuildDefinitionFromControls()

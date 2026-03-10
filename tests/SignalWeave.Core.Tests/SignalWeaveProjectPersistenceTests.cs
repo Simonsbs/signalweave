@@ -51,7 +51,19 @@ public sealed class SignalWeaveProjectPersistenceTests
                 patterns,
                 weights,
                 42,
-                new ProjectWorkspaceState(12000, 2, "Dots"));
+                new ProjectWorkspaceState(
+                    12000,
+                    2,
+                    "Dots",
+                    [
+                        new TrainingSessionSnapshot(
+                            1,
+                            500,
+                            500,
+                            0.123,
+                            new DateTimeOffset(2026, 3, 10, 11, 0, 0, TimeSpan.Zero),
+                            weights.Clone())
+                    ]));
             var project = SignalWeaveProjectSerializer.LoadFile(path);
 
             Assert.Equal(definition.Name, project.Definition.Name);
@@ -65,6 +77,12 @@ public sealed class SignalWeaveProjectPersistenceTests
             Assert.Equal(12000, project.Workspace!.LearningSteps);
             Assert.Equal(2, project.Workspace.SelectedPatternIndex);
             Assert.Equal("Dots", project.Workspace.ErrorPlotDisplayMode);
+            Assert.NotNull(project.Workspace.TrainingSessions);
+            Assert.Single(project.Workspace.TrainingSessions!);
+            Assert.Equal(1, project.Workspace.TrainingSessions![0].SessionNumber);
+            Assert.Equal(500, project.Workspace.TrainingSessions[0].StepsExecuted);
+            Assert.Equal(0.123, project.Workspace.TrainingSessions[0].DisplayAverageError, 12);
+            Assert.Equal(0.8, project.Workspace.TrainingSessions[0].Weights.InputHidden[2, 1], 12);
             Assert.Equal(0.8, project.Weights!.InputHidden[2, 1], 12);
             Assert.Equal(1.3, project.Weights.HiddenOutput[3, 0], 12);
         }

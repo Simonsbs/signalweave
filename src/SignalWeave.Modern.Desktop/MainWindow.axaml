@@ -333,6 +333,29 @@
                                                  Height="14" />
                                 </StackPanel>
                             </Border>
+
+                            <Border Grid.Row="3"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Padding="12">
+                                <Grid RowDefinitions="Auto,*"
+                                      RowSpacing="8">
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="8">
+                                        <TextBlock Text="Training sessions"
+                                                   FontWeight="SemiBold" />
+                                        <Button x:Name="RollbackButton"
+                                                Grid.Column="1"
+                                                Content="Rollback"
+                                                Click="RollbackTrainingSession_Click" />
+                                    </Grid>
+
+                                    <ListBox x:Name="TrainingSessionsListBox"
+                                             Grid.Row="1"
+                                             SelectionChanged="TrainingSessionsListBox_SelectionChanged"
+                                             MinHeight="120" />
+                                </Grid>
+                            </Border>
                         </Grid>
                     </TabItem>
 
