@@ -599,68 +599,65 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         const double canvasWidth = 620;
-        const double canvasHeight = 360;
         const double nodeWidth = 52;
         const double nodeHeight = 42;
         const double biasWidth = 56;
         const double biasHeight = 60;
-        const double biasGap = 68;
+        const double biasX = 62;
 
         var layerCount = _definition.IsDirectFeedForward
             ? 2
             : _definition.HasSecondHiddenLayer ? 4 : 3;
-        var layerXs = BuildLayerLeftPositions(layerCount, canvasWidth, nodeWidth);
-        var inputX = layerXs[0];
-        var hiddenX = layerCount >= 3 ? layerXs[1] : 0;
-        var hidden2X = layerCount == 4 ? layerXs[2] : 0;
-        var outputX = layerXs[^1];
-        var inputBiasX = inputX - biasGap;
-        var hiddenBiasX = hiddenX > 0 ? hiddenX - biasGap : 0;
-        var secondHiddenBiasX = hidden2X > 0 ? hidden2X - biasGap : 0;
+        var layerYs = BuildLane(layerCount, 52, 248);
 
-        var inputYs = BuildDistributedLane(_definition.InputUnits, canvasHeight, nodeHeight, 0.72);
-        var hiddenYs = BuildDistributedLane(_definition.HiddenUnits, canvasHeight, nodeHeight, 0.84);
-        var secondHiddenYs = _definition.HasSecondHiddenLayer
-            ? BuildDistributedLane(_definition.SecondHiddenUnits, canvasHeight, nodeHeight, 0.84)
+        var outputRowTop = layerYs[0];
+        var hidden2RowTop = layerCount == 4 ? layerYs[1] : 0;
+        var hiddenRowTop = layerCount >= 3 ? layerYs[layerCount - 2] : 0;
+        var inputRowTop = layerYs[^1];
+
+        var inputXs = BuildHorizontalNodeLane(_definition.InputUnits, canvasWidth, nodeWidth, 150);
+        var hiddenXs = BuildHorizontalNodeLane(_definition.HiddenUnits, canvasWidth, nodeWidth, 150);
+        var secondHiddenXs = _definition.HasSecondHiddenLayer
+            ? BuildHorizontalNodeLane(_definition.SecondHiddenUnits, canvasWidth, nodeWidth, 150)
             : [];
-        var outputYs = BuildDistributedLane(_definition.OutputUnits, canvasHeight, nodeHeight, 0.54);
+        var outputXs = BuildHorizontalNodeLane(_definition.OutputUnits, canvasWidth, nodeWidth, 210);
         var maxWeight = CalculateMaxWeight(_engine.Weights);
         UpdateWeightLegend(maxWeight);
 
-        var inputBiasY = inputYs.Length == 0 ? 200 : (inputYs[0] + inputYs[^1]) / 2;
-        var hiddenBiasY = hiddenYs.Length == 0 ? 200 : (hiddenYs[0] + hiddenYs[^1]) / 2;
-        var secondHiddenBiasY = secondHiddenYs.Length == 0 ? 200 : (secondHiddenYs[0] + secondHiddenYs[^1]) / 2;
+        var inputBiasY = inputRowTop - ((biasHeight - nodeHeight) / 2);
+        var hiddenBiasY = hiddenRowTop - ((biasHeight - nodeHeight) / 2);
+        var secondHiddenBiasY = hidden2RowTop - ((biasHeight - nodeHeight) / 2);
 
         if (_definition.UseInputBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(inputBiasX, inputBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(new DiagramNodeItem(biasX, inputBiasY, biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
         }
 
         if (_definition.IsDirectFeedForward)
         {
             for (var index = 0; index < _definition.InputUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+                DiagramNodes.Add(new DiagramNodeItem(inputXs[index], inputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
             }
 
             for (var index = 0; index < _definition.OutputUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+                DiagramNodes.Add(new DiagramNodeItem(outputXs[index], outputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
             }
 
             for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
             {
-                var x1 = source < _definition.InputUnits ? inputX + nodeWidth : inputBiasX + biasWidth;
+                var x1 = source < _definition.InputUnits ? inputXs[source] + (nodeWidth / 2) : biasX + biasWidth;
                 var y1 = source < _definition.InputUnits
-                    ? inputYs[source] + (nodeHeight / 2)
-                    : inputBiasY;
+                    ? inputRowTop
+                    : inputBiasY + (biasHeight / 2);
 
                 for (var target = 0; target < _engine.Weights.InputHidden.GetLength(1); target++)
                 {
                     var weight = _engine.Weights.InputHidden[source, target];
                     DiagramEdges.Add(new DiagramEdgeItem(
                         ToPoint(x1, y1),
-                        ToPoint(outputX, outputYs[target] + (nodeHeight / 2)),
+                        ToPoint(outputXs[target] + (nodeWidth / 2), outputRowTop + nodeHeight),
                         WeightColor(weight),
                         WeightThickness(weight, maxWeight),
                         false));
@@ -672,51 +669,50 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (_definition.UseHiddenBias)
         {
-            var biasNodeY = _definition.HasSecondHiddenLayer ? secondHiddenBiasY : hiddenBiasY;
-            DiagramNodes.Add(new DiagramNodeItem(hiddenBiasX, biasNodeY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(new DiagramNodeItem(biasX, hiddenBiasY, biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
         }
 
         if (_definition.HasSecondHiddenLayer && _definition.UseSecondHiddenBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(secondHiddenBiasX, secondHiddenBiasY - (biasHeight / 2), biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(new DiagramNodeItem(biasX, secondHiddenBiasY, biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
         }
 
         for (var index = 0; index < _definition.InputUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(inputX, inputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(new DiagramNodeItem(inputXs[index], inputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
         }
 
         for (var index = 0; index < _definition.HiddenUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(hiddenX, hiddenYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(new DiagramNodeItem(hiddenXs[index], hiddenRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
         }
 
         if (_definition.HasSecondHiddenLayer)
         {
             for (var index = 0; index < _definition.SecondHiddenUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(hidden2X, secondHiddenYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+                DiagramNodes.Add(new DiagramNodeItem(secondHiddenXs[index], hidden2RowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
             }
         }
 
         for (var index = 0; index < _definition.OutputUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(outputX, outputYs[index], nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(new DiagramNodeItem(outputXs[index], outputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
         }
 
         for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
         {
-            var x1 = source < _definition.InputUnits ? inputX + nodeWidth : inputBiasX + biasWidth;
+            var x1 = source < _definition.InputUnits ? inputXs[source] + (nodeWidth / 2) : biasX + biasWidth;
             var y1 = source < _definition.InputUnits
-                ? inputYs[source] + (nodeHeight / 2)
-                : inputBiasY;
+                ? inputRowTop
+                : inputBiasY + (biasHeight / 2);
 
             for (var target = 0; target < _engine.Weights.InputHidden.GetLength(1); target++)
             {
                 var weight = _engine.Weights.InputHidden[source, target];
                 DiagramEdges.Add(new DiagramEdgeItem(
                     ToPoint(x1, y1),
-                    ToPoint(hiddenX, hiddenYs[target] + (nodeHeight / 2)),
+                    ToPoint(hiddenXs[target] + (nodeWidth / 2), hiddenRowTop + nodeHeight),
                     WeightColor(weight),
                     WeightThickness(weight, maxWeight),
                     false));
@@ -727,43 +723,42 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             for (var source = 0; source < _engine.Weights.HiddenHidden.GetLength(0); source++)
             {
-                var x1 = source < _definition.HiddenUnits ? hiddenX + nodeWidth : hiddenBiasX + biasWidth;
+                var x1 = source < _definition.HiddenUnits ? hiddenXs[source] + (nodeWidth / 2) : biasX + biasWidth;
                 var y1 = source < _definition.HiddenUnits
-                    ? hiddenYs[source] + (nodeHeight / 2)
-                    : secondHiddenBiasY;
+                    ? hiddenRowTop
+                    : hiddenBiasY + (biasHeight / 2);
 
                 for (var target = 0; target < _engine.Weights.HiddenHidden.GetLength(1); target++)
                 {
                     var weight = _engine.Weights.HiddenHidden[source, target];
                     DiagramEdges.Add(new DiagramEdgeItem(
                         ToPoint(x1, y1),
-                        ToPoint(hidden2X, secondHiddenYs[target] + (nodeHeight / 2)),
+                        ToPoint(secondHiddenXs[target] + (nodeWidth / 2), hidden2RowTop + nodeHeight),
                         WeightColor(weight),
                         WeightThickness(weight, maxWeight),
                         false));
-                }
+                    }
             }
         }
 
         var outputSourceCount = _definition.HasSecondHiddenLayer ? _definition.SecondHiddenUnits : _definition.HiddenUnits;
-        var outputSourceX = _definition.HasSecondHiddenLayer ? hidden2X : hiddenX;
-        var outputSourceYs = _definition.HasSecondHiddenLayer ? secondHiddenYs : hiddenYs;
-        var outputBiasX = _definition.HasSecondHiddenLayer ? secondHiddenBiasX : hiddenBiasX;
+        var outputSourceXs = _definition.HasSecondHiddenLayer ? secondHiddenXs : hiddenXs;
+        var outputSourceRowTop = _definition.HasSecondHiddenLayer ? hidden2RowTop : hiddenRowTop;
         var outputBiasY = _definition.HasSecondHiddenLayer ? secondHiddenBiasY : hiddenBiasY;
 
         for (var source = 0; source < _engine.Weights.HiddenOutput.GetLength(0); source++)
         {
-            var x1 = source < outputSourceCount ? outputSourceX + nodeWidth : outputBiasX + biasWidth;
+            var x1 = source < outputSourceCount ? outputSourceXs[source] + (nodeWidth / 2) : biasX + biasWidth;
             var y1 = source < outputSourceCount
-                ? outputSourceYs[source] + (nodeHeight / 2)
-                : outputBiasY;
+                ? outputSourceRowTop
+                : outputBiasY + (biasHeight / 2);
 
             for (var target = 0; target < _engine.Weights.HiddenOutput.GetLength(1); target++)
             {
                 var weight = _engine.Weights.HiddenOutput[source, target];
                 DiagramEdges.Add(new DiagramEdgeItem(
                     ToPoint(x1, y1),
-                    ToPoint(outputX, outputYs[target] + (nodeHeight / 2)),
+                    ToPoint(outputXs[target] + (nodeWidth / 2), outputRowTop + nodeHeight),
                     WeightColor(weight),
                     WeightThickness(weight, maxWeight),
                     false));
@@ -781,8 +776,8 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 var weight = _engine.Weights.RecurrentHidden[source, target];
                 DiagramEdges.Add(new DiagramEdgeItem(
-                    ToPoint(hiddenX + (nodeWidth / 2), hiddenYs[source] + nodeHeight + 6),
-                    ToPoint(hiddenX + (nodeWidth / 2), hiddenYs[target] - 8),
+                    ToPoint(hiddenXs[source] + (nodeWidth / 2), hiddenRowTop + nodeHeight + 4),
+                    ToPoint(hiddenXs[target] + (nodeWidth / 2), hiddenRowTop - 10),
                     WeightColor(weight),
                     WeightThickness(weight, maxWeight),
                     true));
@@ -1255,6 +1250,21 @@ public partial class MainWindowViewModel : ViewModelBase
         var start = (canvasHeight - usableHeight) / 2;
         var end = start + usableHeight - nodeHeight;
         return BuildLane(count, start, end);
+    }
+
+    private static double[] BuildHorizontalNodeLane(int count, double canvasWidth, double nodeWidth, double sidePadding)
+    {
+        if (count <= 1)
+        {
+            return [((canvasWidth - nodeWidth) / 2)];
+        }
+
+        var maxGap = 74.0;
+        var availableGap = Math.Max(8.0, (canvasWidth - (sidePadding * 2) - nodeWidth) / (count - 1));
+        var gap = Math.Min(maxGap, availableGap);
+        var totalWidth = nodeWidth + ((count - 1) * gap);
+        var start = (canvasWidth - totalWidth) / 2;
+        return Enumerable.Range(0, count).Select(index => start + (index * gap)).ToArray();
     }
 
     private static double[] BuildLayerLeftPositions(int layerCount, double canvasWidth, double nodeWidth)
