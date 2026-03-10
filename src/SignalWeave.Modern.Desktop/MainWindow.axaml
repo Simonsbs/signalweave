@@ -390,18 +390,51 @@
                     <TabItem Header="Patterns">
                         <Border Background="#FFFDF9"
                                 Padding="0">
-                            <Grid RowDefinitions="Auto,*"
+                            <Grid RowDefinitions="Auto,Auto,*"
                                   RowSpacing="12"
                                   Margin="16">
                                 <TextBlock Classes="muted"
                                            TextWrapping="Wrap"
                                            Text="Patterns now live in the side control stack. They are saved inside the project file together with settings and weights." />
 
-                                <TextBox Grid.Row="1"
-                                         x:Name="PatternEditorTextBox"
-                                         AcceptsReturn="True"
-                                         TextWrapping="NoWrap"
-                                         FontFamily="Cascadia Mono, Consolas, monospace" />
+                                <TextBlock Grid.Row="1"
+                                           x:Name="PatternEditorStatusTextBlock"
+                                           Classes="muted"
+                                           Text="Pattern editor ready." />
+
+                                <TabControl Grid.Row="2"
+                                            x:Name="PatternModeTabs"
+                                            TabStripPlacement="Top">
+                                    <TabItem Header="Text mode">
+                                        <TextBox x:Name="PatternEditorTextBox"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="NoWrap"
+                                                 TextChanged="PatternEditorTextBox_TextChanged"
+                                                 FontFamily="Cascadia Mono, Consolas, monospace" />
+                                    </TabItem>
+
+                                    <TabItem Header="Graphic mode">
+                                        <Grid RowDefinitions="Auto,*"
+                                              RowSpacing="12">
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  ColumnSpacing="10">
+                                                <TextBlock Classes="muted"
+                                                           VerticalAlignment="Center"
+                                                           Text="Edit patterns in a table view. Changes are mirrored back into the text editor." />
+                                                <Button Grid.Column="1"
+                                                        Content="Add pattern"
+                                                        Click="AddPatternRow_Click" />
+                                            </Grid>
+
+                                            <ScrollViewer Grid.Row="1"
+                                                          HorizontalScrollBarVisibility="Auto"
+                                                          VerticalScrollBarVisibility="Auto">
+                                                <StackPanel x:Name="PatternTableHost"
+                                                            Spacing="6" />
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </TabItem>
+                                </TabControl>
                             </Grid>
                         </Border>
                     </TabItem>

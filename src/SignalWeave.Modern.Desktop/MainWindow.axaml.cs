@@ -9,6 +9,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using SignalWeave.Core;
@@ -35,6 +37,9 @@ public partial class MainWindow : Window
     private DispatcherTimer? _trainingProgressTimer;
     private int _currentTrainingSteps;
     private bool _isBusy;
+    private bool _isInitializingUi = true;
+    private bool _isSyncingPatternText;
+    private bool _isSyncingPatternTable;
 
     public MainWindow()
     {
@@ -52,6 +57,7 @@ public partial class MainWindow : Window
         }
 
         LoadProjectState(CreateDefaultProject(), null, "Loaded the default Modern sample project.");
+        _isInitializingUi = false;
     }
 
     private sealed record PatternOption(int Index, string Label)
@@ -97,10 +103,11 @@ public partial class MainWindow : Window
         _liveTrainingHistory.Clear();
 
         ApplyDefinitionToControls(project.Definition);
-        PatternEditorTextBox.Text = PatternSetWriter.Write(project.Patterns);
+        SetPatternEditorText(PatternSetWriter.Write(project.Patterns));
         LearningStepsComboBox.Text = project.Workspace?.LearningSteps.ToString(CultureInfo.InvariantCulture)
             ?? project.Definition.MaxEpochs.ToString(CultureInfo.InvariantCulture);
         UpdatePatternSelector(project.Workspace?.SelectedPatternIndex ?? 0);
+        RenderPatternGraphicTable(project.Patterns);
 
         LatestRunSummaryTextBlock.Text = "No run executed yet.";
         ProgressLabelTextBlock.Text = project.CompletedCycles > 0
@@ -223,6 +230,112 @@ public partial class MainWindow : Window
         UpdateActionAvailability();
     }
 
+    private void SetPatternEditorText(string text)
+    {
+        if (PatternEditorTextBox is null)
+        {
+            return;
+        }
+
+        _isSyncingPatternText = true;
+        PatternEditorTextBox.Text = text;
+        _isSyncingPatternText = false;
+    }
+
+    private void PatternEditorTextBox_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isSyncingPatternText || _isSyncingPatternTable || !ArePatternEditorControlsReady())
+        {
+            return;
+        }
+
+        if (TryParsePatternDraft(PatternEditorTextBox.Text, out var parsed))
+        {
+            _patterns = NormalizePatternSetForDefinition(parsed);
+            RenderPatternGraphicTable(_patterns);
+            UpdatePatternSelector(Math.Max(PatternSelectorComboBox.SelectedIndex, 0));
+            SetPatternEditorStatus($"Pattern text parsed: {_patterns.Examples.Count} rows");
+        }
+        else
+        {
+            SetPatternEditorStatus("Pattern text contains an invalid row. Graphic mode is showing the last valid pattern set.");
+        }
+    }
+
+    private bool ArePatternEditorControlsReady()
+    {
+        return PatternEditorTextBox is not null &&
+               PatternEditorStatusTextBlock is not null &&
+               PatternTableHost is not null &&
+               PatternSelectorComboBox is not null;
+    }
+
+    private void SetPatternEditorStatus(string text)
+    {
+        if (PatternEditorStatusTextBlock is null)
+        {
+            return;
+        }
+
+        PatternEditorStatusTextBlock.Text = text;
+    }
+
+    private bool TryParsePatternDraft(string? text, out PatternSet parsed)
+    {
+        try
+        {
+            parsed = NormalizePatternSetForDefinition(PatternSetParser.Parse(text ?? string.Empty, CurrentPatternDraftName()));
+            return true;
+        }
+        catch
+        {
+            parsed = new PatternSet([]);
+            return false;
+        }
+    }
+
+    private string CurrentPatternDraftName()
+    {
+        return _graphPreviewDefinition?.Name
+            ?? _definition?.Name
+            ?? "pattern";
+    }
+
+    private PatternSet NormalizePatternSetForDefinition(PatternSet patternSet)
+    {
+        if (!AreDefinitionControlsReady())
+        {
+            return patternSet;
+        }
+
+        var definition = BuildDefinitionFromControls();
+        var normalized = patternSet.Examples.Select(example =>
+        {
+            var inputs = NormalizeVector(example.Inputs, definition.InputUnits);
+            var targets = example.Targets is null
+                ? new double[definition.OutputUnits]
+                : NormalizeVector(example.Targets, definition.OutputUnits);
+            return example with
+            {
+                Inputs = inputs,
+                Targets = targets
+            };
+        }).ToArray();
+
+        return new PatternSet(normalized);
+    }
+
+    private static double[] NormalizeVector(double[] values, int length)
+    {
+        var normalized = new double[length];
+        for (var index = 0; index < length; index++)
+        {
+            normalized[index] = index < values.Length ? values[index] : 0.0;
+        }
+
+        return normalized;
+    }
+
     private void UpdateSliderValueLabels()
     {
         if (InputUnitsValueTextBlock is null ||
@@ -302,6 +415,287 @@ public partial class MainWindow : Window
 
         PatternSelectorComboBox.SelectedIndex = Math.Clamp(preferredIndex, 0, options.Count - 1);
     }
+
+    private void RenderPatternGraphicTable(PatternSet patternSet)
+    {
+        if (PatternTableHost is null)
+        {
+            return;
+        }
+
+        _isSyncingPatternTable = true;
+        PatternTableHost.Children.Clear();
+
+        var inputCount = AreDefinitionControlsReady() ? ReadSliderValue(InputUnitsSlider) : _definition?.InputUnits ?? 0;
+        var outputCount = AreDefinitionControlsReady() ? ReadSliderValue(OutputUnitsSlider) : _definition?.OutputUnits ?? 0;
+
+        PatternTableHost.Children.Add(BuildPatternTableHeader(inputCount, outputCount));
+
+        for (var rowIndex = 0; rowIndex < patternSet.Examples.Count; rowIndex++)
+        {
+            PatternTableHost.Children.Add(BuildPatternTableRow(patternSet.Examples[rowIndex], rowIndex, inputCount, outputCount));
+        }
+
+        _isSyncingPatternTable = false;
+    }
+
+    private Grid BuildPatternTableHeader(int inputCount, int outputCount)
+    {
+        var grid = new Grid
+        {
+            ColumnSpacing = 6
+        };
+        grid.ColumnDefinitions = BuildPatternColumnDefinitions(inputCount, outputCount);
+
+        AddPatternHeaderText(grid, "Label", 0);
+        AddPatternHeaderText(grid, "Reset", 1);
+
+        var column = 2;
+        for (var index = 0; index < inputCount; index++, column++)
+        {
+            AddPatternHeaderText(grid, $"I{index + 1}", column);
+        }
+
+        for (var index = 0; index < outputCount; index++, column++)
+        {
+            AddPatternHeaderText(grid, $"O{index + 1}", column);
+        }
+
+        AddPatternHeaderText(grid, "Del", column);
+        return grid;
+    }
+
+    private static void AddPatternHeaderText(Grid grid, string text, int column)
+    {
+        var header = new TextBlock
+        {
+            Text = text,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brush.Parse("#6A6258"),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+        };
+        Grid.SetColumn(header, column);
+        grid.Children.Add(header);
+    }
+
+    private Grid BuildPatternTableRow(PatternExample example, int rowIndex, int inputCount, int outputCount)
+    {
+        var grid = new Grid
+        {
+            ColumnSpacing = 6
+        };
+        grid.ColumnDefinitions = BuildPatternColumnDefinitions(inputCount, outputCount);
+
+        var labelBox = new TextBox
+        {
+            Text = example.Label,
+            Tag = new PatternCellTag(rowIndex, PatternCellKind.Label, -1),
+            MinWidth = 92
+        };
+        labelBox.LostFocus += PatternTableTextBox_LostFocus;
+        Grid.SetColumn(labelBox, 0);
+        grid.Children.Add(labelBox);
+
+        var resetCheckBox = new CheckBox
+        {
+            IsChecked = example.ResetsContextAfter,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Tag = new PatternCellTag(rowIndex, PatternCellKind.Reset, -1)
+        };
+        resetCheckBox.Click += PatternTableReset_Click;
+        Grid.SetColumn(resetCheckBox, 1);
+        grid.Children.Add(resetCheckBox);
+
+        var column = 2;
+        for (var index = 0; index < inputCount; index++, column++)
+        {
+            grid.Children.Add(BuildPatternNumericCell(example.Inputs.ElementAtOrDefault(index), rowIndex, PatternCellKind.Input, index, column));
+        }
+
+        var targets = example.Targets ?? new double[outputCount];
+        for (var index = 0; index < outputCount; index++, column++)
+        {
+            grid.Children.Add(BuildPatternNumericCell(targets.ElementAtOrDefault(index), rowIndex, PatternCellKind.Target, index, column));
+        }
+
+        var deleteButton = new Button
+        {
+            Content = "X",
+            Tag = rowIndex,
+            Padding = new Thickness(6, 2)
+        };
+        deleteButton.Click += DeletePatternRow_Click;
+        Grid.SetColumn(deleteButton, column);
+        grid.Children.Add(deleteButton);
+
+        return grid;
+    }
+
+    private TextBox BuildPatternNumericCell(double value, int rowIndex, PatternCellKind kind, int vectorIndex, int column)
+    {
+        var textBox = new TextBox
+        {
+            Text = FormatNumber(value),
+            Width = 42,
+            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Tag = new PatternCellTag(rowIndex, kind, vectorIndex)
+        };
+        textBox.LostFocus += PatternTableTextBox_LostFocus;
+        Grid.SetColumn(textBox, column);
+        return textBox;
+    }
+
+    private static ColumnDefinitions BuildPatternColumnDefinitions(int inputCount, int outputCount)
+    {
+        var columns = new ColumnDefinitions
+        {
+            new ColumnDefinition(GridLength.Auto),
+            new ColumnDefinition(GridLength.Auto)
+        };
+
+        for (var index = 0; index < inputCount + outputCount; index++)
+        {
+            columns.Add(new ColumnDefinition(GridLength.Auto));
+        }
+
+        columns.Add(new ColumnDefinition(GridLength.Auto));
+        return columns;
+    }
+
+    private void AddPatternRow_Click(object? sender, RoutedEventArgs e)
+    {
+        var inputCount = AreDefinitionControlsReady() ? ReadSliderValue(InputUnitsSlider) : _definition?.InputUnits ?? 1;
+        var outputCount = AreDefinitionControlsReady() ? ReadSliderValue(OutputUnitsSlider) : _definition?.OutputUnits ?? 1;
+        var examples = _patterns.Examples.ToList();
+        examples.Add(new PatternExample(
+            $"pattern-{examples.Count + 1}",
+            new double[inputCount],
+            new double[outputCount],
+            false));
+        ApplyGraphicPatternSet(new PatternSet(examples));
+    }
+
+    private void DeletePatternRow_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: int rowIndex })
+        {
+            return;
+        }
+
+        var examples = _patterns.Examples.ToList();
+        if (rowIndex < 0 || rowIndex >= examples.Count)
+        {
+            return;
+        }
+
+        examples.RemoveAt(rowIndex);
+        ApplyGraphicPatternSet(new PatternSet(examples));
+    }
+
+    private void PatternTableReset_Click(object? sender, RoutedEventArgs e)
+    {
+        CommitPatternTableFromGraphic();
+    }
+
+    private void PatternTableTextBox_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        CommitPatternTableFromGraphic();
+    }
+
+    private void CommitPatternTableFromGraphic()
+    {
+        if (_isSyncingPatternTable || !ArePatternEditorControlsReady())
+        {
+            return;
+        }
+
+        if (!TryReadPatternTable(out var patternSet))
+        {
+            SetPatternEditorStatus("Graphic mode contains an invalid numeric value.");
+            return;
+        }
+
+        ApplyGraphicPatternSet(patternSet);
+    }
+
+    private void ApplyGraphicPatternSet(PatternSet patternSet)
+    {
+        _patterns = NormalizePatternSetForDefinition(patternSet);
+        RenderPatternGraphicTable(_patterns);
+        if (PatternSelectorComboBox is not null)
+        {
+            var selection = Math.Max(PatternSelectorComboBox.SelectedIndex, 0);
+            UpdatePatternSelector(selection);
+        }
+
+        SetPatternEditorText(PatternSetWriter.Write(_patterns));
+        SetPatternEditorStatus($"Graphic editor updated: {_patterns.Examples.Count} rows");
+    }
+
+    private bool TryReadPatternTable(out PatternSet patternSet)
+    {
+        var inputCount = AreDefinitionControlsReady() ? ReadSliderValue(InputUnitsSlider) : _definition?.InputUnits ?? 0;
+        var outputCount = AreDefinitionControlsReady() ? ReadSliderValue(OutputUnitsSlider) : _definition?.OutputUnits ?? 0;
+        var rowGrids = PatternTableHost.Children.OfType<Grid>().Skip(1).ToList();
+        var examples = new List<PatternExample>(rowGrids.Count);
+
+        foreach (var rowGrid in rowGrids)
+        {
+            var label = rowGrid.Children
+                .OfType<TextBox>()
+                .FirstOrDefault(child => child.Tag is PatternCellTag { Kind: PatternCellKind.Label })?.Text?.Trim();
+
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                label = $"pattern-{examples.Count + 1}";
+            }
+
+            var reset = rowGrid.Children
+                .OfType<CheckBox>()
+                .FirstOrDefault(child => child.Tag is PatternCellTag { Kind: PatternCellKind.Reset })?.IsChecked == true;
+
+            var inputs = new double[inputCount];
+            var targets = new double[outputCount];
+
+            foreach (var box in rowGrid.Children.OfType<TextBox>())
+            {
+                if (box.Tag is not PatternCellTag tag || tag.Kind == PatternCellKind.Label)
+                {
+                    continue;
+                }
+
+                if (!double.TryParse(box.Text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var value))
+                {
+                    patternSet = new PatternSet([]);
+                    return false;
+                }
+
+                if (tag.Kind == PatternCellKind.Input && tag.Index >= 0 && tag.Index < inputs.Length)
+                {
+                    inputs[tag.Index] = value;
+                }
+                else if (tag.Kind == PatternCellKind.Target && tag.Index >= 0 && tag.Index < targets.Length)
+                {
+                    targets[tag.Index] = value;
+                }
+            }
+
+            examples.Add(new PatternExample(label, inputs, targets, reset));
+        }
+
+        patternSet = new PatternSet(examples);
+        return true;
+    }
+
+    private enum PatternCellKind
+    {
+        Label,
+        Reset,
+        Input,
+        Target
+    }
+
+    private sealed record PatternCellTag(int Row, PatternCellKind Kind, int Index);
 
     private static string BuildPatternLabel(PatternExample example, int index)
     {
@@ -469,18 +863,39 @@ public partial class MainWindow : Window
 
     private void NetworkKindComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
         SyncNetworkKindControls();
         RefreshGraphPreview();
     }
 
     private void TopologySliderChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
         UpdateTopologyControlState();
+        _patterns = NormalizePatternSetForDefinition(_patterns);
+        RenderPatternGraphicTable(_patterns);
+        SetPatternEditorText(PatternSetWriter.Write(_patterns));
         RefreshGraphPreview();
     }
 
     private void TopologyOptionChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
+        _patterns = NormalizePatternSetForDefinition(_patterns);
+        RenderPatternGraphicTable(_patterns);
+        SetPatternEditorText(PatternSetWriter.Write(_patterns));
         RefreshGraphPreview();
     }
 
