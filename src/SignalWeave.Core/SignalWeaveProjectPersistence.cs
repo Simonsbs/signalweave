@@ -14,7 +14,8 @@ public sealed record TrainingSessionSnapshot(
     int CompletedCycles,
     double DisplayAverageError,
     DateTimeOffset CompletedAtUtc,
-    WeightSet Weights);
+    WeightSet Weights,
+    IReadOnlyList<TrainingPoint>? History = null);
 
 public sealed record SignalWeaveProject(
     NetworkDefinition Definition,
@@ -32,8 +33,9 @@ public sealed record SignalWeaveCheckpoint(
 
 public static class SignalWeaveProjectSerializer
 {
-    public const string SchemaId = "signalweave-project/v3";
-    public const string CompatibilitySchemaId = "signalweave-project/v2";
+    public const string SchemaId = "signalweave-project/v4";
+    public const string CompatibilitySchemaId = "signalweave-project/v3";
+    public const string CompatibilitySchemaId2 = "signalweave-project/v2";
     public const string LegacySchemaId = "signalweave-project/v1";
 
     public static void SaveFile(string path, NetworkDefinition definition, PatternSet patterns, WeightSet? weights = null)
@@ -71,7 +73,14 @@ public static class SignalWeaveProjectSerializer
                             CompletedCycles = session.CompletedCycles,
                             DisplayAverageError = session.DisplayAverageError,
                             CompletedAtUtc = session.CompletedAtUtc,
-                            Weights = WeightSetDocumentMapper.ToDocument(session.Weights)
+                            Weights = WeightSetDocumentMapper.ToDocument(session.Weights),
+                            History = session.History?
+                                .Select(point => new TrainingPointDocument
+                                {
+                                    Epoch = point.Epoch,
+                                    AverageError = point.AverageError
+                                })
+                                .ToList()
                         })
                         .ToList()
                 }
@@ -83,7 +92,7 @@ public static class SignalWeaveProjectSerializer
     public static SignalWeaveProject LoadFile(string path)
     {
         var document = ReadDocument<ProjectDocument>(path);
-        EnsureSchema(document.Schema, [SchemaId, CompatibilitySchemaId, LegacySchemaId], "project");
+        EnsureSchema(document.Schema, [SchemaId, CompatibilitySchemaId, CompatibilitySchemaId2, LegacySchemaId], "project");
 
         return new SignalWeaveProject(
             document.Definition ?? throw new InvalidOperationException("Project file is missing the network definition."),
@@ -104,7 +113,10 @@ public static class SignalWeaveProjectSerializer
                             session.CompletedCycles,
                             session.DisplayAverageError,
                             session.CompletedAtUtc,
-                            WeightSetDocumentMapper.FromDocument(session.Weights!)))
+                            WeightSetDocumentMapper.FromDocument(session.Weights!),
+                            session.History?
+                                .Select(point => new TrainingPoint(point.Epoch, point.AverageError))
+                                .ToArray()))
                         .ToArray()));
     }
 
@@ -186,6 +198,13 @@ internal sealed class TrainingSessionDocument
     public double DisplayAverageError { get; set; }
     public DateTimeOffset CompletedAtUtc { get; set; }
     public WeightDocument? Weights { get; set; }
+    public List<TrainingPointDocument>? History { get; set; }
+}
+
+internal sealed class TrainingPointDocument
+{
+    public int Epoch { get; set; }
+    public double AverageError { get; set; }
 }
 
 public static class SignalWeaveCheckpointSerializer

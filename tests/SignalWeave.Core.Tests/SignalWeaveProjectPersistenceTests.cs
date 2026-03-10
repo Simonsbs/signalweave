@@ -62,7 +62,12 @@ public sealed class SignalWeaveProjectPersistenceTests
                             500,
                             0.123,
                             new DateTimeOffset(2026, 3, 10, 11, 0, 0, TimeSpan.Zero),
-                            weights.Clone())
+                            weights.Clone(),
+                            [
+                                new TrainingPoint(1, 0.9),
+                                new TrainingPoint(2, 0.4),
+                                new TrainingPoint(3, 0.123)
+                            ])
                     ]));
             var project = SignalWeaveProjectSerializer.LoadFile(path);
 
@@ -83,6 +88,9 @@ public sealed class SignalWeaveProjectPersistenceTests
             Assert.Equal(500, project.Workspace.TrainingSessions[0].StepsExecuted);
             Assert.Equal(0.123, project.Workspace.TrainingSessions[0].DisplayAverageError, 12);
             Assert.Equal(0.8, project.Workspace.TrainingSessions[0].Weights.InputHidden[2, 1], 12);
+            Assert.NotNull(project.Workspace.TrainingSessions[0].History);
+            Assert.Equal(3, project.Workspace.TrainingSessions[0].History!.Count);
+            Assert.Equal(0.4, project.Workspace.TrainingSessions[0].History![1].AverageError, 12);
             Assert.Equal(0.8, project.Weights!.InputHidden[2, 1], 12);
             Assert.Equal(1.3, project.Weights.HiddenOutput[3, 0], 12);
         }

@@ -215,7 +215,11 @@ public partial class MainWindow : Window
         _trainingSessions.Clear();
         if (project.Workspace?.TrainingSessions is not null)
         {
-            _trainingSessions.AddRange(project.Workspace.TrainingSessions.Select(session => session with { Weights = session.Weights.Clone() }));
+            _trainingSessions.AddRange(project.Workspace.TrainingSessions.Select(session => session with
+            {
+                Weights = session.Weights.Clone(),
+                History = session.History?.ToArray()
+            }));
         }
 
         ApplyDefinitionToControls(project.Definition);
@@ -561,6 +565,10 @@ public partial class MainWindow : Window
         {
             TrainingSessionsListBox.SelectedItem = options.FirstOrDefault(option => option.Snapshot.SessionNumber == selectedSessionNumber.Value);
         }
+        else if (options.Count > 0)
+        {
+            TrainingSessionsListBox.SelectedIndex = 0;
+        }
 
         UpdateActionAvailability();
     }
@@ -821,6 +829,15 @@ public partial class MainWindow : Window
 
     private void TrainingSessionsListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (TrainingSessionsListBox?.SelectedItem is TrainingSessionOption option)
+        {
+            RenderErrorPlot(option.Snapshot.History ?? []);
+        }
+        else
+        {
+            RenderErrorPlot(_trainingHistory);
+        }
+
         UpdateActionAvailability();
     }
 
@@ -837,6 +854,10 @@ public partial class MainWindow : Window
         _trainingSessions.RemoveAll(existing => existing.SessionNumber > session.SessionNumber);
         _diagramResult = null;
         _trainingHistory.Clear();
+        if (session.History is not null)
+        {
+            _trainingHistory.AddRange(session.History);
+        }
         _latestTrainingPoint = null;
         LatestRunSummaryTextBlock.Text = $"Rolled back to Train #{session.SessionNumber}.";
         ProgressLabelTextBlock.Text = $"{session.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles";
@@ -1291,7 +1312,8 @@ public partial class MainWindow : Window
                 _engine!.CompletedCycles,
                 result.FinalRun.DisplayAverageError,
                 DateTimeOffset.UtcNow,
-                _engine.Weights.Clone()));
+                _engine.Weights.Clone(),
+                result.History.ToArray()));
             AppendConsole(BuildTrainingResultMarkdown(result));
             RenderErrorPlot(_trainingHistory);
             RenderNetworkGraph();
