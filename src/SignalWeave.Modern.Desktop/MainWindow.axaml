@@ -463,9 +463,16 @@
                               ColumnSpacing="12">
                             <TextBlock Text="Console"
                                        Classes="section" />
-                            <Button Grid.Column="1"
-                                    Content="Clear"
-                                    Click="ClearConsole_Click" />
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                <Button Content="⧉"
+                                        ToolTip.Tip="Copy all console content"
+                                        Width="36"
+                                        Click="CopyConsole_Click" />
+                                <Button Content="Clear"
+                                        Click="ClearConsole_Click" />
+                            </StackPanel>
                         </Grid>
 
                         <ScrollViewer Grid.Row="1"

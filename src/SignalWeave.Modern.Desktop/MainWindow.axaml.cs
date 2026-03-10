@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -32,6 +33,7 @@ public partial class MainWindow : Window
     private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
     private readonly object _trainingProgressGate = new();
     private readonly List<TrainingPoint> _trainingHistory = [];
+    private readonly StringBuilder _consoleMarkdown = new();
 
     private SignalWeaveEngine? _engine;
     private NetworkDefinition? _definition;
@@ -960,7 +962,20 @@ public partial class MainWindow : Window
 
     private void ClearConsole_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
+        _consoleMarkdown.Clear();
         ConsoleContentHost.Children.Clear();
+    }
+
+    private async void CopyConsole_Click(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.Clipboard is null || _consoleMarkdown.Length == 0)
+        {
+            return;
+        }
+
+        await topLevel.Clipboard.SetTextAsync(_consoleMarkdown.ToString());
+        SetStatus("Console copied to clipboard.");
     }
 
     private void Reset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -1046,11 +1061,10 @@ public partial class MainWindow : Window
                 : "Idle";
             LatestRunSummaryTextBlock.Text =
                 $"Training complete. Final displayed average error: {FormatNumber(result.FinalRun.DisplayAverageError)}";
-            AppendConsole(result.FinalRun.ToTable());
+            AppendConsole(BuildTrainingResultMarkdown(result));
             RenderErrorPlot(_trainingHistory);
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
-            AppendConsole($"Training finished after {result.History.Count.ToString(CultureInfo.InvariantCulture)} steps.");
             SetStatus("Training complete.");
         }
         catch (Exception ex)
@@ -1081,10 +1095,9 @@ public partial class MainWindow : Window
             var result = _engine!.TestOne(_patterns, index);
             _diagramResult = result;
             LatestRunSummaryTextBlock.Text = $"Tested pattern {index + 1}: {result.Label}";
-            AppendConsole(BuildSingleResultText(result));
+            AppendConsole(BuildSingleResultMarkdown(result));
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
-            AppendConsole($"Tested pattern {index + 1}: {result.Label}");
             SetStatus("Test one complete.");
         }
         catch (Exception ex)
@@ -1110,10 +1123,9 @@ public partial class MainWindow : Window
             var selectedIndex = Math.Clamp(PatternSelectorComboBox.SelectedIndex, 0, result.Results.Count - 1);
             _diagramResult = result.Results.Count == 0 ? null : result.Results[selectedIndex];
             LatestRunSummaryTextBlock.Text = $"Test all complete. Displayed average error: {FormatNumber(result.DisplayAverageError)}";
-            AppendConsole(result.ToTable());
+            AppendConsole(BuildRunResultMarkdown("## Test all", result));
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
-            AppendConsole($"Test all finished. Displayed average error: {FormatNumber(result.DisplayAverageError)}");
             SetStatus("Test all complete.");
         }
         catch (Exception ex)
@@ -1344,6 +1356,14 @@ public partial class MainWindow : Window
         {
             return;
         }
+
+        if (_consoleMarkdown.Length > 0)
+        {
+            _consoleMarkdown.AppendLine();
+            _consoleMarkdown.AppendLine();
+        }
+
+        _consoleMarkdown.Append(message);
 
         foreach (var control in BuildMarkdownConsoleEntry(message))
         {
@@ -1586,6 +1606,62 @@ public partial class MainWindow : Window
         return candidates.Where(candidate => candidate >= 0).DefaultIfEmpty(-1).Min();
     }
 
+    private string BuildTrainingResultMarkdown(TrainResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("## Training");
+        builder.AppendLine();
+        builder.AppendLine($"- Steps executed: `{result.History.Count.ToString(CultureInfo.InvariantCulture)}`");
+        builder.AppendLine($"- Final displayed average error: `{FormatNumber(result.FinalRun.DisplayAverageError)}`");
+        builder.AppendLine();
+        builder.Append(BuildRunResultMarkdownBody(result.FinalRun));
+        return builder.ToString();
+    }
+
+    private string BuildRunResultMarkdown(string heading, RunResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine(heading);
+        builder.AppendLine();
+        builder.Append(BuildRunResultMarkdownBody(result));
+        return builder.ToString();
+    }
+
+    private string BuildRunResultMarkdownBody(RunResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine($"- Patterns evaluated: `{result.Results.Count.ToString(CultureInfo.InvariantCulture)}`");
+        builder.AppendLine($"- Displayed average error: `{FormatNumber(result.DisplayAverageError)}`");
+        builder.AppendLine();
+        builder.AppendLine("```text");
+        builder.AppendLine("Idx  Label               Outputs                  Targets                  Error");
+
+        foreach (var item in result.Results)
+        {
+            var outputs = FormatVector(item.Outputs);
+            var targets = item.Targets is null ? "-" : FormatVector(item.Targets);
+            builder.AppendLine($"{(item.Index + 1).ToString(CultureInfo.InvariantCulture),-4} {TrimToWidth(item.Label, 18),-18} {TrimToWidth(outputs, 24),-24} {TrimToWidth(targets, 24),-24} {FormatNumber(item.Error)}");
+        }
+
+        builder.AppendLine("```");
+        return builder.ToString();
+    }
+
+    private static string FormatVector(IEnumerable<double> values)
+    {
+        return string.Join(" ", values.Select(FormatNumber));
+    }
+
+    private static string TrimToWidth(string value, int width)
+    {
+        return value.Length <= width ? value : value[..Math.Max(0, width - 1)] + "…";
+    }
+
+    private static string EscapeMarkdown(string value)
+    {
+        return value.Replace("`", "\\`", StringComparison.Ordinal);
+    }
+
     private void EnsurePatternsAvailable()
     {
         if (_patterns.Examples.Count == 0)
@@ -1604,23 +1680,30 @@ public partial class MainWindow : Window
         }
     }
 
-    private string BuildSingleResultText(TestResult result)
+    private string BuildSingleResultMarkdown(TestResult result)
     {
-        var builder = new System.Text.StringBuilder();
-        builder.AppendLine($"Pattern: {result.Index + 1} - {result.Label}");
-        builder.AppendLine($"Inputs:  {string.Join(" ", result.Inputs.Select(FormatNumber))}");
-        builder.AppendLine($"Outputs: {string.Join(" ", result.Outputs.Select(FormatNumber))}");
+        var builder = new StringBuilder();
+        builder.AppendLine("## Test one");
+        builder.AppendLine();
+        builder.AppendLine($"- Pattern: `{result.Index + 1}`");
+        builder.AppendLine($"- Label: `{EscapeMarkdown(result.Label)}`");
+        builder.AppendLine($"- Error: `{FormatNumber(result.Error)}`");
+        builder.AppendLine();
+        builder.AppendLine("```text");
+        builder.AppendLine("Field    Values");
+        builder.AppendLine($"Inputs   {FormatVector(result.Inputs)}");
+        builder.AppendLine($"Outputs  {FormatVector(result.Outputs)}");
         if (result.Targets is not null)
         {
-            builder.AppendLine($"Targets: {string.Join(" ", result.Targets.Select(FormatNumber))}");
+            builder.AppendLine($"Targets  {FormatVector(result.Targets)}");
         }
 
         if (result.HiddenActivations.Length > 0)
         {
-            builder.AppendLine($"Hidden:  {string.Join(" ", result.HiddenActivations.Select(FormatNumber))}");
+            builder.AppendLine($"Hidden   {FormatVector(result.HiddenActivations)}");
         }
 
-        builder.AppendLine($"Error:   {FormatNumber(result.Error)}");
+        builder.AppendLine("```");
         return builder.ToString();
     }
 
