@@ -37,48 +37,48 @@
     </Window.Styles>
 
     <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New Project" Click="NewProject_Click" />
-                <MenuItem Header="_Load Project" Click="LoadProject_Click" />
-                <MenuItem Header="_Save Project" Click="SaveProject_Click" />
-                <MenuItem Header="Save Project _As" Click="SaveProjectAs_Click" />
-                <Separator />
-                <MenuItem Header="E_xit" Click="Exit_Click" />
-            </MenuItem>
-        </Menu>
+        <Border DockPanel.Dock="Top"
+                Classes="card"
+                Margin="20,20,20,0"
+                Padding="12">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto"
+                  ColumnSpacing="10">
+                <Button Grid.Column="0"
+                        Classes="action"
+                        Content="✚ New"
+                        Click="NewProject_Click" />
+                <Button Grid.Column="1"
+                        Classes="action"
+                        Content="📂 Load"
+                        Click="LoadProject_Click" />
+                <Button Grid.Column="2"
+                        Classes="action"
+                        Content="💾 Save"
+                        Click="SaveProject_Click" />
+                <Button Grid.Column="3"
+                        Classes="action"
+                        Content="🖫 Save As"
+                        Click="SaveProjectAs_Click" />
+                <TextBlock Grid.Column="4"
+                           VerticalAlignment="Center"
+                           Text="🕘 Recent" />
+                <ComboBox x:Name="RecentProjectsComboBox"
+                          Grid.Column="5"
+                          Width="280"
+                          SelectionChanged="RecentProjectsComboBox_SelectionChanged" />
+                <TextBlock x:Name="WorkspaceStatusTextBlock"
+                           Grid.Column="7"
+                           Classes="muted"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           Text="Ready." />
+            </Grid>
+        </Border>
 
         <Grid Margin="20"
-              RowDefinitions="Auto,*,6,280"
+              RowDefinitions="*,6,280"
               ColumnDefinitions="2.15*,6,1*">
-            <Border Classes="card"
-                    Grid.ColumnSpan="3"
-                    Padding="18,14">
-                <Grid ColumnDefinitions="*,Auto"
-                      ColumnSpacing="18">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="SignalWeave Modern"
-                                   Classes="title" />
-                        <TextBlock x:Name="ProjectPathTextBlock"
-                                   Classes="muted"
-                                   Text="Project file: unsaved project" />
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1"
-                                HorizontalAlignment="Right"
-                                Spacing="4">
-                        <TextBlock Text="Unified project workflow"
-                                   FontWeight="SemiBold"
-                                   HorizontalAlignment="Right" />
-                        <TextBlock x:Name="WorkspaceStatusTextBlock"
-                                   Classes="muted"
-                                   HorizontalAlignment="Right"
-                                   Text="Ready." />
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="1"
+            <Border Grid.Row="0"
                     Grid.Column="0"
                     Classes="card"
                     Padding="0">
@@ -104,7 +104,7 @@
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Row="1"
+            <GridSplitter Grid.Row="0"
                           Grid.Column="1"
                           Width="6"
                           HorizontalAlignment="Stretch"
@@ -113,7 +113,7 @@
                           Background="#D7CCBD"
                           ShowsPreview="True" />
 
-            <Border Grid.Row="1"
+            <Border Grid.Row="0"
                     Grid.Column="2"
                     Classes="card"
                     Padding="0">
@@ -441,7 +441,7 @@
                 </TabControl>
             </Border>
 
-            <GridSplitter Grid.Row="2"
+            <GridSplitter Grid.Row="1"
                           Grid.ColumnSpan="3"
                           Height="6"
                           VerticalAlignment="Stretch"
@@ -450,7 +450,7 @@
                           Background="#D7CCBD"
                           ShowsPreview="True" />
 
-            <Grid Grid.Row="3"
+            <Grid Grid.Row="2"
                   Grid.ColumnSpan="3"
                   ColumnDefinitions="1.7*,6,1.2*">
                 <Border Classes="card"
