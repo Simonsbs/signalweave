@@ -151,7 +151,11 @@ public partial class MainWindow : Window
 
     private void UpdateTopologyControlState()
     {
-        if (NetworkKindComboBox is null)
+        if (NetworkKindComboBox is null ||
+            HiddenUnitsSlider is null ||
+            SecondHiddenUnitsSlider is null ||
+            HiddenBiasCheckBox is null ||
+            SecondHiddenBiasCheckBox is null)
         {
             return;
         }
@@ -221,6 +225,14 @@ public partial class MainWindow : Window
 
     private void UpdateSliderValueLabels()
     {
+        if (InputUnitsValueTextBlock is null ||
+            HiddenUnitsValueTextBlock is null ||
+            SecondHiddenUnitsValueTextBlock is null ||
+            OutputUnitsValueTextBlock is null)
+        {
+            return;
+        }
+
         InputUnitsValueTextBlock.Text = ReadSliderValue(InputUnitsSlider).ToString(CultureInfo.InvariantCulture);
         HiddenUnitsValueTextBlock.Text = ReadSliderValue(HiddenUnitsSlider).ToString(CultureInfo.InvariantCulture);
         SecondHiddenUnitsValueTextBlock.Text = ReadSliderValue(SecondHiddenUnitsSlider).ToString(CultureInfo.InvariantCulture);
@@ -1342,8 +1354,13 @@ public partial class MainWindow : Window
         return $"-{FormatNumber(range)} - {FormatNumber(range)}";
     }
 
-    private static int ReadSliderValue(Slider slider)
+    private static int ReadSliderValue(Slider? slider)
     {
+        if (slider is null)
+        {
+            return 0;
+        }
+
         return (int)Math.Round(slider.Value, MidpointRounding.AwayFromZero);
     }
 
