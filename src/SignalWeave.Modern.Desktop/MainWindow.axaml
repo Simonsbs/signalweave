@@ -49,12 +49,10 @@
         </Menu>
 
         <Grid Margin="20"
-              RowDefinitions="Auto,*,280"
-              ColumnDefinitions="2.15*,1*"
-              RowSpacing="18"
-              ColumnSpacing="18">
+              RowDefinitions="Auto,*,6,280"
+              ColumnDefinitions="2.15*,6,1*">
             <Border Classes="card"
-                    Grid.ColumnSpan="2"
+                    Grid.ColumnSpan="3"
                     Padding="18,14">
                 <Grid ColumnDefinitions="*,Auto"
                       ColumnSpacing="18">
@@ -81,6 +79,7 @@
             </Border>
 
             <Border Grid.Row="1"
+                    Grid.Column="0"
                     Classes="card"
                     Padding="0">
                 <Grid RowDefinitions="Auto,*"
@@ -100,12 +99,22 @@
                     <Canvas Grid.Row="1"
                             x:Name="NetworkGraphCanvas"
                             Background="#FFF9F1"
+                            ClipToBounds="True"
                             MinHeight="520" />
                 </Grid>
             </Border>
 
+            <GridSplitter Grid.Row="1"
+                          Grid.Column="1"
+                          Width="6"
+                          HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D7CCBD"
+                          ShowsPreview="True" />
+
             <Border Grid.Row="1"
-                    Grid.Column="1"
+                    Grid.Column="2"
                     Classes="card"
                     Padding="0">
                 <TabControl x:Name="ControlTabs"
@@ -268,6 +277,57 @@
                         </Grid>
                     </TabItem>
 
+                    <TabItem Header="Summary">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <Grid Margin="16"
+                                  RowDefinitions="Auto,Auto,*"
+                                  RowSpacing="14">
+                                <TextBlock Text="Summary and weights"
+                                           Classes="section" />
+
+                                <TextBlock Grid.Row="1"
+                                           x:Name="LatestRunSummaryTextBlock"
+                                           Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="No run executed yet." />
+
+                                <Grid Grid.Row="2"
+                                      RowDefinitions="Auto,*"
+                                      RowSpacing="12">
+                                    <Grid ColumnDefinitions="1.1*,1*"
+                                          ColumnSpacing="16">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="Project summary"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock x:Name="ProjectSummaryTextBlock"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1"
+                                                    Spacing="6">
+                                            <TextBlock Text="Weights"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock x:Name="WeightsSummaryTextBlock"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border Grid.Row="1"
+                                            BorderBrush="#D7CCBD"
+                                            BorderThickness="1"
+                                            Padding="12">
+                                        <TextBlock x:Name="ProjectStateTextBlock"
+                                                   Classes="muted"
+                                                   TextWrapping="Wrap"
+                                                   Text="Save the project to persist the current network settings, weights, and control-panel state." />
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </ScrollViewer>
+                    </TabItem>
+
                     <TabItem Header="Patterns">
                         <Border Background="#FFFDF9"
                                 Padding="0">
@@ -289,11 +349,20 @@
                 </TabControl>
             </Border>
 
-            <Grid Grid.Row="2"
-                  Grid.ColumnSpan="2"
-                  ColumnDefinitions="1.5*,1*,1.1*"
-                  ColumnSpacing="18">
+            <GridSplitter Grid.Row="2"
+                          Grid.ColumnSpan="3"
+                          Height="6"
+                          VerticalAlignment="Stretch"
+                          ResizeDirection="Rows"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D7CCBD"
+                          ShowsPreview="True" />
+
+            <Grid Grid.Row="3"
+                  Grid.ColumnSpan="3"
+                  ColumnDefinitions="1.7*,6,1.2*">
                 <Border Classes="card"
+                        Grid.Column="0"
                         Padding="0">
                     <Grid RowDefinitions="Auto,*"
                           RowSpacing="10"
@@ -315,56 +384,13 @@
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="1"
-                        Classes="card"
-                        Padding="0">
-                    <Grid RowDefinitions="Auto,Auto,*"
-                          RowSpacing="14"
-                          Margin="16">
-                        <TextBlock Text="Summary and weights"
-                                   Classes="section" />
-
-                        <TextBlock Grid.Row="1"
-                                   x:Name="LatestRunSummaryTextBlock"
-                                   Classes="muted"
-                                   TextWrapping="Wrap"
-                                   Text="No run executed yet." />
-
-                        <Grid Grid.Row="2"
-                              RowDefinitions="Auto,*"
-                              RowSpacing="12">
-                            <Grid ColumnDefinitions="1.1*,1*"
-                                  ColumnSpacing="16">
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="Project summary"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock x:Name="ProjectSummaryTextBlock"
-                                               Classes="muted"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="1"
-                                            Spacing="6">
-                                    <TextBlock Text="Weights"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock x:Name="WeightsSummaryTextBlock"
-                                               Classes="muted"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Grid>
-
-                            <Border Grid.Row="1"
-                                    BorderBrush="#D7CCBD"
-                                    BorderThickness="1"
-                                    Padding="12">
-                                <TextBlock x:Name="ProjectStateTextBlock"
-                                           Classes="muted"
-                                           TextWrapping="Wrap"
-                                           Text="Save the project to persist the current network settings, weights, and control-panel state." />
-                            </Border>
-                        </Grid>
-                    </Grid>
-                </Border>
+                <GridSplitter Grid.Column="1"
+                              Width="6"
+                              HorizontalAlignment="Stretch"
+                              ResizeDirection="Columns"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="#D7CCBD"
+                              ShowsPreview="True" />
 
                 <Border Grid.Column="2"
                         Classes="card"
@@ -377,6 +403,7 @@
 
                         <Canvas Grid.Row="1"
                                 x:Name="ErrorPlotCanvas"
+                                ClipToBounds="True"
                                 MinHeight="220"
                                 Background="#FFF9F1" />
                     </Grid>

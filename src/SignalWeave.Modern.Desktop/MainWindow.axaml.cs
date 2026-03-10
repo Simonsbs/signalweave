@@ -807,8 +807,8 @@ public partial class MainWindow : Window
 
         ErrorPlotCanvas.Children.Clear();
 
-        var width = Math.Max(ErrorPlotCanvas.Bounds.Width, 320);
-        var height = Math.Max(ErrorPlotCanvas.Bounds.Height, 160);
+        var width = Math.Max(ErrorPlotCanvas.Bounds.Width, 200);
+        var height = Math.Max(ErrorPlotCanvas.Bounds.Height, 140);
         var left = 40.0;
         var top = 14.0;
         var right = width - 14.0;
@@ -867,12 +867,12 @@ public partial class MainWindow : Window
         {
             var dot = new Ellipse
             {
-                Width = 3,
-                Height = 3,
+                Width = 2,
+                Height = 2,
                 Fill = Brush.Parse("#B31B1B")
             };
-            Canvas.SetLeft(dot, point.X - 1.5);
-            Canvas.SetTop(dot, point.Y - 1.5);
+            Canvas.SetLeft(dot, point.X - 1);
+            Canvas.SetTop(dot, point.Y - 1);
             ErrorPlotCanvas.Children.Add(dot);
         }
     }
@@ -891,16 +891,19 @@ public partial class MainWindow : Window
             return;
         }
 
-        var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 620);
-        var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 280);
-        var top = 24.0;
-        var bottom = canvasHeight - 24.0;
-        var left = 94.0;
-        var right = canvasWidth - 24.0;
+        var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 220);
+        var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 180);
+        var top = 20.0;
+        var bottom = canvasHeight - 18.0;
+        var labelGutter = Math.Min(58.0, Math.Max(34.0, canvasWidth * 0.12));
+        var left = labelGutter + 10.0;
+        var right = canvasWidth - 14.0;
         var rows = BuildGraphRows(_definition, _diagramResult);
-        var rowGap = rows.Count == 1 ? 0.0 : (bottom - top) / (rows.Count - 1);
+        var availableHeight = Math.Max(bottom - top, 40.0);
+        var rowGap = rows.Count == 1 ? 0.0 : availableHeight / (rows.Count - 1);
         var maxNodesInRow = Math.Max(rows.Max(row => row.Values.Length), 1);
-        var nodeSize = Math.Clamp(Math.Min((right - left) / (maxNodesInRow + 0.6), rowGap * 0.62), 24.0, 58.0);
+        var availableWidth = Math.Max(right - left, 48.0);
+        var nodeSize = Math.Clamp(Math.Min(availableWidth / (maxNodesInRow + 1.0), rowGap * 0.56), 12.0, 54.0);
         var graphRows = new List<List<GraphNode>>(rows.Count);
 
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
@@ -911,27 +914,28 @@ public partial class MainWindow : Window
             {
                 Text = row.Label,
                 Foreground = Brush.Parse("#6A6258"),
-                FontSize = 11
+                FontSize = Math.Max(9, Math.Min(11, nodeSize * 0.28))
             };
             Canvas.SetLeft(title, 10);
             Canvas.SetTop(title, y - 8);
             NetworkGraphCanvas.Children.Add(title);
 
-            var usableWidth = Math.Max(right - left, nodeSize);
+            var biasReservedWidth = row.HasBias ? (nodeSize * 1.05) : 0.0;
+            var usableWidth = Math.Max(right - left - biasReservedWidth, nodeSize);
             var count = Math.Max(row.Values.Length, 1);
             var spacing = count == 1 ? 0.0 : (usableWidth - nodeSize) / (count - 1);
-            var rowLeft = left + ((usableWidth - ((count - 1) * spacing + nodeSize)) / 2.0);
+            var rowLeft = left + biasReservedWidth + ((usableWidth - ((count - 1) * spacing + nodeSize)) / 2.0);
             var nodes = new List<GraphNode>(row.Values.Length + (row.HasBias ? 1 : 0));
 
             if (row.HasBias)
             {
-                nodes.Add(new GraphNode(left - (nodeSize * 1.18), y, nodeSize * 0.78, 1.0, "B"));
+                nodes.Add(new GraphNode(left, y, nodeSize * 0.74, 1.0, "B"));
             }
 
             for (var index = 0; index < row.Values.Length; index++)
             {
                 var x = count == 1
-                    ? left + ((usableWidth - nodeSize) / 2.0)
+                    ? rowLeft
                     : rowLeft + (spacing * index);
                 nodes.Add(new GraphNode(x, y, nodeSize, row.Values[index], row.ValueLabels[index]));
             }
@@ -1024,7 +1028,7 @@ public partial class MainWindow : Window
                 Opacity = 0.66
             };
             Canvas.SetLeft(loop, node.CenterX - (loop.Width / 2.0));
-            Canvas.SetTop(loop, node.CenterY - (node.Size * 0.82));
+            Canvas.SetTop(loop, Math.Max(2, node.CenterY - (node.Size * 0.82)));
             NetworkGraphCanvas!.Children.Add(loop);
         }
     }
