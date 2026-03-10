@@ -2059,8 +2059,11 @@ public partial class MainWindow : Window
             return;
         }
 
+        UpdateWeightLegend(definition);
+
         var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 180);
         var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 140);
+        var showActivationValues = _diagramResult is not null;
         var rows = BuildGraphRows(definition, _diagramResult);
         var maxNodesInRow = Math.Max(rows.Max(row => row.Values.Length), 1);
         var labelGutter = Math.Clamp(canvasWidth * 0.11, 28.0, 56.0);
@@ -2101,7 +2104,7 @@ public partial class MainWindow : Window
 
             if (row.HasBias)
             {
-                nodes.Add(new GraphNode(left, y, nodeSize * 0.74, 1.0, "B"));
+                nodes.Add(new GraphNode(left, y, nodeSize * 0.74, 1.0, "B", "B", true));
             }
 
             for (var index = 0; index < row.Values.Length; index++)
@@ -2109,7 +2112,9 @@ public partial class MainWindow : Window
                 var x = count == 1
                     ? rowLeft
                     : rowLeft + (spacing * index);
-                nodes.Add(new GraphNode(x, y, nodeSize, row.Values[index], row.ValueLabels[index]));
+                var idLabel = row.ValueLabels[index];
+                var valueText = showActivationValues ? FormatGraphValue(row.Values[index]) : idLabel;
+                nodes.Add(new GraphNode(x, y, nodeSize, row.Values[index], idLabel, valueText, false));
             }
 
             graphRows.Add(nodes);
@@ -2210,6 +2215,7 @@ public partial class MainWindow : Window
 
     private void DrawGraphNode(GraphNode node)
     {
+        var top = node.CenterY - (node.Size / 2.0);
         var shape = new Rectangle
         {
             Width = node.Size,
@@ -2218,19 +2224,40 @@ public partial class MainWindow : Window
             RadiusY = node.IsBias ? 4 : node.Size * 0.18,
             Fill = node.IsBias
                 ? Brush.Parse("#E7DED0")
-                : new SolidColorBrush(GetActivationColor(node.Activation)),
+                : Brush.Parse("#FFF9F1"),
             Stroke = Brush.Parse("#3C372F"),
             StrokeThickness = 1.05
         };
 
         Canvas.SetLeft(shape, node.X);
-        Canvas.SetTop(shape, node.CenterY - (node.Size / 2.0));
+        Canvas.SetTop(shape, top);
         NetworkGraphCanvas!.Children.Add(shape);
+
+        if (!node.IsBias)
+        {
+            var clampedActivation = Math.Clamp(node.Activation, 0.0, 1.0);
+            var fillHeight = Math.Max(0, (node.Size - 2.0) * clampedActivation);
+            if (fillHeight > 0.0)
+            {
+                var fill = new Rectangle
+                {
+                    Width = Math.Max(0, node.Size - 2.0),
+                    Height = fillHeight,
+                    RadiusX = node.Size * 0.12,
+                    RadiusY = node.Size * 0.12,
+                    Fill = Brush.Parse("#4D9A57"),
+                    ClipToBounds = true
+                };
+                Canvas.SetLeft(fill, node.X + 1.0);
+                Canvas.SetTop(fill, top + node.Size - 1.0 - fillHeight);
+                NetworkGraphCanvas.Children.Add(fill);
+            }
+        }
 
         var label = new TextBlock
         {
-            Text = node.Label,
-            FontSize = Math.Max(10, node.Size * 0.2),
+            Text = node.DisplayText,
+            FontSize = Math.Max(9, node.Size * 0.18),
             FontWeight = FontWeight.SemiBold,
             Foreground = Brush.Parse("#2A251F")
         };
@@ -2238,6 +2265,20 @@ public partial class MainWindow : Window
         Canvas.SetLeft(label, node.CenterX - (label.DesiredSize.Width / 2.0));
         Canvas.SetTop(label, node.CenterY - (label.DesiredSize.Height / 2.0));
         NetworkGraphCanvas.Children.Add(label);
+
+        if (!node.IsBias && node.DisplayText != node.IdLabel)
+        {
+            var idLabel = new TextBlock
+            {
+                Text = node.IdLabel,
+                FontSize = Math.Max(8, node.Size * 0.12),
+                Foreground = Brush.Parse("#6A6258")
+            };
+            idLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(idLabel, node.CenterX - (idLabel.DesiredSize.Width / 2.0));
+            Canvas.SetTop(idLabel, Math.Max(0, top - idLabel.DesiredSize.Height - 2.0));
+            NetworkGraphCanvas.Children.Add(idLabel);
+        }
     }
 
     private IReadOnlyList<GraphRow> BuildGraphRows(NetworkDefinition definition, TestResult? diagramResult)
@@ -2303,11 +2344,28 @@ public partial class MainWindow : Window
         return Color.FromRgb(red, green, blue);
     }
 
+    private void UpdateWeightLegend(NetworkDefinition definition)
+    {
+        if (WeightLegendMinTextBlock is null || WeightLegendMaxTextBlock is null || WeightLegendZeroTextBlock is null)
+        {
+            return;
+        }
+
+        var range = definition.RandomWeightRange;
+        WeightLegendMinTextBlock.Text = $"-{FormatGraphValue(range)}";
+        WeightLegendZeroTextBlock.Text = "0";
+        WeightLegendMaxTextBlock.Text = FormatGraphValue(range);
+    }
+
+    private static string FormatGraphValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
     private sealed record GraphRow(string Label, double[] Values, string[] ValueLabels, bool HasBias);
 
-    private sealed record GraphNode(double X, double CenterY, double Size, double Activation, string Label)
+    private sealed record GraphNode(double X, double CenterY, double Size, double Activation, string IdLabel, string DisplayText, bool IsBias)
     {
-        public bool IsBias => string.Equals(Label, "B", StringComparison.Ordinal);
         public double CenterX => X + (Size / 2.0);
     }
 

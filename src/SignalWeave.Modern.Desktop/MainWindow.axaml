@@ -82,7 +82,7 @@
                     Grid.Column="0"
                     Classes="card"
                     Padding="0">
-                <Grid RowDefinitions="Auto,*"
+                <Grid RowDefinitions="Auto,*,Auto"
                       RowSpacing="10"
                       Margin="16">
                     <Grid ColumnDefinitions="*,Auto"
@@ -101,6 +101,39 @@
                             Background="#FFF9F1"
                             ClipToBounds="True"
                             MinHeight="220" />
+
+                    <Grid Grid.Row="2"
+                          ColumnDefinitions="Auto,*,Auto,Auto"
+                          ColumnSpacing="10"
+                          VerticalAlignment="Center">
+                        <TextBlock x:Name="WeightLegendMinTextBlock"
+                                   Classes="muted"
+                                   VerticalAlignment="Center"
+                                   Text="-1.0" />
+                        <Border Grid.Column="1"
+                                Height="12"
+                                CornerRadius="3"
+                                BorderBrush="#3C372F"
+                                BorderThickness="1">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                    <GradientStop Offset="0.0" Color="#C13A3A" />
+                                    <GradientStop Offset="0.5" Color="#111111" />
+                                    <GradientStop Offset="1.0" Color="#2F9B57" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <TextBlock x:Name="WeightLegendZeroTextBlock"
+                                   Grid.Column="2"
+                                   Classes="muted"
+                                   VerticalAlignment="Center"
+                                   Text="0" />
+                        <TextBlock x:Name="WeightLegendMaxTextBlock"
+                                   Grid.Column="3"
+                                   Classes="muted"
+                                   VerticalAlignment="Center"
+                                   Text="1.0" />
+                    </Grid>
                 </Grid>
             </Border>
 
