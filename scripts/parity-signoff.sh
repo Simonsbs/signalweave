@@ -30,13 +30,13 @@ done < <(find "$PROBE_DIR/examples" -maxdepth 1 -name '*.bppr' | sort)
 
 echo "[5/5] Publishing desktop bundles"
 for rid in "${RIDS[@]}"; do
-    publish_dir="$ARTIFACTS_DIR/signalweave-desktop-$rid"
-    archive_path="$ARTIFACTS_DIR/signalweave-desktop-$rid.zip"
+    publish_dir="$ARTIFACTS_DIR/signalweave-classic-desktop-$rid"
+    archive_path="$ARTIFACTS_DIR/signalweave-classic-desktop-$rid.zip"
     echo "  - $rid"
     rm -rf "$publish_dir"
     rm -f "$archive_path"
     dotnet publish \
-        "$ROOT_DIR/src/SignalWeave.Desktop/SignalWeave.Desktop.csproj" \
+        "$ROOT_DIR/src/SignalWeave.Classic.Desktop/SignalWeave.Classic.Desktop.csproj" \
         -c Release \
         -r "$rid" \
         --self-contained true \
@@ -53,6 +53,6 @@ echo
 echo "Parity sign-off completed successfully."
 echo "Published desktop bundles:"
 for rid in "${RIDS[@]}"; do
-    echo "  - $ARTIFACTS_DIR/signalweave-desktop-$rid"
-    echo "  - $ARTIFACTS_DIR/signalweave-desktop-$rid.zip"
+    echo "  - $ARTIFACTS_DIR/signalweave-classic-desktop-$rid"
+    echo "  - $ARTIFACTS_DIR/signalweave-classic-desktop-$rid.zip"
 done

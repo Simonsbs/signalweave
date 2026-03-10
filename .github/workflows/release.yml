@@ -3,14 +3,82 @@ name: release
 on:
   push:
     tags:
-      - "v*"
+      - "classic-v*"
+      - "modern-v*"
   workflow_dispatch:
+    inputs:
+      product:
+        description: Product line to publish
+        required: true
+        type: choice
+        options:
+          - classic
+          - modern
+      version:
+        description: Version label for workflow-dispatch publishes
+        required: false
+        default: dev
+        type: string
 
 permissions:
   contents: write
 
 jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      product: ${{ steps.meta.outputs.product }}
+      version: ${{ steps.meta.outputs.version }}
+      project_path: ${{ steps.meta.outputs.project_path }}
+      artifact_prefix: ${{ steps.meta.outputs.artifact_prefix }}
+      release_name: ${{ steps.meta.outputs.release_name }}
+      is_tag_release: ${{ steps.meta.outputs.is_tag_release }}
+
+    steps:
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            product="${{ github.event.inputs.product }}"
+            version="${{ github.event.inputs.version }}"
+            is_tag_release="false"
+          else
+            ref_name="${GITHUB_REF_NAME}"
+            is_tag_release="true"
+            if [[ "$ref_name" == classic-v* ]]; then
+              product="classic"
+              version="${ref_name#classic-v}"
+            elif [[ "$ref_name" == modern-v* ]]; then
+              product="modern"
+              version="${ref_name#modern-v}"
+            else
+              echo "Unsupported release tag: $ref_name" >&2
+              exit 1
+            fi
+          fi
+
+          if [[ "$product" == "classic" ]]; then
+            project_path="src/SignalWeave.Classic.Desktop/SignalWeave.Classic.Desktop.csproj"
+            artifact_prefix="signalweave-classic-desktop"
+            release_name="SignalWeave Classic v$version"
+          else
+            project_path="src/SignalWeave.Modern.Desktop/SignalWeave.Modern.Desktop.csproj"
+            artifact_prefix="signalweave-modern-desktop"
+            release_name="SignalWeave Modern v$version"
+          fi
+
+          {
+            echo "product=$product"
+            echo "version=$version"
+            echo "project_path=$project_path"
+            echo "artifact_prefix=$artifact_prefix"
+            echo "release_name=$release_name"
+            echo "is_tag_release=$is_tag_release"
+          } >> "$GITHUB_OUTPUT"
+
   publish:
+    needs: metadata
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -18,16 +86,12 @@ jobs:
         include:
           - os: ubuntu-latest
             rid: linux-x64
-            artifact_name: signalweave-desktop-linux-x64
           - os: windows-latest
             rid: win-x64
-            artifact_name: signalweave-desktop-win-x64
           - os: macos-latest
             rid: osx-x64
-            artifact_name: signalweave-desktop-osx-x64
           - os: macos-latest
             rid: osx-arm64
-            artifact_name: signalweave-desktop-osx-arm64
 
     steps:
       - name: Checkout
@@ -42,13 +106,13 @@ jobs:
         run: dotnet restore SignalWeave.sln
 
       - name: Publish desktop
-        run: dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=false --output artifacts/${{ matrix.artifact_name }}
+        run: dotnet publish ${{ needs.metadata.outputs.project_path }} --configuration Release --runtime ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=false --output artifacts/${{ needs.metadata.outputs.artifact_prefix }}-${{ matrix.rid }}
 
       - name: Archive desktop bundle
         shell: pwsh
         run: |
-          $source = "artifacts/${{ matrix.artifact_name }}"
-          $destination = "artifacts/${{ matrix.artifact_name }}.zip"
+          $source = "artifacts/${{ needs.metadata.outputs.artifact_prefix }}-${{ matrix.rid }}"
+          $destination = "artifacts/${{ needs.metadata.outputs.artifact_prefix }}-${{ matrix.rid }}.zip"
           if (Test-Path $destination) {
             Remove-Item $destination -Force
           }
@@ -57,12 +121,14 @@ jobs:
       - name: Upload bundle artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: artifacts/${{ matrix.artifact_name }}.zip
+          name: ${{ needs.metadata.outputs.artifact_prefix }}-${{ matrix.rid }}
+          path: artifacts/${{ needs.metadata.outputs.artifact_prefix }}-${{ matrix.rid }}.zip
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: publish
+    if: needs.metadata.outputs.is_tag_release == 'true'
+    needs:
+      - metadata
+      - publish
     runs-on: ubuntu-latest
 
     steps:
@@ -74,4 +140,5 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ needs.metadata.outputs.release_name }}
           files: release-artifacts/**/*.zip

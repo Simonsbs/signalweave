@@ -56,11 +56,19 @@ Deliberate differences:
 - legacy BasicProp file compatibility is out of scope by project decision
 - SignalWeave uses native `signalweave-project/v1` and `signalweave-checkpoint/v1` formats instead of the retired BasicProp file formats
 
+## Product lines
+
+- `Classic`: the current BasicProp-style desktop experience in `src/SignalWeave.Classic.Desktop`
+- `Modern`: a separate desktop product line for the next workflow/UI in `src/SignalWeave.Modern.Desktop`
+
+Both apps share the same engine and general logic through `src/SignalWeave.Core`.
+
 ## Projects
 
 - `src/SignalWeave.Core`: parsers, engine, clustering, sample assets
 - `src/SignalWeave.Cli`: terminal workflow
-- `src/SignalWeave.Desktop`: Avalonia desktop app
+- `src/SignalWeave.Classic.Desktop`: BasicProp-style Avalonia desktop app
+- `src/SignalWeave.Modern.Desktop`: new product-line Avalonia desktop app
 - `tests/SignalWeave.Core.Tests`: parser and trainer tests
 
 ## CLI examples
@@ -80,10 +88,11 @@ dotnet run --project src/SignalWeave.Cli -- summary --checkpoint xor.swcheckpoin
 ## Desktop
 
 ```bash
-dotnet run --project src/SignalWeave.Desktop
+dotnet run --project src/SignalWeave.Classic.Desktop
+dotnet run --project src/SignalWeave.Modern.Desktop
 ```
 
-The desktop app ships with built-in XOR and SRN demos and now exposes a BasicProp-like workflow surface:
+The Classic desktop app ships with built-in XOR and SRN demos and now exposes a BasicProp-like workflow surface:
 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
 - startup with a default feed-forward network, no loaded patterns, and the original BasicProp-style prompt to load patterns before running simulations
@@ -141,16 +150,19 @@ The desktop app ships with built-in XOR and SRN demos and now exposes a BasicPro
 ## Release automation
 
 - `.github/workflows/ci.yml` runs restore, release build, and core tests on Linux, Windows, and macOS.
-- `.github/workflows/release.yml` publishes self-contained desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`, uploads them as workflow artifacts, and attaches them to GitHub releases for `v*` tags.
+- `.github/workflows/release.yml` publishes self-contained bundles for either the `Classic` or `Modern` desktop line depending on the release tag prefix.
+- release tags are product-specific:
+  - `classic-vX.Y.Z`
+  - `modern-vX.Y.Z`
 - the GitHub `release` workflow is now verified from a successful remote `workflow_dispatch` publish-matrix run: `22874465646`
-- `scripts/parity-signoff.sh` is the local release-gate command: it builds the solution, runs the core parity tests, compiles and executes every checked-in BasicProp probe, then publishes and archives the desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`.
+- `scripts/parity-signoff.sh` is the local release-gate command for the `Classic` line: it builds the solution, runs the core parity tests, compiles and executes every checked-in BasicProp probe, then publishes and archives the Classic desktop bundles for `linux-x64`, `win-x64`, `osx-x64`, and `osx-arm64`.
 - validated local publish examples:
 
 ```bash
-dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r linux-x64 --self-contained true -o artifacts/signalweave-desktop-linux-x64
-dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/signalweave-desktop-win-x64
-dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r osx-x64 --self-contained true -o artifacts/signalweave-desktop-osx-x64
-dotnet publish src/SignalWeave.Desktop/SignalWeave.Desktop.csproj -c Release -r osx-arm64 --self-contained true -o artifacts/signalweave-desktop-osx-arm64
+dotnet publish src/SignalWeave.Classic.Desktop/SignalWeave.Classic.Desktop.csproj -c Release -r linux-x64 --self-contained true -o artifacts/signalweave-classic-desktop-linux-x64
+dotnet publish src/SignalWeave.Classic.Desktop/SignalWeave.Classic.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/signalweave-classic-desktop-win-x64
+dotnet publish src/SignalWeave.Modern.Desktop/SignalWeave.Modern.Desktop.csproj -c Release -r linux-x64 --self-contained true -o artifacts/signalweave-modern-desktop-linux-x64
+dotnet publish src/SignalWeave.Modern.Desktop/SignalWeave.Modern.Desktop.csproj -c Release -r win-x64 --self-contained true -o artifacts/signalweave-modern-desktop-win-x64
 ```
 
 Full local sign-off:
@@ -178,3 +190,4 @@ SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JA
 - `docs/parity-checklist.md`: parity status by engine, UI, and utilities
 - `docs/e2e-backlog.md`: milestone backlog and implementation tasks
 - `docs/signalweave-schema.md`: native project and checkpoint schema definitions
+- `docs/product-lines.md`: Classic/Modern product-line and release strategy

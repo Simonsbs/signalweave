@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - classic-ui
+      - modern-ui
   pull_request:
 
 jobs:
