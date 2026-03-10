@@ -43,6 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private PatternSet? _patternSet;
     private SignalWeaveEngine? _engine;
     private RunResult? _lastRun;
+    private TestResult? _diagramResult;
     private string? _engineSignature;
     private string _patternListCaption = "Untitled";
     private bool _suppressMessageMirror;
@@ -229,6 +230,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             EnsureContext(resetWeights: true);
             _lastRun = null;
+            _diagramResult = null;
             SetUntrainedState();
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
@@ -288,6 +290,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 var result = await Task.Run(() => engine.Train(patternSet, steps, progress));
                 _lastRun = result.FinalRun;
+                _diagramResult = null;
 
                 SetTrainedState(engine.CompletedCycles);
                 HistoryText = BuildHistoryText(result.History);
@@ -320,6 +323,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 var run = await Task.Run(() => engine.TestAll(patternSet));
                 _lastRun = run;
+                _diagramResult = null;
                 ConsoleText = $"Test All: Average per pattern error: {run.DisplayAverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
                 AnalysisText = run.ToTable();
                 WeightsText = BuildWeightsText(engine.Weights);
@@ -355,10 +359,12 @@ public partial class MainWindowViewModel : ViewModelBase
             await WithBusyControllerAsync(ControllerActivity.TestingOne, async () =>
             {
                 var result = await Task.Run(() => engine.TestOne(patternSet, patternIndex));
+                _diagramResult = result;
                 var selectorText = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
                 var resultText = BasicPropDisplayFormatter.FormatPattern(result.Outputs);
                 ConsoleText = $"Pattern: \"{selectorText}\"{Environment.NewLine}Result: \"{resultText}\"";
                 AnalysisText = BuildSinglePatternResult(result);
+                RefreshDiagram();
                 ResultsTabIndex = 0;
             });
         });
@@ -447,6 +453,7 @@ public partial class MainWindowViewModel : ViewModelBase
         RunSafe(() =>
         {
             EnsureContext(resetWeights, syncControlsFromEditor);
+            _diagramResult = null;
             SetUntrainedState();
             HistoryText = "No training history yet.";
             ErrorProgressPoints = "0,132 240,132";
@@ -658,6 +665,32 @@ public partial class MainWindowViewModel : ViewModelBase
             ? BuildHorizontalNodeLane(_definition.SecondHiddenUnits, graphLeft, graphRight, nodeWidth)
             : [];
         var outputXs = BuildHorizontalNodeLane(_definition.OutputUnits, graphLeft, graphRight, nodeWidth);
+        var hasOverlay =
+            _diagramResult is not null &&
+            _diagramResult.Inputs.Length == _definition.InputUnits &&
+            _diagramResult.Outputs.Length == _definition.OutputUnits;
+        var overlayInputs = hasOverlay ? _diagramResult!.Inputs : Array.Empty<double>();
+        var overlayOutputs = hasOverlay ? _diagramResult!.Outputs : Array.Empty<double>();
+        var overlayFirstHidden = Array.Empty<double>();
+        var overlaySecondHidden = Array.Empty<double>();
+        if (hasOverlay && _definition.HiddenUnits > 0)
+        {
+            if (_definition.HasSecondHiddenLayer)
+            {
+                if (_diagramResult!.HiddenActivations.Length >= _definition.HiddenUnits + _definition.SecondHiddenUnits)
+                {
+                    overlayFirstHidden = _diagramResult.HiddenActivations[.._definition.HiddenUnits];
+                    overlaySecondHidden = _diagramResult.HiddenActivations
+                        .Skip(_definition.HiddenUnits)
+                        .Take(_definition.SecondHiddenUnits)
+                        .ToArray();
+                }
+            }
+            else if (_diagramResult!.HiddenActivations.Length >= _definition.HiddenUnits)
+            {
+                overlayFirstHidden = _diagramResult.HiddenActivations[.._definition.HiddenUnits];
+            }
+        }
         var maxWeight = CalculateMaxWeight(_engine.Weights);
         UpdateWeightLegend(maxWeight);
 
@@ -667,19 +700,19 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (_definition.UseInputBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(biasX, inputBiasY, biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(CreateBiasNode(biasX, inputBiasY, biasWidth, biasHeight, hasOverlay));
         }
 
         if (_definition.IsDirectFeedForward)
         {
             for (var index = 0; index < _definition.InputUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(inputXs[index], inputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+                DiagramNodes.Add(CreateValueNode(inputXs[index], inputRowTop, nodeWidth, nodeHeight, overlayInputs, index));
             }
 
             for (var index = 0; index < _definition.OutputUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(outputXs[index], outputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+                DiagramNodes.Add(CreateValueNode(outputXs[index], outputRowTop, nodeWidth, nodeHeight, overlayOutputs, index));
             }
 
             for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
@@ -706,35 +739,35 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (_definition.UseHiddenBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(biasX, hiddenBiasY, biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(CreateBiasNode(biasX, hiddenBiasY, biasWidth, biasHeight, hasOverlay));
         }
 
         if (_definition.HasSecondHiddenLayer && _definition.UseSecondHiddenBias)
         {
-            DiagramNodes.Add(new DiagramNodeItem(biasX, secondHiddenBiasY, biasWidth, biasHeight, "1.000\nBIAS", "#E7E1D5", "#746B5B"));
+            DiagramNodes.Add(CreateBiasNode(biasX, secondHiddenBiasY, biasWidth, biasHeight, hasOverlay));
         }
 
         for (var index = 0; index < _definition.InputUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(inputXs[index], inputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(CreateValueNode(inputXs[index], inputRowTop, nodeWidth, nodeHeight, overlayInputs, index));
         }
 
         for (var index = 0; index < _definition.HiddenUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(hiddenXs[index], hiddenRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(CreateValueNode(hiddenXs[index], hiddenRowTop, nodeWidth, nodeHeight, overlayFirstHidden, index));
         }
 
         if (_definition.HasSecondHiddenLayer)
         {
             for (var index = 0; index < _definition.SecondHiddenUnits; index++)
             {
-                DiagramNodes.Add(new DiagramNodeItem(secondHiddenXs[index], hidden2RowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+                DiagramNodes.Add(CreateValueNode(secondHiddenXs[index], hidden2RowTop, nodeWidth, nodeHeight, overlaySecondHidden, index));
             }
         }
 
         for (var index = 0; index < _definition.OutputUnits; index++)
         {
-            DiagramNodes.Add(new DiagramNodeItem(outputXs[index], outputRowTop, nodeWidth, nodeHeight, string.Empty, "#F4F4F2", "#585858"));
+            DiagramNodes.Add(CreateValueNode(outputXs[index], outputRowTop, nodeWidth, nodeHeight, overlayOutputs, index));
         }
 
         for (var source = 0; source < _engine.Weights.InputHidden.GetLength(0); source++)
@@ -820,6 +853,40 @@ public partial class MainWindowViewModel : ViewModelBase
                     true));
             }
         }
+    }
+
+    private static DiagramNodeItem CreateBiasNode(double x, double y, double width, double height, bool highlighted)
+    {
+        return new DiagramNodeItem(
+            x,
+            y,
+            width,
+            height,
+            "1.000\nBIAS",
+            "#D9D9D9",
+            "#585858",
+            highlighted ? 1.0 : 0.0,
+            "#00E000");
+    }
+
+    private static DiagramNodeItem CreateValueNode(double x, double y, double width, double height, double[] values, int index)
+    {
+        if (index < 0 || index >= values.Length)
+        {
+            return new DiagramNodeItem(x, y, width, height, string.Empty, "#F4F4F2", "#585858", 0.0, "#00E000");
+        }
+
+        var value = Math.Clamp(values[index], 0.0, 1.0);
+        return new DiagramNodeItem(
+            x,
+            y,
+            width,
+            height,
+            value.ToString("0.000", CultureInfo.InvariantCulture),
+            "#D9D9D9",
+            "#585858",
+            value,
+            "#00E000");
     }
 
     private static string BuildNetworkSummary(NetworkDefinition definition, PatternSet patternSet)
@@ -1615,6 +1682,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _patternSet = parsedPatterns;
         _lastRun = null;
+        _diagramResult = null;
         UpdatePatternOptions(parsedPatterns);
         NetworkSummary = BuildNetworkSummary(_definition, parsedPatterns);
         HistoryText = "No training history yet.";
@@ -1648,6 +1716,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _engine = new SignalWeaveEngine(_definition!, weights);
         _engineSignature = BuildSignature(_definition!);
         _lastRun = null;
+        _diagramResult = null;
         SetUntrainedState();
         TrainButtonLabel = "Train";
         WeightsText = BuildWeightsText(_engine.Weights);
@@ -2168,7 +2237,16 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 }
 
-public sealed record DiagramNodeItem(double X, double Y, double Width, double Height, string Label, string Fill, string Stroke);
+public sealed record DiagramNodeItem(
+    double X,
+    double Y,
+    double Width,
+    double Height,
+    string Label,
+    string Fill,
+    string Stroke,
+    double FillFraction,
+    string FillHighlight);
 public sealed record DiagramEdgeItem(string StartPoint, string EndPoint, string Stroke, double Thickness, bool IsRecurrent);
 public sealed record WeightGlyphItem(double X, double Y, double CellWidth, double CellHeight, string CellFill, double EllipseX, double EllipseY, double EllipseWidth, double EllipseHeight, string Fill, string Tooltip);
 public sealed record PatternOutputRow(int Index, string Label, string Inputs, string Targets, string Outputs, string Error);

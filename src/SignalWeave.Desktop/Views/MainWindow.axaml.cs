@@ -287,17 +287,36 @@ public partial class MainWindow : Window
                 BorderThickness = new Thickness(1)
             };
 
-            if (!string.IsNullOrWhiteSpace(node.Label))
+            if (!string.IsNullOrWhiteSpace(node.Label) || node.FillFraction > 0)
             {
-                border.Child = new TextBlock
+                var innerGrid = new Grid();
+
+                if (node.FillFraction > 0)
                 {
-                    Text = node.Label,
-                    TextAlignment = TextAlignment.Center,
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                    FontWeight = FontWeight.SemiBold,
-                    Foreground = Brush.Parse("#4A4A4A")
-                };
+                    innerGrid.Children.Add(new Border
+                    {
+                        Background = Brush.Parse(node.FillHighlight),
+                        Height = Math.Max(0, node.Height - 2) * Math.Clamp(node.FillFraction, 0.0, 1.0),
+                        Margin = new Thickness(1),
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Bottom
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(node.Label))
+                {
+                    innerGrid.Children.Add(new TextBlock
+                    {
+                        Text = node.Label,
+                        TextAlignment = TextAlignment.Center,
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                        FontWeight = FontWeight.SemiBold,
+                        FontSize = Math.Clamp(node.Height * 0.42, 9, 20),
+                        Foreground = Brush.Parse("#202020")
+                    });
+                }
+
+                border.Child = innerGrid;
             }
 
             Canvas.SetLeft(border, node.X);
