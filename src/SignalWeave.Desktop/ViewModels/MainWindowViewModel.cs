@@ -37,7 +37,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly string[] _momentumOptions = ["0", "0.2", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"];
     private readonly string[] _learningStepOptions = ["100", "200", "500", "1000", "2000", "5000", "10000", "20000", "50000", "100000"];
     private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
-    private readonly string[] _errorPlotDisplayModeOptions = ["Line", "Dots"];
+    private readonly string[] _errorPlotDisplayModeOptions = ["Dots", "Line"];
 
     private NetworkDefinition? _definition;
     private PatternSet? _patternSet;
@@ -183,7 +183,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _errorPlotBottomRightLabel = "5000";
 
     [ObservableProperty]
-    private string _selectedErrorPlotDisplayMode = "Line";
+    private string _selectedErrorPlotDisplayMode = "Dots";
 
     private ControllerActivity _controllerActivityState = ControllerActivity.Idle;
 
@@ -1177,38 +1177,17 @@ public partial class MainWindowViewModel : ViewModelBase
         const double top = 8;
         const double width = 226;
         const double height = 108;
-        var sampledHistory = SampleTrainingHistory(history, 220);
         var maxEpoch = Math.Max(1, history[^1].Epoch - 1);
-        var maxY = Math.Max(0.01, sampledHistory.Max(point => point.AverageError));
+        var maxY = Math.Max(0.01, history.Max(point => point.AverageError));
 
         return string.Join(
             " ",
-            sampledHistory.Select(point =>
+            history.Select(point =>
             {
                 var x = left + ((point.Epoch - 1) * width / maxEpoch);
                 var y = top + (height - ((point.AverageError / maxY) * height));
                 return $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
             }));
-    }
-
-    private static IReadOnlyList<TrainingPoint> SampleTrainingHistory(IReadOnlyList<TrainingPoint> history, int maxPoints)
-    {
-        if (history.Count <= maxPoints)
-        {
-            return history;
-        }
-
-        var stride = (double)(history.Count - 1) / (maxPoints - 1);
-        var sampled = new List<TrainingPoint>(maxPoints);
-
-        for (var index = 0; index < maxPoints; index++)
-        {
-            var sourceIndex = (int)Math.Round(index * stride, MidpointRounding.AwayFromZero);
-            sourceIndex = Math.Clamp(sourceIndex, 0, history.Count - 1);
-            sampled.Add(history[sourceIndex]);
-        }
-
-        return sampled;
     }
 
     private void UpdateErrorPlotScale(IReadOnlyList<TrainingPoint> history)

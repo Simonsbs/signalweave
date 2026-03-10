@@ -170,7 +170,7 @@ public partial class MainWindow : Window
         }
 
         var points = ParseErrorPlotPoints(_attachedViewModel.ErrorProgressPoints, left, top, plotWidth, plotHeight);
-        if (points.Count >= 2)
+        if (points.Count > 0)
         {
             if (string.Equals(_attachedViewModel.SelectedErrorPlotDisplayMode, "Dots", StringComparison.OrdinalIgnoreCase))
             {
@@ -178,21 +178,21 @@ public partial class MainWindow : Window
                 {
                     var dot = new Ellipse
                     {
-                        Width = 4,
-                        Height = 4,
-                        Fill = Brush.Parse("#4E7396")
+                        Width = 2,
+                        Height = 2,
+                        Fill = Brush.Parse("#FF2A2A")
                     };
-                    Canvas.SetLeft(dot, point.X - 2);
-                    Canvas.SetTop(dot, point.Y - 2);
+                    Canvas.SetLeft(dot, point.X - 1);
+                    Canvas.SetTop(dot, point.Y - 1);
                     ErrorPlotCanvas.Children.Add(dot);
                 }
             }
-            else
+            else if (points.Count >= 2)
             {
                 ErrorPlotCanvas.Children.Add(new Polyline
                 {
                     Points = points,
-                    Stroke = Brush.Parse("#4E7396"),
+                    Stroke = Brush.Parse("#FF2A2A"),
                     StrokeThickness = 2
                 });
             }
