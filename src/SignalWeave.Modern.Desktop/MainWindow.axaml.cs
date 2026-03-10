@@ -19,6 +19,12 @@ namespace SignalWeave.Modern.Desktop;
 
 public partial class MainWindow : Window
 {
+    private const double PatternLabelColumnWidth = 120;
+    private const double PatternResetColumnWidth = 56;
+    private const double PatternBinaryCellWidth = 38;
+    private const double PatternSeparatorColumnWidth = 12;
+    private const double PatternDeleteColumnWidth = 42;
+
     private readonly string[] _learningRateOptions = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.8", "1.0"];
     private readonly string[] _momentumOptions = ["0.0", "0.2", "0.5", "0.8", "0.9"];
     private readonly string[] _learningStepOptions = ["100", "500", "1000", "5000", "10000", "50000"];
@@ -479,7 +485,9 @@ public partial class MainWindow : Window
             Text = text,
             FontWeight = FontWeight.SemiBold,
             Foreground = Brush.Parse("#6A6258"),
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
         };
         Grid.SetColumn(header, column);
         grid.Children.Add(header);
@@ -511,7 +519,7 @@ public partial class MainWindow : Window
         {
             Text = example.Label,
             Tag = new PatternCellTag(rowIndex, PatternCellKind.Label, -1),
-            MinWidth = 92
+            Width = PatternLabelColumnWidth
         };
         labelBox.LostFocus += PatternTableTextBox_LostFocus;
         Grid.SetColumn(labelBox, 0);
@@ -564,7 +572,7 @@ public partial class MainWindow : Window
         var button = new Button
         {
             Content = ToBinaryCellText(value),
-            Width = 38,
+            Width = PatternBinaryCellWidth,
             Height = 30,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
@@ -582,21 +590,21 @@ public partial class MainWindow : Window
     {
         var columns = new ColumnDefinitions
         {
-            new ColumnDefinition(GridLength.Auto),
-            new ColumnDefinition(GridLength.Auto)
+            new ColumnDefinition(PatternLabelColumnWidth, GridUnitType.Pixel),
+            new ColumnDefinition(PatternResetColumnWidth, GridUnitType.Pixel)
         };
 
         for (var index = 0; index < inputCount + outputCount; index++)
         {
-            columns.Add(new ColumnDefinition(GridLength.Auto));
+            columns.Add(new ColumnDefinition(PatternBinaryCellWidth, GridUnitType.Pixel));
         }
 
         if (outputCount > 0)
         {
-            columns.Insert(2 + inputCount, new ColumnDefinition(GridLength.Auto));
+            columns.Insert(2 + inputCount, new ColumnDefinition(PatternSeparatorColumnWidth, GridUnitType.Pixel));
         }
 
-        columns.Add(new ColumnDefinition(GridLength.Auto));
+        columns.Add(new ColumnDefinition(PatternDeleteColumnWidth, GridUnitType.Pixel));
         return columns;
     }
 
