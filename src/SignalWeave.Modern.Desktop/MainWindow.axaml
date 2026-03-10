@@ -734,7 +734,7 @@
                                                Classes="section" />
 
                                     <Grid Grid.Row="1"
-                                          ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto"
+                                          ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto,Auto"
                                           ColumnSpacing="10">
                                         <TextBlock Text="Mode"
                                                    VerticalAlignment="Center" />
@@ -765,6 +765,12 @@
                                                 Width="36"
                                                 ToolTip.Tip="Save analysis content"
                                                 Click="SaveAnalysis_Click" />
+                                        <Button x:Name="SaveAnalysisChartButton"
+                                                Grid.Column="7"
+                                                Content="🖼"
+                                                Width="36"
+                                                ToolTip.Tip="Save analysis chart as PNG"
+                                                Click="SaveAnalysisChart_Click" />
                                     </Grid>
 
                                     <Grid Grid.Row="2"
@@ -783,6 +789,39 @@
                                                    VerticalAlignment="Center" />
                                         <ComboBox x:Name="AnalysisTimeSeriesIndexComboBox"
                                                   Grid.Column="3"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
+                                    </Grid>
+
+                                    <Grid Grid.Row="2"
+                                          x:Name="AnalysisSurfaceControlsGrid"
+                                          ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*"
+                                          ColumnSpacing="10"
+                                          IsVisible="False">
+                                        <TextBlock Text="X input"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisSurfaceXComboBox"
+                                                  Grid.Column="1"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
+
+                                        <TextBlock Grid.Column="2"
+                                                   Text="Y input"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisSurfaceYComboBox"
+                                                  Grid.Column="3"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
+
+                                        <TextBlock Grid.Column="4"
+                                                   Text="Z series"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisSurfaceZKindComboBox"
+                                                  Grid.Column="5"
+                                                  SelectionChanged="AnalysisSelectionChanged" />
+
+                                        <TextBlock Grid.Column="6"
+                                                   Text="Index"
+                                                   VerticalAlignment="Center" />
+                                        <ComboBox x:Name="AnalysisSurfaceZIndexComboBox"
+                                                  Grid.Column="7"
                                                   SelectionChanged="AnalysisSelectionChanged" />
                                     </Grid>
 
@@ -810,6 +849,7 @@
                                                    Classes="muted"
                                                    Text="Run a time-series analysis." />
                                         <Border Grid.Row="1"
+                                                x:Name="AnalysisChartBorder"
                                                 BorderBrush="#D7CCBD"
                                                 BorderThickness="1"
                                                 CornerRadius="10"
