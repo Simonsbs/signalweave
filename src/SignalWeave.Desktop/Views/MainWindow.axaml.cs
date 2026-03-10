@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using SignalWeave.Core;
 using SignalWeave.Desktop.ViewModels;
 
@@ -87,6 +88,11 @@ public partial class MainWindow : Window
             nameof(MainWindowViewModel.SelectedErrorPlotDisplayMode))
         {
             RenderErrorPlot();
+        }
+
+        if (e.PropertyName == nameof(MainWindowViewModel.ConsoleText))
+        {
+            ScrollConsoleToEnd();
         }
     }
 
@@ -219,6 +225,33 @@ public partial class MainWindow : Window
         ErrorPlotCanvas.Children.Add(maxLabel);
     }
 
+    private void ScrollConsoleToEnd()
+    {
+        if (ConsoleTextBox is null)
+        {
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ConsoleTextBox is null)
+            {
+                return;
+            }
+
+            var text = ConsoleTextBox.Text ?? string.Empty;
+            ConsoleTextBox.CaretIndex = text.Length;
+            var lastLineIndex = Math.Max(0, text.Split(Environment.NewLine).Length - 1);
+            try
+            {
+                ConsoleTextBox.ScrollToLine(lastLineIndex);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+            }
+        }, DispatcherPriority.Background);
+    }
+
     private static Avalonia.Collections.AvaloniaList<Point> ParseErrorPlotPoints(string pointsText, double left, double top, double width, double height)
     {
         var points = new Avalonia.Collections.AvaloniaList<Point>();
@@ -342,7 +375,7 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            ViewModel.ConsoleText = exception.Message;
+            ViewModel.AppendConsoleText(exception.Message);
         }
     }
 
@@ -687,7 +720,7 @@ public partial class MainWindow : Window
         }
         catch (Exception exception)
         {
-            ViewModel.ConsoleText = exception.Message;
+            ViewModel.AppendConsoleText(exception.Message);
         }
     }
 

@@ -309,14 +309,27 @@
                   ColumnSpacing="8">
                 <Border Classes="group">
                     <Grid RowDefinitions="Auto,*">
-                        <TextBlock Classes="group-header"
-                                   Text="Console" />
+                        <Grid ColumnDefinitions="*,Auto"
+                              Margin="0,0,0,4">
+                            <TextBlock Classes="group-header"
+                                       Text="Console"
+                                       Margin="0" />
+                            <Button Grid.Column="1"
+                                    Classes="panel"
+                                    MinWidth="56"
+                                    Padding="10,2"
+                                    Content="Clear"
+                                    Command="{Binding ClearConsoleCommand}" />
+                        </Grid>
                         <TextBox Grid.Row="1"
+                                 x:Name="ConsoleTextBox"
                                  Classes="editor"
                                  Text="{Binding ConsoleText}"
                                  IsReadOnly="True"
                                  AcceptsReturn="True"
-                                 TextWrapping="Wrap" />
+                                 TextWrapping="Wrap"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto" />
                     </Grid>
                 </Border>
 

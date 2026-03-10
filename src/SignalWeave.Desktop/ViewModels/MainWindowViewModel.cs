@@ -316,7 +316,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 RebuildPatternOutputs(result.FinalRun);
                 BuildTimeSeriesPlot(result.FinalRun);
 
-                ConsoleText = $"{steps}  Training steps{Environment.NewLine}Training finished";
+                AppendConsoleText($"{steps}  Training steps{Environment.NewLine}Training finished");
                 AnalysisText = result.FinalRun.ToTable();
             });
         });
@@ -338,7 +338,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 var run = await Task.Run(() => engine.TestAll(patternSet));
                 _lastRun = run;
                 _diagramResult = null;
-                ConsoleText = $"Test All: Average per pattern error: {run.DisplayAverageError.ToString("0.######", CultureInfo.InvariantCulture)}";
+                AppendConsoleText($"Test All: Average per pattern error: {run.DisplayAverageError.ToString("0.######", CultureInfo.InvariantCulture)}");
                 AnalysisText = run.ToTable();
                 WeightsText = BuildWeightsText(engine.Weights);
                 RefreshDiagram();
@@ -376,7 +376,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 _diagramResult = result;
                 var selectorText = BasicPropDisplayFormatter.FormatPatternSelector(result.Index, result.Inputs, result.Targets);
                 var resultText = BasicPropDisplayFormatter.FormatPattern(result.Outputs);
-                ConsoleText = $"Pattern: \"{selectorText}\"{Environment.NewLine}Result: \"{resultText}\"";
+                AppendConsoleText($"Pattern: \"{selectorText}\"{Environment.NewLine}Result: \"{resultText}\"");
                 AnalysisText = BuildSinglePatternResult(result);
                 RefreshDiagram();
                 ResultsTabIndex = 0;
@@ -476,11 +476,7 @@ public partial class MainWindowViewModel : ViewModelBase
             RebuildWeightMap();
             if (!string.IsNullOrWhiteSpace(consoleMessage))
             {
-                ConsoleText = consoleMessage;
-            }
-            else
-            {
-                ConsoleText = string.Empty;
+                AppendConsoleText(consoleMessage);
             }
         });
     }
@@ -1560,7 +1556,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception exception)
         {
-            ConsoleText = exception.Message;
+            AppendConsoleText(exception.Message);
         }
     }
 
@@ -1580,7 +1576,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception exception)
         {
-            ConsoleText = exception.Message;
+            AppendConsoleText(exception.Message);
         }
     }
 
@@ -2124,6 +2120,24 @@ public partial class MainWindowViewModel : ViewModelBase
             ? note
             : $"{ConsoleText}{Environment.NewLine}{note}";
         MessageWindow.WriteLine(note);
+    }
+
+    [RelayCommand]
+    private void ClearConsole()
+    {
+        ConsoleText = string.Empty;
+    }
+
+    public void AppendConsoleText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        ConsoleText = string.IsNullOrWhiteSpace(ConsoleText)
+            ? text
+            : $"{ConsoleText}{Environment.NewLine}{text}";
     }
 
     private sealed class BasicPropModalException(string title, string message) : InvalidOperationException(message)
