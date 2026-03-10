@@ -100,7 +100,7 @@
                             x:Name="NetworkGraphCanvas"
                             Background="#FFF9F1"
                             ClipToBounds="True"
-                            MinHeight="520" />
+                            MinHeight="220" />
                 </Grid>
             </Border>
 

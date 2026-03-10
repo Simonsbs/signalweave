@@ -891,19 +891,23 @@ public partial class MainWindow : Window
             return;
         }
 
-        var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 220);
-        var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 180);
-        var top = 20.0;
-        var bottom = canvasHeight - 18.0;
-        var labelGutter = Math.Min(58.0, Math.Max(34.0, canvasWidth * 0.12));
-        var left = labelGutter + 10.0;
-        var right = canvasWidth - 14.0;
+        var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 180);
+        var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 140);
         var rows = BuildGraphRows(_definition, _diagramResult);
-        var availableHeight = Math.Max(bottom - top, 40.0);
-        var rowGap = rows.Count == 1 ? 0.0 : availableHeight / (rows.Count - 1);
         var maxNodesInRow = Math.Max(rows.Max(row => row.Values.Length), 1);
-        var availableWidth = Math.Max(right - left, 48.0);
-        var nodeSize = Math.Clamp(Math.Min(availableWidth / (maxNodesInRow + 1.0), rowGap * 0.56), 12.0, 54.0);
+        var labelGutter = Math.Clamp(canvasWidth * 0.11, 28.0, 56.0);
+        var left = labelGutter + 8.0;
+        var right = canvasWidth - 10.0;
+        var availableWidth = Math.Max(right - left, 36.0);
+        var horizontalNodeLimit = availableWidth / (maxNodesInRow + 1.2);
+        var verticalNodeLimit = (canvasHeight - 24.0) / (rows.Count + 0.65);
+        var nodeSize = Math.Clamp(Math.Min(horizontalNodeLimit, verticalNodeLimit), 10.0, 40.0);
+        var topInset = (nodeSize / 2.0) + 12.0;
+        var bottomInset = (nodeSize / 2.0) + 10.0;
+        var top = topInset;
+        var bottom = Math.Max(topInset, canvasHeight - bottomInset);
+        var availableHeight = Math.Max(bottom - top, 10.0);
+        var rowGap = rows.Count == 1 ? 0.0 : availableHeight / (rows.Count - 1);
         var graphRows = new List<List<GraphNode>>(rows.Count);
 
         for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
@@ -917,7 +921,7 @@ public partial class MainWindow : Window
                 FontSize = Math.Max(9, Math.Min(11, nodeSize * 0.28))
             };
             Canvas.SetLeft(title, 10);
-            Canvas.SetTop(title, y - 8);
+            Canvas.SetTop(title, Math.Max(0, y - 8));
             NetworkGraphCanvas.Children.Add(title);
 
             var biasReservedWidth = row.HasBias ? (nodeSize * 1.05) : 0.0;
