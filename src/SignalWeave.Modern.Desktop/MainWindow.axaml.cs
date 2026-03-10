@@ -27,6 +27,9 @@ public partial class MainWindow : Window
     private const double PatternBinaryCellWidth = 38;
     private const double PatternSeparatorColumnWidth = 12;
     private const double PatternDeleteColumnWidth = 42;
+    private const double PatternInspectorLabelWidth = 38;
+    private const double PatternInspectorBarWidth = 140;
+    private const double PatternInspectorValueWidth = 88;
 
     private readonly string[] _learningRateOptions = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.8", "1.0"];
     private readonly string[] _momentumOptions = ["0.0", "0.2", "0.5", "0.8", "0.9"];
@@ -843,7 +846,7 @@ public partial class MainWindow : Window
     {
         var grid = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+            ColumnDefinitions = new ColumnDefinitions($"{PatternInspectorLabelWidth},{PatternInspectorBarWidth},{PatternInspectorValueWidth}"),
             ColumnSpacing = 8
         };
 
@@ -851,7 +854,9 @@ public partial class MainWindow : Window
         {
             Text = label,
             Foreground = Brush.Parse("#6A6258"),
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = PatternInspectorLabelWidth,
+            TextAlignment = TextAlignment.Right
         };
         Grid.SetColumn(labelBlock, 0);
         grid.Children.Add(labelBlock);
@@ -862,18 +867,26 @@ public partial class MainWindow : Window
             BorderBrush = Brush.Parse("#E2D8CA"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(3),
-            Height = 16
+            Height = 16,
+            Width = PatternInspectorBarWidth,
+            ClipToBounds = true
         };
         Grid.SetColumn(barHost, 1);
 
-        var barGrid = new Grid();
+        var barGrid = new Grid
+        {
+            ClipToBounds = true,
+            Margin = new Thickness(1)
+        };
         var normalized = Math.Clamp(value, 0.0, 1.0);
         barGrid.Children.Add(new Border
         {
             HorizontalAlignment = HorizontalAlignment.Left,
-            Width = normalized * 120.0,
+            Width = normalized * (PatternInspectorBarWidth - 4),
             Background = Brush.Parse("#7CCB74"),
-            CornerRadius = new CornerRadius(2)
+            CornerRadius = new CornerRadius(2),
+            Height = 12,
+            VerticalAlignment = VerticalAlignment.Center
         });
         barHost.Child = barGrid;
         grid.Children.Add(barHost);
@@ -889,7 +902,10 @@ public partial class MainWindow : Window
                 ? Brush.Parse("#C13A3A")
                 : Brush.Parse("#2F2B26"),
             VerticalAlignment = VerticalAlignment.Center,
-            FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace")
+            FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace"),
+            Width = PatternInspectorValueWidth,
+            TextAlignment = TextAlignment.Right,
+            TextTrimming = TextTrimming.CharacterEllipsis
         };
         Grid.SetColumn(valueBlock, 2);
         grid.Children.Add(valueBlock);
