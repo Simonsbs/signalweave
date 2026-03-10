@@ -14,6 +14,9 @@ namespace SignalWeave.Desktop.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private const double DefaultDiagramViewportWidth = 620;
+    private const double DefaultDiagramViewportHeight = 360;
+
     private enum ControllerActivity
     {
         Idle,
@@ -41,6 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private string? _engineSignature;
     private string _patternListCaption = "Untitled";
     private bool _suppressMessageMirror;
+    private double _diagramViewportWidth = DefaultDiagramViewportWidth;
+    private double _diagramViewportHeight = DefaultDiagramViewportHeight;
 
     public MainWindowViewModel()
     {
@@ -598,29 +603,40 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        const double canvasWidth = 620;
-        const double nodeWidth = 52;
-        const double nodeHeight = 42;
-        const double biasWidth = 56;
-        const double biasHeight = 60;
-        const double biasX = 62;
+        var canvasWidth = Math.Max(260, _diagramViewportWidth);
+        var canvasHeight = Math.Max(180, _diagramViewportHeight);
+        var maxUnitsInRow = Math.Max(
+            1,
+            Math.Max(
+                Math.Max(_definition.InputUnits, _definition.HiddenUnits),
+                Math.Max(_definition.SecondHiddenUnits, _definition.OutputUnits)));
+        var graphLeft = canvasWidth * 0.20;
+        var graphRight = canvasWidth * 0.92;
+        var graphWidth = Math.Max(140, graphRight - graphLeft);
+        var nodeWidth = Math.Clamp(graphWidth / (maxUnitsInRow * 1.35), 22, 52);
+        var nodeHeight = Math.Clamp(nodeWidth * 0.8, 20, 42);
+        var biasWidth = Math.Clamp(nodeWidth + 10, 34, 60);
+        var biasHeight = Math.Clamp(nodeHeight + 16, 34, 60);
+        var biasX = Math.Max(8, graphLeft - biasWidth - Math.Max(14, nodeWidth * 0.35));
 
         var layerCount = _definition.IsDirectFeedForward
             ? 2
             : _definition.HasSecondHiddenLayer ? 4 : 3;
-        var layerYs = BuildLane(layerCount, 52, 248);
+        var topPadding = Math.Max(18, canvasHeight * 0.10);
+        var bottomPadding = Math.Max(18, canvasHeight * 0.12);
+        var layerYs = BuildLane(layerCount, topPadding, canvasHeight - bottomPadding - nodeHeight);
 
         var outputRowTop = layerYs[0];
         var hidden2RowTop = layerCount == 4 ? layerYs[1] : 0;
         var hiddenRowTop = layerCount >= 3 ? layerYs[layerCount - 2] : 0;
         var inputRowTop = layerYs[^1];
 
-        var inputXs = BuildHorizontalNodeLane(_definition.InputUnits, canvasWidth, nodeWidth, 150);
-        var hiddenXs = BuildHorizontalNodeLane(_definition.HiddenUnits, canvasWidth, nodeWidth, 150);
+        var inputXs = BuildHorizontalNodeLane(_definition.InputUnits, graphLeft, graphRight, nodeWidth);
+        var hiddenXs = BuildHorizontalNodeLane(_definition.HiddenUnits, graphLeft, graphRight, nodeWidth);
         var secondHiddenXs = _definition.HasSecondHiddenLayer
-            ? BuildHorizontalNodeLane(_definition.SecondHiddenUnits, canvasWidth, nodeWidth, 150)
+            ? BuildHorizontalNodeLane(_definition.SecondHiddenUnits, graphLeft, graphRight, nodeWidth)
             : [];
-        var outputXs = BuildHorizontalNodeLane(_definition.OutputUnits, canvasWidth, nodeWidth, 210);
+        var outputXs = BuildHorizontalNodeLane(_definition.OutputUnits, graphLeft, graphRight, nodeWidth);
         var maxWeight = CalculateMaxWeight(_engine.Weights);
         UpdateWeightLegend(maxWeight);
 
@@ -1244,42 +1260,20 @@ public partial class MainWindowViewModel : ViewModelBase
         return Enumerable.Range(0, count).Select(index => start + (index * step)).ToArray();
     }
 
-    private static double[] BuildDistributedLane(int count, double canvasHeight, double nodeHeight, double spanRatio)
-    {
-        var usableHeight = Math.Max(nodeHeight, canvasHeight * spanRatio);
-        var start = (canvasHeight - usableHeight) / 2;
-        var end = start + usableHeight - nodeHeight;
-        return BuildLane(count, start, end);
-    }
-
-    private static double[] BuildHorizontalNodeLane(int count, double canvasWidth, double nodeWidth, double sidePadding)
+    private static double[] BuildHorizontalNodeLane(int count, double left, double right, double nodeWidth)
     {
         if (count <= 1)
         {
-            return [((canvasWidth - nodeWidth) / 2)];
+            return [((left + right - nodeWidth) / 2)];
         }
 
-        var maxGap = 74.0;
-        var availableGap = Math.Max(8.0, (canvasWidth - (sidePadding * 2) - nodeWidth) / (count - 1));
+        var width = Math.Max(nodeWidth, right - left);
+        var availableGap = Math.Max(4.0, (width - nodeWidth) / (count - 1));
+        var maxGap = Math.Max(availableGap, 74.0);
         var gap = Math.Min(maxGap, availableGap);
         var totalWidth = nodeWidth + ((count - 1) * gap);
-        var start = (canvasWidth - totalWidth) / 2;
+        var start = left + ((width - totalWidth) / 2);
         return Enumerable.Range(0, count).Select(index => start + (index * gap)).ToArray();
-    }
-
-    private static double[] BuildLayerLeftPositions(int layerCount, double canvasWidth, double nodeWidth)
-    {
-        var graphWidth = layerCount switch
-        {
-            2 => 320,
-            3 => 400,
-            4 => 500,
-            _ => 400
-        };
-
-        var start = (canvasWidth - graphWidth) / 2;
-        var end = start + graphWidth - nodeWidth;
-        return BuildLane(layerCount, start, end);
     }
 
     private static double CalculateMaxWeight(WeightSet weights)
@@ -1684,6 +1678,22 @@ public partial class MainWindowViewModel : ViewModelBase
     public void ReportHiddenActivationExport(string path)
     {
         AnalysisText = $"Hidden activations exported:{Environment.NewLine}{path}";
+    }
+
+    public void UpdateDiagramViewport(double width, double height)
+    {
+        width = Math.Max(0, width);
+        height = Math.Max(0, height);
+
+        if (Math.Abs(width - _diagramViewportWidth) < 0.5 &&
+            Math.Abs(height - _diagramViewportHeight) < 0.5)
+        {
+            return;
+        }
+
+        _diagramViewportWidth = width <= 0 ? DefaultDiagramViewportWidth : width;
+        _diagramViewportHeight = height <= 0 ? DefaultDiagramViewportHeight : height;
+        RefreshDiagram();
     }
 
     public TextReportSnapshot CreateOutputClusterReport()

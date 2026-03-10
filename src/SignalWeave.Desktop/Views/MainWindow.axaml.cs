@@ -21,6 +21,11 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        if (NetworkDiagramCanvas is not null)
+        {
+            NetworkDiagramCanvas.SizeChanged += HandleNetworkDiagramCanvasSizeChanged;
+        }
+
         DataContextChanged += HandleDataContextChanged;
         AttachViewModel(DataContext as MainWindowViewModel);
     }
@@ -48,6 +53,7 @@ public partial class MainWindow : Window
             _attachedViewModel.FeedbackDialogRequested += HandleFeedbackDialogRequested;
             _attachedViewModel.DiagramNodes.CollectionChanged += HandleDiagramCollectionChanged;
             _attachedViewModel.DiagramEdges.CollectionChanged += HandleDiagramCollectionChanged;
+            SyncDiagramViewport();
         }
 
         RenderDiagram();
@@ -62,6 +68,23 @@ public partial class MainWindow : Window
     private void HandleDiagramCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         RenderDiagram();
+    }
+
+    private void HandleNetworkDiagramCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        SyncDiagramViewport();
+    }
+
+    private void SyncDiagramViewport()
+    {
+        if (_attachedViewModel is null || NetworkDiagramCanvas is null)
+        {
+            return;
+        }
+
+        _attachedViewModel.UpdateDiagramViewport(
+            NetworkDiagramCanvas.Bounds.Width,
+            NetworkDiagramCanvas.Bounds.Height);
     }
 
     private void RenderDiagram()
