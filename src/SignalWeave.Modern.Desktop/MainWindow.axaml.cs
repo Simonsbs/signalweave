@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private readonly string[] _momentumOptions = ["0.0", "0.2", "0.5", "0.8", "0.9"];
     private readonly string[] _learningStepOptions = ["100", "500", "1000", "5000", "10000", "50000"];
     private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
+    private readonly string[] _weightInspectorViewModes = ["Heatmap", "Magnitude", "Values"];
     private readonly object _trainingProgressGate = new();
     private readonly List<TrainingPoint> _trainingHistory = [];
     private readonly StringBuilder _consoleMarkdown = new();
@@ -69,6 +70,11 @@ public partial class MainWindow : Window
             NetworkGraphCanvas.SizeChanged += (_, _) => RenderNetworkGraph();
         }
 
+        if (WeightInspectorCanvas is not null)
+        {
+            WeightInspectorCanvas.SizeChanged += (_, _) => RenderWeightInspector();
+        }
+
         LoadProjectState(CreateDefaultProject(), null, "Loaded the default Modern sample project.");
         _isInitializingUi = false;
     }
@@ -96,6 +102,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private sealed record WeightSourceOption(string Id, string Label, WeightSet Weights)
+    {
+        public override string ToString() => Label;
+    }
+
+    private sealed record WeightLayerOption(string Id, string Label, double[,] Matrix, string[] SourceLabels, string[] TargetLabels)
+    {
+        public override string ToString() => Label;
+    }
+
     private void PopulateStaticOptions()
     {
         LearningRateComboBox.ItemsSource = _learningRateOptions;
@@ -103,6 +119,8 @@ public partial class MainWindow : Window
         LearningStepsComboBox.ItemsSource = _learningStepOptions;
         WeightRangeComboBox.ItemsSource = _weightRangeOptions;
         WeightRangeComboBox.SelectedIndex = 1;
+        WeightInspectorViewModeComboBox.ItemsSource = _weightInspectorViewModes;
+        WeightInspectorViewModeComboBox.SelectedIndex = 0;
     }
 
     private static SignalWeaveProject CreateDefaultProject()
@@ -483,7 +501,129 @@ public partial class MainWindow : Window
             TrainingSessionsListBox.SelectedIndex = 0;
         }
 
+        UpdateWeightInspectorSources();
         UpdateActionAvailability();
+    }
+
+    private void UpdateWeightInspectorSources()
+    {
+        if (WeightInspectorSourceComboBox is null)
+        {
+            return;
+        }
+
+        var selectedId = (WeightInspectorSourceComboBox.SelectedItem as WeightSourceOption)?.Id;
+        var options = new List<WeightSourceOption>();
+
+        if (_engine is not null)
+        {
+            options.Add(new WeightSourceOption("current", "Current", _engine.Weights.Clone()));
+        }
+
+        foreach (var session in _trainingSessions.OrderByDescending(static session => session.SessionNumber))
+        {
+            options.Add(new WeightSourceOption(
+                $"session-{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                $"Train #{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                session.Weights.Clone()));
+        }
+
+        WeightInspectorSourceComboBox.ItemsSource = options;
+        if (options.Count == 0)
+        {
+            WeightInspectorSourceComboBox.SelectedItem = null;
+            UpdateWeightInspectorLayers();
+            return;
+        }
+
+        WeightInspectorSourceComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
+        UpdateWeightInspectorLayers();
+    }
+
+    private void UpdateWeightInspectorLayers()
+    {
+        if (WeightInspectorLayerComboBox is null)
+        {
+            return;
+        }
+
+        var selectedId = (WeightInspectorLayerComboBox.SelectedItem as WeightLayerOption)?.Id;
+        var source = WeightInspectorSourceComboBox?.SelectedItem as WeightSourceOption;
+        var options = source is null || _definition is null
+            ? []
+            : BuildWeightLayerOptions(_definition, source.Weights);
+
+        WeightInspectorLayerComboBox.ItemsSource = options;
+        if (options.Count == 0)
+        {
+            WeightInspectorLayerComboBox.SelectedItem = null;
+            RenderWeightInspector();
+            return;
+        }
+
+        WeightInspectorLayerComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
+        RenderWeightInspector();
+    }
+
+    private List<WeightLayerOption> BuildWeightLayerOptions(NetworkDefinition definition, WeightSet weights)
+    {
+        var options = new List<WeightLayerOption>();
+
+        if (definition.IsDirectFeedForward)
+        {
+            options.Add(new WeightLayerOption(
+                "input-output",
+                "Input → Output",
+                weights.InputHidden,
+                BuildInputSourceLabels(definition),
+                BuildOutputLabels(definition.OutputUnits)));
+            return options;
+        }
+
+        options.Add(new WeightLayerOption(
+            "input-hidden1",
+            definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Input → Hidden" : "Input → Hidden 1",
+            weights.InputHidden,
+            BuildInputSourceLabels(definition),
+            BuildHiddenLabels(definition.HiddenUnits, definition.NetworkKind == NetworkKind.SimpleRecurrent ? "H" : "H1")));
+
+        if (definition.HasSecondHiddenLayer && weights.HiddenHidden is not null)
+        {
+            options.Add(new WeightLayerOption(
+                "hidden1-hidden2",
+                "Hidden 1 → Hidden 2",
+                weights.HiddenHidden,
+                BuildHiddenSourceLabels(definition.HiddenUnits, "H1", definition.UseHiddenBias),
+                BuildHiddenLabels(definition.SecondHiddenUnits, "H2")));
+
+            options.Add(new WeightLayerOption(
+                "hidden2-output",
+                "Hidden 2 → Output",
+                weights.HiddenOutput,
+                BuildHiddenSourceLabels(definition.SecondHiddenUnits, "H2", definition.UseSecondHiddenBias),
+                BuildOutputLabels(definition.OutputUnits)));
+        }
+        else
+        {
+            options.Add(new WeightLayerOption(
+                definition.NetworkKind == NetworkKind.SimpleRecurrent ? "hidden-output" : "hidden1-output",
+                definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Hidden → Output" : "Hidden 1 → Output",
+                weights.HiddenOutput,
+                BuildHiddenSourceLabels(definition.HiddenUnits, definition.NetworkKind == NetworkKind.SimpleRecurrent ? "H" : "H1", definition.UseHiddenBias),
+                BuildOutputLabels(definition.OutputUnits)));
+        }
+
+        if (definition.NetworkKind == NetworkKind.SimpleRecurrent && weights.RecurrentHidden is not null)
+        {
+            options.Add(new WeightLayerOption(
+                "recurrent",
+                "Context → Hidden",
+                weights.RecurrentHidden,
+                BuildHiddenLabels(definition.HiddenUnits, "C"),
+                BuildHiddenLabels(definition.HiddenUnits, "H")));
+        }
+
+        return options;
     }
 
     private void UpdatePatternSelector(int preferredIndex)
@@ -853,13 +993,35 @@ public partial class MainWindow : Window
         if (TrainingSessionsListBox?.SelectedItem is TrainingSessionOption option)
         {
             RenderErrorPlot(option.Snapshot.History ?? []);
+            if (WeightInspectorSourceComboBox?.ItemsSource is IEnumerable<WeightSourceOption> sources)
+            {
+                var targetId = $"session-{option.Snapshot.SessionNumber.ToString(CultureInfo.InvariantCulture)}";
+                WeightInspectorSourceComboBox.SelectedItem = sources.FirstOrDefault(source => source.Id == targetId)
+                    ?? WeightInspectorSourceComboBox.SelectedItem;
+            }
         }
         else
         {
             RenderErrorPlot(_trainingHistory);
+            if (WeightInspectorSourceComboBox?.ItemsSource is IEnumerable<WeightSourceOption> sources)
+            {
+                WeightInspectorSourceComboBox.SelectedItem = sources.FirstOrDefault(source => source.Id == "current")
+                    ?? WeightInspectorSourceComboBox.SelectedItem;
+            }
         }
 
         UpdateActionAvailability();
+    }
+
+    private void WeightInspectorSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender == WeightInspectorSourceComboBox)
+        {
+            UpdateWeightInspectorLayers();
+            return;
+        }
+
+        RenderWeightInspector();
     }
 
     private void RollbackTrainingSession_Click(object? sender, RoutedEventArgs e)
@@ -1043,6 +1205,226 @@ public partial class MainWindow : Window
         }
 
         return $"{FormatNumber(min)} .. {FormatNumber(max)}";
+    }
+
+    private void RenderWeightInspector()
+    {
+        if (WeightInspectorCanvas is null || WeightInspectorStatsTextBlock is null)
+        {
+            return;
+        }
+
+        WeightInspectorCanvas.Children.Clear();
+
+        if (WeightInspectorLayerComboBox?.SelectedItem is not WeightLayerOption layer)
+        {
+            WeightInspectorStatsTextBlock.Text = "No weight data available.";
+            return;
+        }
+
+        WeightInspectorStatsTextBlock.Text = BuildWeightInspectorStats(layer.Matrix);
+
+        var canvasWidth = Math.Max(WeightInspectorCanvas.Bounds.Width, 260);
+        var canvasHeight = Math.Max(WeightInspectorCanvas.Bounds.Height, 220);
+        var rows = layer.Matrix.GetLength(0);
+        var columns = layer.Matrix.GetLength(1);
+        if (rows == 0 || columns == 0)
+        {
+            WeightInspectorStatsTextBlock.Text += $"{Environment.NewLine}Selected layer has no weights.";
+            return;
+        }
+
+        var leftMargin = 64.0;
+        var topMargin = 32.0;
+        var rightMargin = 20.0;
+        var bottomMargin = 20.0;
+        var plotWidth = Math.Max(canvasWidth - leftMargin - rightMargin, 80.0);
+        var plotHeight = Math.Max(canvasHeight - topMargin - bottomMargin, 80.0);
+        var cellWidth = plotWidth / columns;
+        var cellHeight = plotHeight / rows;
+        var maxAbs = GetMaxAbs(layer.Matrix);
+        var viewMode = WeightInspectorViewModeComboBox?.SelectedItem?.ToString() ?? _weightInspectorViewModes[0];
+        var showValues = string.Equals(viewMode, "Values", StringComparison.Ordinal);
+        var useMagnitude = string.Equals(viewMode, "Magnitude", StringComparison.Ordinal);
+
+        for (var column = 0; column < columns; column++)
+        {
+            var label = new TextBlock
+            {
+                Text = layer.TargetLabels.ElementAtOrDefault(column) ?? $"T{column + 1}",
+                Foreground = Brush.Parse("#6A6258"),
+                FontSize = 11
+            };
+            Canvas.SetLeft(label, leftMargin + (column * cellWidth) + (cellWidth * 0.16));
+            Canvas.SetTop(label, 4);
+            WeightInspectorCanvas.Children.Add(label);
+        }
+
+        for (var row = 0; row < rows; row++)
+        {
+            var label = new TextBlock
+            {
+                Text = layer.SourceLabels.ElementAtOrDefault(row) ?? $"S{row + 1}",
+                Foreground = Brush.Parse("#6A6258"),
+                FontSize = 11
+            };
+            Canvas.SetLeft(label, 8);
+            Canvas.SetTop(label, topMargin + (row * cellHeight) + Math.Max((cellHeight - 14) / 2.0, 0));
+            WeightInspectorCanvas.Children.Add(label);
+        }
+
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                var value = layer.Matrix[row, column];
+                var x = leftMargin + (column * cellWidth);
+                var y = topMargin + (row * cellHeight);
+                var rect = new Rectangle
+                {
+                    Width = Math.Max(cellWidth - 2, 4),
+                    Height = Math.Max(cellHeight - 2, 4),
+                    RadiusX = 2,
+                    RadiusY = 2,
+                    Stroke = Brush.Parse("#E2D8CA"),
+                    StrokeThickness = 0.8,
+                    Fill = useMagnitude
+                        ? GetMagnitudeBrush(value, maxAbs)
+                        : showValues
+                            ? Brush.Parse("#FFFDF9")
+                            : GetWeightBrushScaled(value, maxAbs)
+                };
+                Canvas.SetLeft(rect, x);
+                Canvas.SetTop(rect, y);
+                WeightInspectorCanvas.Children.Add(rect);
+
+                if (showValues)
+                {
+                    var text = new TextBlock
+                    {
+                        Text = FormatCompactValue(value),
+                        Foreground = GetTextBrushForValue(value),
+                        FontSize = Math.Max(9, Math.Min(12, Math.Min(cellWidth, cellHeight) * 0.28)),
+                        TextAlignment = TextAlignment.Center,
+                        Width = Math.Max(cellWidth - 4, 10)
+                    };
+                    Canvas.SetLeft(text, x + 2);
+                    Canvas.SetTop(text, y + Math.Max((cellHeight - 14) / 2.0, 0));
+                    WeightInspectorCanvas.Children.Add(text);
+                }
+            }
+        }
+    }
+
+    private static string BuildWeightInspectorStats(double[,] matrix)
+    {
+        if (matrix.Length == 0)
+        {
+            return "No matrix values.";
+        }
+
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+        var sumAbs = 0.0;
+        var nearZero = 0;
+
+        foreach (var value in matrix)
+        {
+            min = Math.Min(min, value);
+            max = Math.Max(max, value);
+            sumAbs += Math.Abs(value);
+            if (Math.Abs(value) < 0.05)
+            {
+                nearZero++;
+            }
+        }
+
+        var count = matrix.Length;
+        return $"Rows: {matrix.GetLength(0)}  |  Columns: {matrix.GetLength(1)}{Environment.NewLine}" +
+               $"Min: {FormatNumber(min)}  |  Max: {FormatNumber(max)}  |  Mean |w|: {FormatNumber(sumAbs / count)}  |  Near zero: {nearZero}/{count}";
+    }
+
+    private static double GetMaxAbs(double[,] matrix)
+    {
+        var maxAbs = 0.0;
+        foreach (var value in matrix)
+        {
+            maxAbs = Math.Max(maxAbs, Math.Abs(value));
+        }
+
+        return Math.Max(maxAbs, 0.0001);
+    }
+
+    private static IBrush GetWeightBrushScaled(double value, double maxAbs)
+    {
+        var normalized = Math.Clamp(value / maxAbs, -1.0, 1.0);
+        if (normalized < 0)
+        {
+            var t = Math.Abs(normalized);
+            return new SolidColorBrush(Color.FromRgb((byte)(40 + (t * 180)), 36, 36));
+        }
+
+        if (normalized > 0)
+        {
+            return new SolidColorBrush(Color.FromRgb(28, (byte)(40 + (normalized * 170)), 46));
+        }
+
+        return Brush.Parse("#161413");
+    }
+
+    private static IBrush GetMagnitudeBrush(double value, double maxAbs)
+    {
+        var intensity = Math.Clamp(Math.Abs(value) / maxAbs, 0.0, 1.0);
+        var channel = (byte)(245 - (intensity * 170));
+        return new SolidColorBrush(Color.FromRgb(channel, channel, channel));
+    }
+
+    private static IBrush GetTextBrushForValue(double value)
+    {
+        return Math.Abs(value) > 0.0001
+            ? GetWeightBrushScaled(value, Math.Max(Math.Abs(value), 0.0001))
+            : Brush.Parse("#2F2B26");
+    }
+
+    private static string FormatCompactValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private static string[] BuildInputSourceLabels(NetworkDefinition definition)
+    {
+        var labels = Enumerable.Range(1, definition.InputUnits)
+            .Select(index => $"I{index}")
+            .ToList();
+        if (definition.UseInputBias)
+        {
+            labels.Add("B");
+        }
+
+        return labels.ToArray();
+    }
+
+    private static string[] BuildHiddenSourceLabels(int count, string prefix, bool includeBias)
+    {
+        var labels = Enumerable.Range(1, count)
+            .Select(index => $"{prefix}{index}")
+            .ToList();
+        if (includeBias)
+        {
+            labels.Add("B");
+        }
+
+        return labels.ToArray();
+    }
+
+    private static string[] BuildHiddenLabels(int count, string prefix)
+    {
+        return Enumerable.Range(1, count).Select(index => $"{prefix}{index}").ToArray();
+    }
+
+    private static string[] BuildOutputLabels(int count)
+    {
+        return Enumerable.Range(1, count).Select(index => $"O{index}").ToArray();
     }
 
     private async void NewProject_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

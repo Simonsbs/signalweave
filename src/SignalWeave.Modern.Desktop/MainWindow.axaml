@@ -471,12 +471,12 @@
                         </Border>
                     </TabItem>
 
-					<TabItem Header="Summary">
-						<ScrollViewer VerticalScrollBarVisibility="Auto">
-							<Grid Margin="16"
+						<TabItem Header="Summary">
+							<ScrollViewer VerticalScrollBarVisibility="Auto">
+								<Grid Margin="16"
                                   RowDefinitions="Auto,Auto,*"
                                   RowSpacing="14">
-								<TextBlock Text="Summary and weights"
+									<TextBlock Text="Summary"
                                            Classes="section" />
 
 								<TextBlock Grid.Row="1"
@@ -518,12 +518,71 @@
                                                    Text="Save the project to persist the current network settings, weights, and control-panel state." />
 									</Border>
 								</Grid>
-							</Grid>
-						</ScrollViewer>
-					</TabItem>
+								</Grid>
+							</ScrollViewer>
+						</TabItem>
 
-				</TabControl>
-            </Border>
+						<TabItem Header="Weights">
+							<Grid Margin="16"
+                                  RowDefinitions="Auto,Auto,Auto,*"
+                                  RowSpacing="12">
+                                <TextBlock Text="Weight inspector"
+                                           Classes="section" />
+
+                                <Grid Grid.Row="1"
+                                      ColumnDefinitions="Auto,*,Auto,*,Auto,*"
+                                      ColumnSpacing="10"
+                                      RowSpacing="8">
+                                    <TextBlock Text="Source"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="WeightInspectorSourceComboBox"
+                                              Grid.Column="1"
+                                              SelectionChanged="WeightInspectorSelectionChanged" />
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="Layer"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="WeightInspectorLayerComboBox"
+                                              Grid.Column="3"
+                                              SelectionChanged="WeightInspectorSelectionChanged" />
+
+                                    <TextBlock Grid.Column="4"
+                                               Text="View"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="WeightInspectorViewModeComboBox"
+                                              Grid.Column="5"
+                                              SelectionChanged="WeightInspectorSelectionChanged" />
+                                </Grid>
+
+                                <Border Grid.Row="2"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        Padding="12">
+                                    <TextBlock x:Name="WeightInspectorStatsTextBlock"
+                                               Classes="muted"
+                                               TextWrapping="Wrap"
+                                               Text="No weight data available." />
+                                </Border>
+
+                                <Border Grid.Row="3"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        Background="#FFFDF9"
+                                        Padding="12">
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                  VerticalScrollBarVisibility="Auto">
+                                        <Canvas x:Name="WeightInspectorCanvas"
+                                                ClipToBounds="True"
+                                                MinWidth="260"
+                                                MinHeight="220"
+                                                Background="#FFF9F1" />
+                                    </ScrollViewer>
+                                </Border>
+							</Grid>
+						</TabItem>
+
+					</TabControl>
+	            </Border>
 
             <GridSplitter Grid.Row="1"
                           Grid.ColumnSpan="3"
