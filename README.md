@@ -68,6 +68,7 @@ Modern workflow direction:
 - one project file stores network settings, embedded patterns, current weights, completed cycles, and Modern control-panel state
 - Modern no longer needs separate load/save actions for network settings, weights, or patterns
 - the network settings surface lives inside the main window as a control-panel tab instead of a popup dialog
+- detailed Modern usage docs live in `docs/modern-ui-guide.md`
 
 ## Projects
 
@@ -153,6 +154,35 @@ The Classic desktop app ships with built-in XOR and SRN demos and now exposes a 
 - hidden-activation export from the desktop app through a save dialog using the BasicProp `getHiddenActs()` helper semantics and raw concatenated `.dat` rows
 - screenshot-driven main-shell cleanup now trims some wasted network-pane space while keeping the existing diagram visible
 
+The Modern desktop app uses a single-project workflow instead:
+
+- top toolbar for `New`, `Load`, `Save`, and `Save As`
+- left workspace tabs for `Network Graph`, `Weights`, and `Analysis`
+- right workflow tabs for `Network`, `Training`, `Tests`, `Patterns`, and `Summary`
+- bottom `Console` and `Error graph` panels
+- project-first save/load using `.swproj.json`
+
+Quick start for Modern:
+
+1. Start the app:
+
+```bash
+dotnet run --project src/SignalWeave.Modern.Desktop
+```
+
+2. Click `📂 Load`
+3. Open `samples/seventeen-patterns-7x7-modern.swproj.json`
+4. Open `Training` and click `Train #1`
+5. Open `Tests` and click `Test all`
+6. Inspect the result in:
+- `Network Graph`
+- `Weights`
+- `Analysis`
+
+Full step-by-step instructions are in:
+
+- `docs/modern-ui-guide.md`
+
 ## Release automation
 
 - `.github/workflows/ci.yml` runs restore, release build, and core tests on Linux, Windows, and macOS.
@@ -199,3 +229,4 @@ SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JA
 - `docs/signalweave-schema.md`: native project and checkpoint schema definitions
 - `docs/product-lines.md`: Classic/Modern product-line and release strategy
 - `docs/modern-ui-todo.md`: Modern-specific backlog for porting analysis and utility workflows
+- `docs/modern-ui-guide.md`: step-by-step guide for loading, training, testing, analyzing, and saving Modern projects
