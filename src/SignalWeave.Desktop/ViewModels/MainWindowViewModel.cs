@@ -745,7 +745,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     DiagramEdges.Add(new DiagramEdgeItem(
                         ToPoint(x1, y1),
                         ToPoint(outputXs[target] + (nodeWidth / 2), outputRowTop + nodeHeight),
-                        WeightColor(weight),
+                        WeightColor(weight, maxWeight),
                         WeightThickness(weight, maxWeight),
                         false));
                 }
@@ -800,7 +800,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 DiagramEdges.Add(new DiagramEdgeItem(
                     ToPoint(x1, y1),
                     ToPoint(hiddenXs[target] + (nodeWidth / 2), hiddenRowTop + nodeHeight),
-                    WeightColor(weight),
+                    WeightColor(weight, maxWeight),
                     WeightThickness(weight, maxWeight),
                     false));
             }
@@ -821,7 +821,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     DiagramEdges.Add(new DiagramEdgeItem(
                         ToPoint(x1, y1),
                         ToPoint(secondHiddenXs[target] + (nodeWidth / 2), hidden2RowTop + nodeHeight),
-                        WeightColor(weight),
+                        WeightColor(weight, maxWeight),
                         WeightThickness(weight, maxWeight),
                         false));
                     }
@@ -846,7 +846,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 DiagramEdges.Add(new DiagramEdgeItem(
                     ToPoint(x1, y1),
                     ToPoint(outputXs[target] + (nodeWidth / 2), outputRowTop + nodeHeight),
-                    WeightColor(weight),
+                    WeightColor(weight, maxWeight),
                     WeightThickness(weight, maxWeight),
                     false));
             }
@@ -865,7 +865,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 DiagramEdges.Add(new DiagramEdgeItem(
                     ToPoint(hiddenXs[source] + (nodeWidth / 2), hiddenRowTop + nodeHeight + 4),
                     ToPoint(hiddenXs[target] + (nodeWidth / 2), hiddenRowTop - 10),
-                    WeightColor(weight),
+                    WeightColor(weight, maxWeight),
                     WeightThickness(weight, maxWeight),
                     true));
             }
@@ -1443,24 +1443,42 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private static string WeightColor(double weight)
+    private static string WeightColor(double weight, double maxWeight)
     {
-        if (weight > 0)
+        if (Math.Abs(weight) < 0.000001 || maxWeight <= 0)
         {
-            return "#53A451";
+            return "#000000";
         }
 
         if (weight < 0)
         {
-            return "#D25555";
+            return InterpolateColor("#000000", "#FF2020", Math.Abs(weight) / maxWeight);
         }
 
-        return "#808080";
+        return InterpolateColor("#000000", "#1FCB1F", Math.Abs(weight) / maxWeight);
     }
 
     private static double WeightThickness(double weight, double maxWeight)
     {
-        return 0.7 + (Math.Abs(weight) / maxWeight * 2.6);
+        var denominator = Math.Max(maxWeight, 0.000001);
+        return 0.7 + (Math.Abs(weight) / denominator * 2.6);
+    }
+
+    private static string InterpolateColor(string startHex, string endHex, double t)
+    {
+        t = Math.Clamp(t, 0.0, 1.0);
+
+        var startR = Convert.ToInt32(startHex.Substring(1, 2), 16);
+        var startG = Convert.ToInt32(startHex.Substring(3, 2), 16);
+        var startB = Convert.ToInt32(startHex.Substring(5, 2), 16);
+        var endR = Convert.ToInt32(endHex.Substring(1, 2), 16);
+        var endG = Convert.ToInt32(endHex.Substring(3, 2), 16);
+        var endB = Convert.ToInt32(endHex.Substring(5, 2), 16);
+
+        var red = (int)Math.Round(startR + ((endR - startR) * t), MidpointRounding.AwayFromZero);
+        var green = (int)Math.Round(startG + ((endG - startG) * t), MidpointRounding.AwayFromZero);
+        var blue = (int)Math.Round(startB + ((endB - startB) * t), MidpointRounding.AwayFromZero);
+        return $"#{red:X2}{green:X2}{blue:X2}";
     }
 
     private static string PickNearest(IEnumerable<string> options, double value)
