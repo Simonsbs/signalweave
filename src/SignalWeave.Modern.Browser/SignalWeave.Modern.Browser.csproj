@@ -6,6 +6,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>SignalWeave.Modern.Browser</AssemblyName>
     <RootNamespace>SignalWeave.Modern.Browser</RootNamespace>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <WasmBuildNative>true</WasmBuildNative>
   </PropertyGroup>
 
   <ItemGroup>

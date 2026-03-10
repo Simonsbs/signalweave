@@ -16,6 +16,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using SignalWeave.Core;
 
 namespace SignalWeave.Modern.Desktop;
@@ -59,6 +60,7 @@ public partial class MainView : UserControl
     private bool _isSyncingPatternText;
     private bool _isSyncingPatternTable;
     private bool _isUpdatingAnalysisControls;
+    private bool _isInitialProjectLoaded;
     private string _lastAnalysisReportTitle = "Run an analysis report.";
     private string _lastAnalysisReportText = string.Empty;
     private string _lastAnalysisExportText = string.Empty;
@@ -70,6 +72,7 @@ public partial class MainView : UserControl
         InitializeComponent();
         PopulateStaticOptions();
         ProductInfoTextBlock.Text = BuildProductInfoText();
+        AttachedToVisualTree += MainView_AttachedToVisualTree;
 
         if (ErrorPlotCanvas is not null)
         {
@@ -90,7 +93,16 @@ public partial class MainView : UserControl
         {
             AnalysisTimeSeriesCanvas.SizeChanged += (_, _) => RenderAnalysisChart();
         }
+    }
 
+    private void MainView_AttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (_isInitialProjectLoaded)
+        {
+            return;
+        }
+
+        _isInitialProjectLoaded = true;
         LoadProjectState(CreateDefaultProject(), null, "Loaded the default Modern sample project.");
         _isInitializingUi = false;
     }
@@ -1536,7 +1548,7 @@ public partial class MainView : UserControl
 
     private void RenderWeightInspector()
     {
-        if (WeightInspectorCanvas is null || WeightInspectorStatsTextBlock is null)
+        if (!IsVisualReadyForRendering() || WeightInspectorCanvas is null || WeightInspectorStatsTextBlock is null)
         {
             return;
         }
@@ -2615,6 +2627,11 @@ public partial class MainView : UserControl
         return $"SignalWeave Modern v{version}";
     }
 
+    private bool IsVisualReadyForRendering()
+    {
+        return TopLevel.GetTopLevel(this) is not null;
+    }
+
     private void AppendConsole(string message)
     {
         if (ConsoleContentHost is null)
@@ -2974,7 +2991,7 @@ public partial class MainView : UserControl
 
     private void RenderErrorPlot(IReadOnlyList<TrainingPoint> history)
     {
-        if (ErrorPlotCanvas is null)
+        if (!IsVisualReadyForRendering() || ErrorPlotCanvas is null)
         {
             return;
         }
@@ -3053,7 +3070,7 @@ public partial class MainView : UserControl
 
     private void RenderNetworkGraph()
     {
-        if (NetworkGraphCanvas is null)
+        if (!IsVisualReadyForRendering() || NetworkGraphCanvas is null)
         {
             return;
         }
@@ -3443,6 +3460,11 @@ public partial class MainView : UserControl
 
     private async Task SaveVisualAsPngAsync(Control? control, string artifactName)
     {
+#if BROWSER
+        await Task.CompletedTask;
+        SetStatus($"{artifactName} PNG export is unavailable in the browser build.");
+        return;
+#else
         if (control is null)
         {
             SetStatus("Nothing to export.");
@@ -3482,6 +3504,7 @@ public partial class MainView : UserControl
             AppendConsole($"Save {artifactName} failed: {ex.Message}");
             SetStatus($"Save {artifactName} failed.");
         }
+#endif
     }
 
     private TestResult EnsureSelectedPatternResultForExport()
@@ -3899,7 +3922,7 @@ public partial class MainView : UserControl
 
     private void RenderAnalysisChart()
     {
-        if (AnalysisTimeSeriesCanvas is null)
+        if (!IsVisualReadyForRendering() || AnalysisTimeSeriesCanvas is null)
         {
             return;
         }
