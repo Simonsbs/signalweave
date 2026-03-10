@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
@@ -28,6 +29,7 @@ public partial class MainWindow : Window
     private PatternSet _patterns = new([]);
     private string? _currentProjectPath;
     private TestResult? _diagramResult;
+    private NetworkDefinition? _graphPreviewDefinition;
     private TrainingPoint? _latestTrainingPoint;
     private List<TrainingPoint> _liveTrainingHistory = [];
     private DispatcherTimer? _trainingProgressTimer;
@@ -66,6 +68,7 @@ public partial class MainWindow : Window
         MomentumComboBox.ItemsSource = _momentumOptions;
         LearningStepsComboBox.ItemsSource = _learningStepOptions;
         WeightRangeComboBox.ItemsSource = _weightRangeOptions;
+        WeightRangeComboBox.SelectedIndex = 1;
     }
 
     private static SignalWeaveProject CreateDefaultProject()
@@ -88,6 +91,7 @@ public partial class MainWindow : Window
         _engine = new SignalWeaveEngine(project.Definition, project.Weights);
         _engine.RestoreCompletedCycles(project.CompletedCycles);
         _diagramResult = null;
+        _graphPreviewDefinition = null;
         _trainingHistory.Clear();
         _latestTrainingPoint = null;
         _liveTrainingHistory.Clear();
@@ -119,37 +123,69 @@ public partial class MainWindow : Window
     {
         ProjectNameTextBox.Text = definition.Name;
         NetworkKindComboBox.SelectedIndex = definition.NetworkKind == NetworkKind.FeedForward ? 0 : 1;
-        InputUnitsTextBox.Text = definition.InputUnits.ToString(CultureInfo.InvariantCulture);
-        HiddenUnitsTextBox.Text = definition.HiddenUnits.ToString(CultureInfo.InvariantCulture);
-        SecondHiddenUnitsTextBox.Text = definition.SecondHiddenUnits.ToString(CultureInfo.InvariantCulture);
-        OutputUnitsTextBox.Text = definition.OutputUnits.ToString(CultureInfo.InvariantCulture);
+        InputUnitsSlider.Value = definition.InputUnits;
+        HiddenUnitsSlider.Value = definition.HiddenUnits;
+        SecondHiddenUnitsSlider.Value = definition.SecondHiddenUnits;
+        OutputUnitsSlider.Value = definition.OutputUnits;
         InputBiasCheckBox.IsChecked = definition.UseInputBias;
         HiddenBiasCheckBox.IsChecked = definition.UseHiddenBias;
         SecondHiddenBiasCheckBox.IsChecked = definition.UseSecondHiddenBias;
         LearningRateComboBox.Text = FormatNumber(definition.LearningRate);
         MomentumComboBox.Text = FormatNumber(definition.Momentum);
-        WeightRangeComboBox.Text = FormatWeightRange(definition.RandomWeightRange);
+        WeightRangeComboBox.SelectedItem = FindMatchingWeightRange(definition.RandomWeightRange);
         ErrorThresholdTextBox.Text = FormatNumber(definition.ErrorThreshold);
         BatchUpdateCheckBox.IsChecked = definition.UpdateMode == UpdateMode.Batch;
         CrossEntropyCheckBox.IsChecked = definition.CostFunction == CostFunction.CrossEntropy;
+        UpdateTopologyControlState();
     }
 
     private void SyncNetworkKindControls()
     {
-        if (NetworkKindComboBox is null || SecondHiddenUnitsTextBox is null || SecondHiddenBiasCheckBox is null)
+        if (NetworkKindComboBox is null)
+        {
+            return;
+        }
+
+        UpdateTopologyControlState();
+    }
+
+    private void UpdateTopologyControlState()
+    {
+        if (NetworkKindComboBox is null)
         {
             return;
         }
 
         var isFeedForward = GetSelectedNetworkKind() == NetworkKind.FeedForward;
-        SecondHiddenUnitsTextBox.IsEnabled = isFeedForward;
-        SecondHiddenBiasCheckBox.IsEnabled = isFeedForward;
+        HiddenUnitsSlider.Minimum = isFeedForward ? 0 : 1;
 
-        if (!isFeedForward)
+        if (!isFeedForward && HiddenUnitsSlider.Value < 1)
         {
-            SecondHiddenUnitsTextBox.Text = "0";
+            HiddenUnitsSlider.Value = 1;
+        }
+
+        if (HiddenUnitsSlider.Value <= 0)
+        {
+            HiddenBiasCheckBox.IsChecked = false;
+        }
+
+        if (!isFeedForward || HiddenUnitsSlider.Value <= 0)
+        {
+            SecondHiddenUnitsSlider.Value = 0;
+        }
+
+        if (SecondHiddenUnitsSlider.Value <= 0)
+        {
             SecondHiddenBiasCheckBox.IsChecked = false;
         }
+
+        SecondHiddenUnitsSlider.IsEnabled = isFeedForward && HiddenUnitsSlider.Value > 0;
+        HiddenBiasCheckBox.IsEnabled = HiddenUnitsSlider.Value > 0;
+        SecondHiddenBiasCheckBox.IsEnabled = isFeedForward && SecondHiddenUnitsSlider.Value > 0;
+        UpdateSliderValueLabels();
+
+        HiddenBiasCheckBox.Opacity = HiddenBiasCheckBox.IsEnabled ? 1.0 : 0.55;
+        SecondHiddenBiasCheckBox.Opacity = SecondHiddenBiasCheckBox.IsEnabled ? 1.0 : 0.55;
     }
 
     private void UpdateWorkspaceSummary()
@@ -181,6 +217,38 @@ public partial class MainWindow : Window
             $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, and selected pattern {Math.Max(PatternSelectorComboBox.SelectedIndex, 0) + 1}.";
 
         UpdateActionAvailability();
+    }
+
+    private void UpdateSliderValueLabels()
+    {
+        InputUnitsValueTextBlock.Text = ReadSliderValue(InputUnitsSlider).ToString(CultureInfo.InvariantCulture);
+        HiddenUnitsValueTextBlock.Text = ReadSliderValue(HiddenUnitsSlider).ToString(CultureInfo.InvariantCulture);
+        SecondHiddenUnitsValueTextBlock.Text = ReadSliderValue(SecondHiddenUnitsSlider).ToString(CultureInfo.InvariantCulture);
+        OutputUnitsValueTextBlock.Text = ReadSliderValue(OutputUnitsSlider).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private void RefreshGraphPreview()
+    {
+        if (TryBuildPreviewDefinition(out var previewDefinition))
+        {
+            _graphPreviewDefinition = previewDefinition;
+            NetworkGraphSummaryTextBlock.Text = $"Preview: {previewDefinition.TotalLayerCount}-layer topology";
+            RenderNetworkGraph();
+        }
+    }
+
+    private bool TryBuildPreviewDefinition(out NetworkDefinition definition)
+    {
+        try
+        {
+            definition = BuildDefinitionFromControls();
+            return true;
+        }
+        catch
+        {
+            definition = null!;
+            return false;
+        }
     }
 
     private void UpdateActionAvailability()
@@ -379,6 +447,18 @@ public partial class MainWindow : Window
     private void NetworkKindComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         SyncNetworkKindControls();
+        RefreshGraphPreview();
+    }
+
+    private void TopologySliderChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        UpdateTopologyControlState();
+        RefreshGraphPreview();
+    }
+
+    private void TopologyOptionChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        RefreshGraphPreview();
     }
 
     private void ClearConsole_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -562,6 +642,7 @@ public partial class MainWindow : Window
         _engine = new SignalWeaveEngine(nextDefinition, weights);
         _engine.RestoreCompletedCycles(completedCycles);
         _diagramResult = canReuseWeights ? _diagramResult : null;
+        _graphPreviewDefinition = null;
 
         var selectedIndex = Math.Max(PatternSelectorComboBox.SelectedIndex, 0);
         UpdatePatternSelector(selectedIndex);
@@ -588,23 +669,23 @@ public partial class MainWindow : Window
     {
         var networkKind = GetSelectedNetworkKind();
         var secondHiddenUnits = networkKind == NetworkKind.FeedForward
-            ? ParseInt(SecondHiddenUnitsTextBox.Text, "Second hidden units")
+            ? ReadSliderValue(SecondHiddenUnitsSlider)
             : 0;
 
         var definition = new NetworkDefinition
         {
             Name = string.IsNullOrWhiteSpace(ProjectNameTextBox.Text) ? "Untitled Modern Project" : ProjectNameTextBox.Text.Trim(),
             NetworkKind = networkKind,
-            InputUnits = ParseInt(InputUnitsTextBox.Text, "Inputs"),
-            HiddenUnits = ParseInt(HiddenUnitsTextBox.Text, "Hidden layer 1"),
+            InputUnits = ReadSliderValue(InputUnitsSlider),
+            HiddenUnits = ReadSliderValue(HiddenUnitsSlider),
             SecondHiddenUnits = secondHiddenUnits,
-            OutputUnits = ParseInt(OutputUnitsTextBox.Text, "Outputs"),
+            OutputUnits = ReadSliderValue(OutputUnitsSlider),
             UseInputBias = InputBiasCheckBox.IsChecked ?? false,
-            UseHiddenBias = HiddenBiasCheckBox.IsChecked ?? false,
-            UseSecondHiddenBias = networkKind == NetworkKind.FeedForward && (SecondHiddenBiasCheckBox.IsChecked ?? false),
+            UseHiddenBias = HiddenUnitsSlider.Value > 0 && (HiddenBiasCheckBox.IsChecked ?? false),
+            UseSecondHiddenBias = networkKind == NetworkKind.FeedForward && SecondHiddenUnitsSlider.Value > 0 && (SecondHiddenBiasCheckBox.IsChecked ?? false),
             LearningRate = ParseDouble(LearningRateComboBox.Text, "Learning rate"),
             Momentum = ParseDouble(MomentumComboBox.Text, "Momentum"),
-            RandomWeightRange = ParseWeightRange(WeightRangeComboBox.Text),
+            RandomWeightRange = ParseWeightRange(GetSelectedWeightRangeText()),
             SigmoidPrimeOffset = 0.1,
             MaxEpochs = ParseLearningStepsFromControls(),
             ErrorThreshold = ParseDouble(ErrorThresholdTextBox.Text, "Error threshold"),
@@ -886,14 +967,15 @@ public partial class MainWindow : Window
 
         NetworkGraphCanvas.Children.Clear();
 
-        if (_definition is null || _engine is null)
+        var definition = _graphPreviewDefinition ?? _definition;
+        if (definition is null)
         {
             return;
         }
 
         var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 180);
         var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 140);
-        var rows = BuildGraphRows(_definition, _diagramResult);
+        var rows = BuildGraphRows(definition, _diagramResult);
         var maxNodesInRow = Math.Max(rows.Max(row => row.Values.Length), 1);
         var labelGutter = Math.Clamp(canvasWidth * 0.11, 28.0, 56.0);
         var left = labelGutter + 8.0;
@@ -947,7 +1029,7 @@ public partial class MainWindow : Window
             graphRows.Add(nodes);
         }
 
-        DrawGraphConnections(graphRows);
+        DrawGraphConnections(graphRows, definition);
 
         foreach (var row in graphRows)
         {
@@ -958,37 +1040,40 @@ public partial class MainWindow : Window
         }
     }
 
-    private void DrawGraphConnections(IReadOnlyList<List<GraphNode>> rows)
+    private void DrawGraphConnections(IReadOnlyList<List<GraphNode>> rows, NetworkDefinition definition)
     {
-        if (_definition is null || _engine is null || rows.Count < 2)
+        if (rows.Count < 2)
         {
             return;
         }
 
-        if (_definition.IsDirectFeedForward)
+        var canUseLiveWeights = _engine is not null && CanReuseWeights(_definition, definition);
+        var weights = canUseLiveWeights ? _engine!.Weights : null;
+
+        if (definition.IsDirectFeedForward)
         {
-            DrawWeightMatrixConnections(rows[1], rows[0], _engine.Weights.InputHidden, _definition.UseInputBias);
+            DrawConnections(rows[1], rows[0], weights?.InputHidden, definition.UseInputBias);
             return;
         }
 
-        if (_definition.HasSecondHiddenLayer)
+        if (definition.HasSecondHiddenLayer)
         {
-            DrawWeightMatrixConnections(rows[3], rows[2], _engine.Weights.InputHidden, _definition.UseInputBias);
-            DrawWeightMatrixConnections(rows[2], rows[1], _engine.Weights.HiddenHidden!, _definition.UseHiddenBias);
-            DrawWeightMatrixConnections(rows[1], rows[0], _engine.Weights.HiddenOutput, _definition.UseSecondHiddenBias);
+            DrawConnections(rows[3], rows[2], weights?.InputHidden, definition.UseInputBias);
+            DrawConnections(rows[2], rows[1], weights?.HiddenHidden, definition.UseHiddenBias);
+            DrawConnections(rows[1], rows[0], weights?.HiddenOutput, definition.UseSecondHiddenBias);
             return;
         }
 
-        DrawWeightMatrixConnections(rows[2], rows[1], _engine.Weights.InputHidden, _definition.UseInputBias);
-        DrawWeightMatrixConnections(rows[1], rows[0], _engine.Weights.HiddenOutput, _definition.UseHiddenBias);
+        DrawConnections(rows[2], rows[1], weights?.InputHidden, definition.UseInputBias);
+        DrawConnections(rows[1], rows[0], weights?.HiddenOutput, definition.UseHiddenBias);
 
-        if (_definition.NetworkKind == NetworkKind.SimpleRecurrent && _engine.Weights.RecurrentHidden is not null)
+        if (definition.NetworkKind == NetworkKind.SimpleRecurrent && weights?.RecurrentHidden is not null)
         {
-            DrawRecurrentHints(rows[1], _engine.Weights.RecurrentHidden);
+            DrawRecurrentHints(rows[1], weights.RecurrentHidden);
         }
     }
 
-    private void DrawWeightMatrixConnections(IReadOnlyList<GraphNode> sourceRow, IReadOnlyList<GraphNode> targetRow, double[,] weights, bool hasBias)
+    private void DrawConnections(IReadOnlyList<GraphNode> sourceRow, IReadOnlyList<GraphNode> targetRow, double[,]? weights, bool hasBias)
     {
         var sourceOffset = hasBias ? 1 : 0;
         var targetOffset = targetRow.Count > 0 && targetRow[0].IsBias ? 1 : 0;
@@ -996,20 +1081,20 @@ public partial class MainWindow : Window
         for (var sourceIndex = 0; sourceIndex < sourceRow.Count; sourceIndex++)
         {
             var matrixRow = sourceIndex < sourceOffset
-                ? weights.GetLength(0) - 1
+                ? (weights?.GetLength(0) ?? 1) - 1
                 : sourceIndex - sourceOffset;
 
             for (var targetIndex = targetOffset; targetIndex < targetRow.Count; targetIndex++)
             {
                 var targetColumn = targetIndex - targetOffset;
-                var weight = weights[matrixRow, targetColumn];
+                var weight = weights is null ? 0.0 : weights[matrixRow, targetColumn];
                 NetworkGraphCanvas!.Children.Add(new Line
                 {
                     StartPoint = new Point(sourceRow[sourceIndex].CenterX, sourceRow[sourceIndex].CenterY),
                     EndPoint = new Point(targetRow[targetIndex].CenterX, targetRow[targetIndex].CenterY),
-                    Stroke = GetWeightBrush(weight),
-                    StrokeThickness = 0.75 + (Math.Min(Math.Abs(weight), 1.5) * 1.15),
-                    Opacity = 0.72
+                    Stroke = weights is null ? Brush.Parse("#B5ADA3") : GetWeightBrush(weight),
+                    StrokeThickness = weights is null ? 1.0 : 0.75 + (Math.Min(Math.Abs(weight), 1.5) * 1.15),
+                    Opacity = weights is null ? 0.48 : 0.72
                 });
             }
         }
@@ -1255,6 +1340,25 @@ public partial class MainWindow : Window
     private static string FormatWeightRange(double range)
     {
         return $"-{FormatNumber(range)} - {FormatNumber(range)}";
+    }
+
+    private static int ReadSliderValue(Slider slider)
+    {
+        return (int)Math.Round(slider.Value, MidpointRounding.AwayFromZero);
+    }
+
+    private string GetSelectedWeightRangeText()
+    {
+        return WeightRangeComboBox.SelectedItem as string
+            ?? WeightRangeComboBox.SelectionBoxItem as string
+            ?? _weightRangeOptions[1];
+    }
+
+    private string FindMatchingWeightRange(double range)
+    {
+        var desired = FormatWeightRange(range);
+        return _weightRangeOptions.FirstOrDefault(option => string.Equals(option, desired, StringComparison.Ordinal))
+            ?? _weightRangeOptions.OrderBy(option => Math.Abs(ParseWeightRange(option) - range)).First();
     }
 
     private static string FormatNumber(double value)
