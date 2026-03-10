@@ -598,33 +598,32 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        const double nodeWidth = 50;
-        const double nodeHeight = 40;
-        const double biasWidth = 54;
-        const double biasHeight = 58;
+        const double canvasWidth = 620;
+        const double canvasHeight = 360;
+        const double nodeWidth = 52;
+        const double nodeHeight = 42;
+        const double biasWidth = 56;
+        const double biasHeight = 60;
+        const double biasGap = 68;
 
-        var inputX = _definition.IsDirectFeedForward
-            ? 175
-            : _definition.HasSecondHiddenLayer
-                ? 140
-                : 165;
-        var hiddenX = _definition.HasSecondHiddenLayer ? 265 : 295;
-        var hidden2X = _definition.HasSecondHiddenLayer ? 390 : 0;
-        var outputX = _definition.IsDirectFeedForward
-            ? 390
-            : _definition.HasSecondHiddenLayer
-                ? 515
-                : 485;
-        var inputBiasX = inputX - 65;
-        var hiddenBiasX = hiddenX - 65;
-        var secondHiddenBiasX = hidden2X > 0 ? hidden2X - 65 : 0;
+        var layerCount = _definition.IsDirectFeedForward
+            ? 2
+            : _definition.HasSecondHiddenLayer ? 4 : 3;
+        var layerXs = BuildLayerLeftPositions(layerCount, canvasWidth, nodeWidth);
+        var inputX = layerXs[0];
+        var hiddenX = layerCount >= 3 ? layerXs[1] : 0;
+        var hidden2X = layerCount == 4 ? layerXs[2] : 0;
+        var outputX = layerXs[^1];
+        var inputBiasX = inputX - biasGap;
+        var hiddenBiasX = hiddenX > 0 ? hiddenX - biasGap : 0;
+        var secondHiddenBiasX = hidden2X > 0 ? hidden2X - biasGap : 0;
 
-        var inputYs = BuildLane(_definition.InputUnits, 145, 275);
-        var hiddenYs = BuildLane(_definition.HiddenUnits, 95, 255);
+        var inputYs = BuildDistributedLane(_definition.InputUnits, canvasHeight, nodeHeight, 0.72);
+        var hiddenYs = BuildDistributedLane(_definition.HiddenUnits, canvasHeight, nodeHeight, 0.84);
         var secondHiddenYs = _definition.HasSecondHiddenLayer
-            ? BuildLane(_definition.SecondHiddenUnits, 95, 255)
+            ? BuildDistributedLane(_definition.SecondHiddenUnits, canvasHeight, nodeHeight, 0.84)
             : [];
-        var outputYs = BuildLane(_definition.OutputUnits, 165, 225);
+        var outputYs = BuildDistributedLane(_definition.OutputUnits, canvasHeight, nodeHeight, 0.54);
         var maxWeight = CalculateMaxWeight(_engine.Weights);
         UpdateWeightLegend(maxWeight);
 
@@ -1248,6 +1247,29 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var step = (end - start) / (count - 1);
         return Enumerable.Range(0, count).Select(index => start + (index * step)).ToArray();
+    }
+
+    private static double[] BuildDistributedLane(int count, double canvasHeight, double nodeHeight, double spanRatio)
+    {
+        var usableHeight = Math.Max(nodeHeight, canvasHeight * spanRatio);
+        var start = (canvasHeight - usableHeight) / 2;
+        var end = start + usableHeight - nodeHeight;
+        return BuildLane(count, start, end);
+    }
+
+    private static double[] BuildLayerLeftPositions(int layerCount, double canvasWidth, double nodeWidth)
+    {
+        var graphWidth = layerCount switch
+        {
+            2 => 320,
+            3 => 400,
+            4 => 500,
+            _ => 400
+        };
+
+        var start = (canvasWidth - graphWidth) / 2;
+        var end = start + graphWidth - nodeWidth;
+        return BuildLane(layerCount, start, end);
     }
 
     private static double CalculateMaxWeight(WeightSet weights)
