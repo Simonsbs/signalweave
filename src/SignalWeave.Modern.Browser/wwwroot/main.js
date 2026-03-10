@@ -1,4 +1,5 @@
-import { dotnet } from './_framework/dotnet.js';
+const assetVersion = '911a25e';
+const { dotnet } = await import(`./_framework/dotnet.js?v=${assetVersion}`);
 
 const isBrowser = typeof window !== 'undefined';
 if (!isBrowser) {
@@ -8,6 +9,14 @@ if (!isBrowser) {
 const dotnetRuntime = await dotnet
   .withDiagnosticTracing(false)
   .withApplicationArgumentsFromQuery()
+  .withOnConfigLoaded(config => {
+    config.cacheBootResources = false;
+    config.disableNoCacheFetch = true;
+  })
+  .withModuleConfig({
+    loadBootResource: (_type, _name, defaultUri) =>
+      `${defaultUri}${defaultUri.includes('?') ? '&' : '?'}v=${assetVersion}`
+  })
   .create();
 
 const config = dotnetRuntime.getConfig();
