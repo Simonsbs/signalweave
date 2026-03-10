@@ -35,6 +35,16 @@
             <Setter Property="Background" Value="#DDE5EE" />
             <Setter Property="BorderBrush" Value="#9DB3CD" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#2C3E50" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="0" />
         </Style>
         <Style Selector="TabControl.config-tabs">
             <Setter Property="Background" Value="#E1E1E1" />
@@ -44,12 +54,28 @@
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
         <Style Selector="Slider.config-slider">
-            <Setter Property="Width" Value="108" />
-            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
         <Style Selector="CheckBox.bias-toggle">
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.slider-value">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#4A4A4A" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="MinWidth" Value="28" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.scale-label">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#7A7A7A" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style Selector="Border.bias-separator">
+            <Setter Property="Background" Value="#C0C0C0" />
+            <Setter Property="Width" Value="1" />
         </Style>
     </Window.Styles>
 
@@ -61,240 +87,240 @@
             <TabItem Classes="config-tab"
                      Header="FeedForward Net">
                 <Border Classes="config-panel">
-                    <Grid ColumnDefinitions="140,*,36"
-                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-                          ColumnSpacing="10"
-                          RowSpacing="16">
-                        <TextBlock Grid.Column="2"
-                                   Text="bias"
-                                   HorizontalAlignment="Center"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Foreground="#4A4A4A" />
+                    <StackPanel Spacing="16">
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       Text="Total no. of layers:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="2"
+                                            Maximum="4"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding FeedForwardLayersValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding FeedForwardLayersValue}" />
+                                </Grid>
+                            </StackPanel>
+                            <Border Grid.Column="3"
+                                    Classes="bias-separator" />
+                            <TextBlock Grid.Column="5"
+                                       Text="bias"
+                                       HorizontalAlignment="Center"
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       Foreground="#4A4A4A" />
+                        </Grid>
 
-                        <TextBlock Grid.Row="0"
-                                   Classes="config-label"
-                                   Text="Total no. of layers:" />
-                        <StackPanel Grid.Row="0"
-                                    Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Classes="config-slider"
-                                    Minimum="2"
-                                    Maximum="4"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding FeedForwardLayersValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="2" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="3" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="4" />
-                            </Grid>
-                        </StackPanel>
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       Text="Input units:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="1"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding InputUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding InputUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                            <Border Grid.Column="3"
+                                    Classes="bias-separator" />
+                            <CheckBox Grid.Column="5"
+                                      Classes="bias-toggle"
+                                      IsChecked="{Binding UseInputBias, Mode=TwoWay}" />
+                        </Grid>
 
-                        <TextBlock Grid.Row="1"
-                                   Classes="config-label"
-                                   Text="Input units:" />
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Classes="config-slider"
-                                    Minimum="1"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding InputUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                        <CheckBox Classes="bias-toggle"
-                                  Grid.Row="1"
-                                  Grid.Column="2"
-                                  IsChecked="{Binding UseInputBias, Mode=TwoWay}" />
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}"
+                                       Text="Layer 1:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12"
+                                        IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="0"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding HiddenUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding HiddenUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                            <Border Grid.Column="3"
+                                    Classes="bias-separator" />
+                            <CheckBox Grid.Column="5"
+                                      Classes="bias-toggle"
+                                      IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}"
+                                      IsChecked="{Binding UseHiddenBias, Mode=TwoWay}" />
+                        </Grid>
 
-                        <TextBlock Grid.Row="2"
-                                   Classes="config-label"
-                                   Text="Layer 1:" />
-                        <StackPanel Grid.Row="2"
-                                    Grid.Column="1"
-                                    Spacing="2"
-                                    IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}">
-                            <Slider Classes="config-slider"
-                                    Minimum="0"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding HiddenUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                        <CheckBox Classes="bias-toggle"
-                                  Grid.Row="2"
-                                  Grid.Column="2"
-                                  IsEnabled="{Binding IsFeedForwardFirstLayerEnabled}"
-                                  IsChecked="{Binding UseHiddenBias, Mode=TwoWay}" />
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}"
+                                       Text="Layer 2:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12"
+                                        IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="1"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding SecondHiddenUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding SecondHiddenUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                            <Border Grid.Column="3"
+                                    Classes="bias-separator" />
+                            <CheckBox Grid.Column="5"
+                                      Classes="bias-toggle"
+                                      IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}"
+                                      IsChecked="{Binding UseSecondHiddenBias, Mode=TwoWay}" />
+                        </Grid>
 
-                        <TextBlock Grid.Row="3"
-                                   Classes="config-label"
-                                   IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}"
-                                   Text="Layer 2:" />
-                        <StackPanel Grid.Row="3"
-                                    Grid.Column="1"
-                                    Spacing="2"
-                                    IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}">
-                            <Slider Classes="config-slider"
-                                    Minimum="1"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding SecondHiddenUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                        <CheckBox Classes="bias-toggle"
-                                  Grid.Row="3"
-                                  Grid.Column="2"
-                                  IsEnabled="{Binding IsFeedForwardSecondLayerEnabled}"
-                                  IsChecked="{Binding UseSecondHiddenBias, Mode=TwoWay}" />
-
-                        <TextBlock Grid.Row="4"
-                                   Classes="config-label"
-                                   Text="Output units:" />
-                        <StackPanel Grid.Row="4"
-                                    Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Classes="config-slider"
-                                    Minimum="1"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding OutputUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       Text="Output units:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="1"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding OutputUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding OutputUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </Border>
             </TabItem>
 
             <TabItem Classes="config-tab"
                      Header="SRN">
                 <Border Classes="config-panel">
-                    <Grid ColumnDefinitions="140,*,36"
-                          RowDefinitions="Auto,Auto,Auto"
-                          ColumnSpacing="10"
-                          RowSpacing="16">
-                        <TextBlock Grid.Column="2"
-                                   Text="bias"
-                                   HorizontalAlignment="Center"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Foreground="#4A4A4A" />
+                    <StackPanel Spacing="16">
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       Text="Input units:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="1"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding InputUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding InputUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                            <Border Grid.Column="3"
+                                    Classes="bias-separator" />
+                            <TextBlock Grid.Column="5"
+                                       Text="bias"
+                                       HorizontalAlignment="Center"
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       Foreground="#4A4A4A" />
+                        </Grid>
 
-                        <TextBlock Classes="config-label"
-                                   Text="Input units:" />
-                        <StackPanel Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Classes="config-slider"
-                                    Minimum="1"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding InputUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                        <CheckBox Classes="bias-toggle"
-                                  Grid.Column="2"
-                                  IsChecked="{Binding UseInputBias, Mode=TwoWay}" />
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       Text="Layer 1:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="1"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding HiddenUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding HiddenUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                            <Border Grid.Column="3"
+                                    Classes="bias-separator" />
+                            <CheckBox Grid.Column="5"
+                                      Classes="bias-toggle"
+                                      IsChecked="{Binding UseHiddenBias, Mode=TwoWay}" />
+                        </Grid>
 
-                        <TextBlock Grid.Row="1"
-                                   Classes="config-label"
-                                   Text="Layer 1:" />
-                        <StackPanel Grid.Row="1"
-                                    Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Classes="config-slider"
-                                    Minimum="1"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding HiddenUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                        <CheckBox Classes="bias-toggle"
-                                  Grid.Row="1"
-                                  Grid.Column="2"
-                                  IsChecked="{Binding UseHiddenBias, Mode=TwoWay}" />
-
-                        <TextBlock Grid.Row="2"
-                                   Classes="config-label"
-                                   Text="Output units:" />
-                        <StackPanel Grid.Row="2"
-                                    Grid.Column="1"
-                                    Spacing="2">
-                            <Slider Classes="config-slider"
-                                    Minimum="1"
-                                    Maximum="10"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Value="{Binding OutputUnitsValue, Mode=TwoWay}" />
-                            <Grid ColumnDefinitions="Auto,*,Auto,*,Auto">
-                                <TextBlock Text="1" />
-                                <TextBlock Grid.Column="2"
-                                           HorizontalAlignment="Center"
-                                           Text="5" />
-                                <TextBlock Grid.Column="4"
-                                           HorizontalAlignment="Right"
-                                           Text="10" />
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
+                        <Grid ColumnDefinitions="140,*,12,1,12,36"
+                              ColumnSpacing="0">
+                            <TextBlock Grid.Column="0"
+                                       Classes="config-label"
+                                       Text="Output units:" />
+                            <StackPanel Grid.Column="1"
+                                        Spacing="12">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <Slider Classes="config-slider"
+                                            Minimum="1"
+                                            Maximum="10"
+                                            TickFrequency="1"
+                                            TickPlacement="BottomRight"
+                                            IsSnapToTickEnabled="True"
+                                            Value="{Binding OutputUnitsValue, Mode=TwoWay}" />
+                                    <TextBlock Grid.Column="1"
+                                               Classes="slider-value"
+                                               Text="{Binding OutputUnitsValue}" />
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
                 </Border>
             </TabItem>
         </TabControl>
