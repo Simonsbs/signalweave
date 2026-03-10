@@ -248,25 +248,10 @@
                                     <CheckBox x:Name="SecondHiddenBiasCheckBox" Content="Hidden 2" Click="TopologyOptionChanged" />
                                 </StackPanel>
 
-                                <TextBlock Grid.Row="7" Text="Learning rate" VerticalAlignment="Center" />
-                                <ComboBox x:Name="LearningRateComboBox"
-                                          Grid.Row="7"
-                                          Grid.Column="1"
-                                          IsEditable="True" />
-
-                                <TextBlock Grid.Row="8" Text="Momentum" VerticalAlignment="Center" />
-                                <ComboBox x:Name="MomentumComboBox"
-                                          Grid.Row="8"
-                                          Grid.Column="1"
-                                          IsEditable="True" />
-
-                                <TextBlock Grid.Row="9" Text="Weight range" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="7" Text="Weight range" VerticalAlignment="Center" />
                                 <ComboBox x:Name="WeightRangeComboBox"
-                                          Grid.Row="9"
+                                          Grid.Row="7"
                                           Grid.Column="1" />
-
-                                <TextBlock Grid.Row="10" Text="Error threshold" VerticalAlignment="Center" />
-                                <TextBox x:Name="ErrorThresholdTextBox" Grid.Row="10" Grid.Column="1" />
                             </Grid>
                         </ScrollViewer>
                     </TabItem>
@@ -276,23 +261,40 @@
                               RowDefinitions="Auto,Auto,Auto,*"
                               RowSpacing="14">
                             <Grid ColumnDefinitions="Auto,*"
-                                  RowDefinitions="Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                                   ColumnSpacing="12"
                                   RowSpacing="10">
-                                <TextBlock Text="Learning steps" VerticalAlignment="Center" />
-                                <ComboBox x:Name="LearningStepsComboBox"
+                                <TextBlock Text="Learning rate" VerticalAlignment="Center" />
+                                <ComboBox x:Name="LearningRateComboBox"
                                           Grid.Column="1"
                                           IsEditable="True" />
 
-                                <TextBlock Grid.Row="1" Text="Training mode" VerticalAlignment="Center" />
-                                <CheckBox x:Name="BatchUpdateCheckBox"
+                                <TextBlock Grid.Row="1" Text="Momentum" VerticalAlignment="Center" />
+                                <ComboBox x:Name="MomentumComboBox"
                                           Grid.Row="1"
+                                          Grid.Column="1"
+                                          IsEditable="True" />
+
+                                <TextBlock Grid.Row="2" Text="Error threshold" VerticalAlignment="Center" />
+                                <TextBox x:Name="ErrorThresholdTextBox"
+                                         Grid.Row="2"
+                                         Grid.Column="1" />
+
+                                <TextBlock Grid.Row="3" Text="Learning steps" VerticalAlignment="Center" />
+                                <ComboBox x:Name="LearningStepsComboBox"
+                                          Grid.Row="3"
+                                          Grid.Column="1"
+                                          IsEditable="True" />
+
+                                <TextBlock Grid.Row="4" Text="Training mode" VerticalAlignment="Center" />
+                                <CheckBox x:Name="BatchUpdateCheckBox"
+                                          Grid.Row="4"
                                           Grid.Column="1"
                                           Content="Batch update" />
 
-                                <TextBlock Grid.Row="2" Text="Error function" VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="5" Text="Error function" VerticalAlignment="Center" />
                                 <CheckBox x:Name="CrossEntropyCheckBox"
-                                          Grid.Row="2"
+                                          Grid.Row="5"
                                           Grid.Column="1"
                                           Content="Cross entropy" />
 
