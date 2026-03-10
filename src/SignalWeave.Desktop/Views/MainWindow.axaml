@@ -88,7 +88,7 @@
 
         <Grid RowDefinitions="*,220"
               RowSpacing="8">
-            <Grid ColumnDefinitions="*,258"
+            <Grid ColumnDefinitions="*,300"
                   ColumnSpacing="8">
                 <Border Classes="group">
                     <Grid RowDefinitions="Auto,*">
@@ -171,8 +171,8 @@
                                    Text="Control panel" />
 
                         <Grid Grid.Row="1"
-                              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-                              ColumnDefinitions="*,90"
+                              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                              ColumnDefinitions="96,*"
                               RowSpacing="8"
                               ColumnSpacing="8"
                               Margin="2,2,2,0">
@@ -180,8 +180,9 @@
                                        VerticalAlignment="Center"
                                        IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Column="1"
+                                      IsEditable="True"
                                       ItemsSource="{Binding LearningRateOptions}"
-                                      SelectedItem="{Binding SelectedLearningRate, Mode=TwoWay}"
+                                      Text="{Binding SelectedLearningRate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       IsEnabled="{Binding CanAdjustControls}" />
 
                             <TextBlock Grid.Row="1"
@@ -190,8 +191,9 @@
                                        IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Row="1"
                                       Grid.Column="1"
+                                      IsEditable="True"
                                       ItemsSource="{Binding MomentumOptions}"
-                                      SelectedItem="{Binding SelectedMomentum, Mode=TwoWay}"
+                                      Text="{Binding SelectedMomentum, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       IsEnabled="{Binding CanAdjustControls}" />
 
                             <TextBlock Grid.Row="2"
@@ -200,8 +202,9 @@
                                        IsEnabled="{Binding CanAdjustControls}" />
                             <ComboBox Grid.Row="2"
                                       Grid.Column="1"
+                                      IsEditable="True"
                                       ItemsSource="{Binding LearningStepOptions}"
-                                      SelectedItem="{Binding SelectedLearningSteps, Mode=TwoWay}"
+                                      Text="{Binding SelectedLearningSteps, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       IsEnabled="{Binding CanAdjustControls}" />
 
                             <TextBlock Grid.Row="3"
@@ -214,37 +217,48 @@
                                       SelectedItem="{Binding SelectedWeightRange, Mode=TwoWay}"
                                       IsEnabled="{Binding CanAdjustControls}" />
 
-                            <CheckBox Grid.Row="4"
-                                      Content="Batch Update"
-                                      IsChecked="{Binding BatchUpdate, Mode=TwoWay}"
-                                      IsEnabled="{Binding CanAdjustControls}" />
-                            <CheckBox Grid.Row="4"
-                                      Grid.Column="1"
-                                      Content="X-entropy"
-                                      IsChecked="{Binding CrossEntropy, Mode=TwoWay}"
-                                      IsEnabled="{Binding CanToggleCrossEntropy}" />
+                            <Grid Grid.Row="4"
+                                  Grid.ColumnSpan="2"
+                                  ColumnDefinitions="*,*"
+                                  ColumnSpacing="8">
+                                <CheckBox Content="Batch Update"
+                                          IsChecked="{Binding BatchUpdate, Mode=TwoWay}"
+                                          IsEnabled="{Binding CanAdjustControls}" />
+                                <CheckBox Grid.Column="1"
+                                          Content="X-entropy"
+                                          IsChecked="{Binding CrossEntropy, Mode=TwoWay}"
+                                          IsEnabled="{Binding CanToggleCrossEntropy}" />
+                            </Grid>
 
-                            <Button Grid.Row="5"
-                                    Classes="panel"
-                                    Content="Reset"
-                                    Command="{Binding ResetNetworkCommand}"
-                                    IsEnabled="{Binding CanRunReset}" />
-                            <Button Grid.Row="5"
-                                    Grid.Column="1"
-                                    Classes="panel"
-                                    Content="{Binding TrainButtonLabel}"
-                                    Command="{Binding TrainCommand}"
-                                    IsEnabled="{Binding CanRunTrain}" />
+                            <Grid Grid.Row="5"
+                                  Grid.ColumnSpan="2"
+                                  ColumnDefinitions="*,*"
+                                  ColumnSpacing="8">
+                                <Button Grid.Column="0"
+                                        Classes="panel"
+                                        HorizontalAlignment="Stretch"
+                                        Content="Reset"
+                                        Command="{Binding ResetNetworkCommand}"
+                                        IsEnabled="{Binding CanRunReset}" />
+                                <Button Grid.Column="1"
+                                        Classes="panel"
+                                        HorizontalAlignment="Stretch"
+                                        Content="{Binding TrainButtonLabel}"
+                                        Command="{Binding TrainCommand}"
+                                        IsEnabled="{Binding CanRunTrain}" />
+                            </Grid>
 
                             <TextBlock Grid.Row="6"
+                                       Grid.ColumnSpan="2"
                                        Text="Progress"
                                        VerticalAlignment="Center" />
-                            <Grid Grid.Row="6"
-                                  Grid.Column="1">
+                            <Grid Grid.Row="7"
+                                  Grid.ColumnSpan="2">
                                 <ProgressBar Minimum="0"
                                              Maximum="{Binding ProgressMaximum}"
                                              Value="{Binding ProgressValue}"
                                              Height="24"
+                                             HorizontalAlignment="Stretch"
                                              Foreground="#6689AF"
                                              Background="#EDF1F5"
                                              BorderBrush="#9FB0C0"
@@ -256,25 +270,27 @@
                                            FontWeight="SemiBold" />
                             </Grid>
 
-                            <TextBlock Grid.Row="7"
+                            <TextBlock Grid.Row="8"
                                        Text="Pattern"
                                        VerticalAlignment="Center"
                                        IsEnabled="{Binding CanSelectPattern}" />
-                            <ComboBox Grid.Row="7"
+                            <ComboBox Grid.Row="8"
                                       Grid.Column="1"
                                       ItemsSource="{Binding PatternOptions}"
                                       SelectedItem="{Binding SelectedPattern, Mode=TwoWay}"
                                       IsEnabled="{Binding CanSelectPattern}" />
 
-                            <Button Grid.Row="8"
-                                    Grid.ColumnSpan="2"
-                                    Classes="panel"
-                                    Content="Test one"
-                                    Command="{Binding TestOneCommand}"
-                                    IsEnabled="{Binding EffectiveCanTestOne}" />
                             <Button Grid.Row="9"
                                     Grid.ColumnSpan="2"
                                     Classes="panel"
+                                    HorizontalAlignment="Stretch"
+                                    Content="Test one"
+                                    Command="{Binding TestOneCommand}"
+                                    IsEnabled="{Binding EffectiveCanTestOne}" />
+                            <Button Grid.Row="10"
+                                    Grid.ColumnSpan="2"
+                                    Classes="panel"
+                                    HorizontalAlignment="Stretch"
                                     Content="Test all"
                                     Command="{Binding TestAllCommand}"
                                     IsEnabled="{Binding CanRunTestAll}" />
@@ -284,7 +300,7 @@
             </Grid>
 
             <Grid Grid.Row="1"
-                  ColumnDefinitions="*,258"
+                  ColumnDefinitions="*,300"
                   ColumnSpacing="8">
                 <Border Classes="group">
                     <Grid RowDefinitions="Auto,*">
