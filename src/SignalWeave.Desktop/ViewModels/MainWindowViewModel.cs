@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -282,13 +283,17 @@ public partial class MainWindowViewModel : ViewModelBase
                 var completedCycles = startingCycles + point.Epoch;
                 ProgressValue = completedCycles;
                 ProgressLabel = completedCycles.ToString(CultureInfo.InvariantCulture);
-                ErrorProgressPoints = BuildErrorPolyline(liveHistory);
+                ErrorProgressPoints = BuildErrorPolyline(liveHistory, 600);
                 UpdateErrorPlotScale(liveHistory);
             });
 
             await WithBusyControllerAsync(ControllerActivity.Learning, async () =>
             {
-                var result = await Task.Run(() => engine.Train(patternSet, steps, progress));
+                var result = await Task.Factory.StartNew(
+                    () => engine.Train(patternSet, steps, progress),
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default);
                 _lastRun = result.FinalRun;
                 _diagramResult = null;
 
@@ -1166,7 +1171,7 @@ public partial class MainWindowViewModel : ViewModelBase
         return builder.ToString();
     }
 
-    private static string BuildErrorPolyline(IReadOnlyList<TrainingPoint> history)
+    private static string BuildErrorPolyline(IReadOnlyList<TrainingPoint> history, int? maxPoints = null)
     {
         if (history.Count == 0)
         {
@@ -1177,17 +1182,38 @@ public partial class MainWindowViewModel : ViewModelBase
         const double top = 8;
         const double width = 226;
         const double height = 108;
+        var plotHistory = maxPoints is > 1 ? SampleTrainingHistory(history, maxPoints.Value) : history;
         var maxEpoch = Math.Max(1, history[^1].Epoch - 1);
         var maxY = Math.Max(0.01, history.Max(point => point.AverageError));
 
         return string.Join(
             " ",
-            history.Select(point =>
+            plotHistory.Select(point =>
             {
                 var x = left + ((point.Epoch - 1) * width / maxEpoch);
                 var y = top + (height - ((point.AverageError / maxY) * height));
                 return $"{x.ToString("0.##", CultureInfo.InvariantCulture)},{y.ToString("0.##", CultureInfo.InvariantCulture)}";
             }));
+    }
+
+    private static IReadOnlyList<TrainingPoint> SampleTrainingHistory(IReadOnlyList<TrainingPoint> history, int maxPoints)
+    {
+        if (history.Count <= maxPoints)
+        {
+            return history;
+        }
+
+        var stride = (double)(history.Count - 1) / (maxPoints - 1);
+        var sampled = new List<TrainingPoint>(maxPoints);
+
+        for (var index = 0; index < maxPoints; index++)
+        {
+            var sourceIndex = (int)Math.Round(index * stride, MidpointRounding.AwayFromZero);
+            sourceIndex = Math.Clamp(sourceIndex, 0, history.Count - 1);
+            sampled.Add(history[sourceIndex]);
+        }
+
+        return sampled;
     }
 
     private void UpdateErrorPlotScale(IReadOnlyList<TrainingPoint> history)

@@ -9,10 +9,10 @@
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="SignalWeave: A Simple Neural Network Simulator. Version 1.0"
-        Width="1360"
-        Height="900"
-        MinWidth="1180"
-        MinHeight="780"
+        Width="1510"
+        Height="1010"
+        MinWidth="1330"
+        MinHeight="860"
         Background="#D9D9D9">
 
     <Design.DataContext>
@@ -86,9 +86,9 @@
             </MenuItem>
         </Menu>
 
-        <Grid RowDefinitions="*,220"
+        <Grid RowDefinitions="*,330"
               RowSpacing="8">
-            <Grid ColumnDefinitions="*,300"
+            <Grid ColumnDefinitions="*,450"
                   ColumnSpacing="8">
                 <Border Classes="group">
                     <Grid RowDefinitions="Auto,*">
@@ -305,7 +305,7 @@
             </Grid>
 
             <Grid Grid.Row="1"
-                  ColumnDefinitions="*,300"
+                  ColumnDefinitions="*,450"
                   ColumnSpacing="8">
                 <Border Classes="group">
                     <Grid RowDefinitions="Auto,*">
@@ -338,8 +338,8 @@
                                           SelectedItem="{Binding SelectedErrorPlotDisplayMode, Mode=TwoWay}" />
                                 <Canvas x:Name="ErrorPlotCanvas"
                                         Grid.Row="1"
-                                        MinWidth="220"
-                                        MinHeight="170"
+                                        MinWidth="330"
+                                        MinHeight="255"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch" />
                             </Grid>
