@@ -638,20 +638,20 @@ public partial class MainWindowViewModel : ViewModelBase
             Math.Max(
                 Math.Max(_definition.InputUnits, _definition.HiddenUnits),
                 Math.Max(_definition.SecondHiddenUnits, _definition.OutputUnits)));
-        var graphLeft = canvasWidth * 0.20;
-        var graphRight = canvasWidth * 0.92;
+        var graphLeft = canvasWidth * 0.12;
+        var graphRight = canvasWidth * 0.97;
         var graphWidth = Math.Max(140, graphRight - graphLeft);
-        var nodeWidth = Math.Clamp(graphWidth / (maxUnitsInRow * 1.35), 22, 52);
-        var nodeHeight = Math.Clamp(nodeWidth * 0.8, 20, 42);
-        var biasWidth = Math.Clamp(nodeWidth + 10, 34, 60);
-        var biasHeight = Math.Clamp(nodeHeight + 16, 34, 60);
+        var nodeWidth = Math.Clamp(graphWidth / (maxUnitsInRow * 0.92), 44, 104);
+        var nodeHeight = Math.Clamp(nodeWidth * 0.9, 40, 92);
+        var biasWidth = Math.Clamp(nodeWidth + 18, 62, 128);
+        var biasHeight = Math.Clamp(nodeHeight + 18, 56, 112);
         var biasX = Math.Max(8, graphLeft - biasWidth - Math.Max(14, nodeWidth * 0.35));
 
         var layerCount = _definition.IsDirectFeedForward
             ? 2
             : _definition.HasSecondHiddenLayer ? 4 : 3;
-        var topPadding = Math.Max(18, canvasHeight * 0.10);
-        var bottomPadding = Math.Max(18, canvasHeight * 0.12);
+        var topPadding = Math.Max(16, canvasHeight * 0.07);
+        var bottomPadding = Math.Max(18, canvasHeight * 0.10);
         var layerYs = BuildLane(layerCount, topPadding, canvasHeight - bottomPadding - nodeHeight);
 
         var outputRowTop = layerYs[0];
