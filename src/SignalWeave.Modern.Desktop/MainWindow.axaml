@@ -80,96 +80,107 @@
                 </Grid>
             </Border>
 
-            <TabControl Grid.Row="1"
-                        Margin="0"
-                        TabStripPlacement="Top">
-                <TabItem Header="Patterns">
-                    <Border Classes="card"
-                            Padding="0">
-                        <Grid RowDefinitions="Auto,*"
-                              RowSpacing="12"
-                              Margin="16">
-                            <TextBlock Classes="muted"
-                                       TextWrapping="Wrap"
-                                       Text="Patterns are edited directly in the project. Saving the project persists the network settings, current weights, training-cycle count, and control-panel state in one file." />
-
-                            <TextBox Grid.Row="1"
-                                     x:Name="PatternEditorTextBox"
-                                     AcceptsReturn="True"
-                                     TextWrapping="NoWrap"
-                                     FontFamily="Cascadia Mono, Consolas, monospace" />
+            <Grid Grid.Row="1"
+                  RowDefinitions="340,*"
+                  RowSpacing="18">
+                <Border Classes="card"
+                        Padding="0">
+                    <Grid RowDefinitions="Auto,*"
+                          RowSpacing="10"
+                          Margin="16">
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="12">
+                            <TextBlock Text="Network graph"
+                                       Classes="section" />
+                            <TextBlock x:Name="NetworkGraphSummaryTextBlock"
+                                       Grid.Column="1"
+                                       Classes="muted"
+                                       HorizontalAlignment="Right"
+                                       Text="Topology view" />
                         </Grid>
-                    </Border>
-                </TabItem>
 
-                <TabItem Header="Results">
-                    <Border Classes="card"
-                            Padding="0">
-                        <Grid RowDefinitions="Auto,200,*"
-                              RowSpacing="14"
-                              Margin="16">
-                            <Grid ColumnDefinitions="2.2*,1*"
-                                  ColumnSpacing="16">
-                                <StackPanel Spacing="6">
-                                    <TextBlock Text="Project summary"
-                                               Classes="section" />
-                                    <TextBlock x:Name="ProjectSummaryTextBlock"
-                                               Classes="muted"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
+                        <Canvas Grid.Row="1"
+                                x:Name="NetworkGraphCanvas"
+                                Background="#FFF9F1"
+                                MinHeight="280" />
+                    </Grid>
+                </Border>
 
-                                <StackPanel Grid.Column="1"
-                                            Spacing="6">
-                                    <TextBlock Text="Weights"
-                                               Classes="section" />
-                                    <TextBlock x:Name="WeightsSummaryTextBlock"
-                                               Classes="muted"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
+                <TabControl Grid.Row="1"
+                            Margin="0"
+                            TabStripPlacement="Top">
+                    <TabItem Header="Patterns">
+                        <Border Classes="card"
+                                Padding="0">
+                            <Grid RowDefinitions="Auto,*"
+                                  RowSpacing="12"
+                                  Margin="16">
+                                <TextBlock Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="Patterns are edited directly in the project. Saving the project persists the network settings, current weights, training-cycle count, and control-panel state in one file." />
+
+                                <TextBox Grid.Row="1"
+                                         x:Name="PatternEditorTextBox"
+                                         AcceptsReturn="True"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Cascadia Mono, Consolas, monospace" />
                             </Grid>
+                        </Border>
+                    </TabItem>
 
-                            <Border Grid.Row="1"
-                                    BorderBrush="#D7CCBD"
-                                    BorderThickness="1"
-                                    Padding="10">
-                                <Grid RowDefinitions="Auto,*"
-                                      RowSpacing="8">
-                                    <Grid ColumnDefinitions="*,Auto"
-                                          ColumnSpacing="12">
+                    <TabItem Header="Results">
+                        <Border Classes="card"
+                                Padding="0">
+                            <Grid RowDefinitions="Auto,240,*"
+                                  RowSpacing="14"
+                                  Margin="16">
+                                <Grid ColumnDefinitions="2.2*,1*"
+                                      ColumnSpacing="16">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Project summary"
+                                                   Classes="section" />
+                                        <TextBlock x:Name="ProjectSummaryTextBlock"
+                                                   Classes="muted"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1"
+                                                Spacing="6">
+                                        <TextBlock Text="Weights"
+                                                   Classes="section" />
+                                        <TextBlock x:Name="WeightsSummaryTextBlock"
+                                                   Classes="muted"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="1"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        Padding="10">
+                                    <Grid RowDefinitions="Auto,*"
+                                          RowSpacing="8">
                                         <TextBlock Text="Training history"
                                                    Classes="section" />
-                                        <StackPanel Grid.Column="1"
-                                                    Orientation="Horizontal"
-                                                    Spacing="8">
-                                            <TextBlock Text="Display"
-                                                       VerticalAlignment="Center"
-                                                       Classes="muted" />
-                                            <ComboBox x:Name="PlotModeComboBox"
-                                                      Width="120"
-                                                      SelectionChanged="PlotModeComboBox_SelectionChanged">
-                                                <ComboBoxItem Content="Line" />
-                                                <ComboBoxItem Content="Dots" />
-                                            </ComboBox>
-                                        </StackPanel>
+
+                                        <Canvas Grid.Row="1"
+                                                x:Name="ErrorPlotCanvas"
+                                                MinHeight="190"
+                                                Background="#FFF9F1" />
                                     </Grid>
+                                </Border>
 
-                                    <Canvas Grid.Row="1"
-                                            x:Name="ErrorPlotCanvas"
-                                            MinHeight="150"
-                                            Background="#FFF9F1" />
-                                </Grid>
-                            </Border>
-
-                            <TextBox Grid.Row="2"
-                                     x:Name="ResultsTextBox"
-                                     IsReadOnly="True"
-                                     AcceptsReturn="True"
-                                     TextWrapping="NoWrap"
-                                     FontFamily="Cascadia Mono, Consolas, monospace" />
-                        </Grid>
-                    </Border>
-                </TabItem>
-            </TabControl>
+                                <TextBox Grid.Row="2"
+                                         x:Name="ResultsTextBox"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Cascadia Mono, Consolas, monospace" />
+                            </Grid>
+                        </Border>
+                    </TabItem>
+                </TabControl>
+            </Grid>
 
             <Border Grid.Row="1"
                     Grid.Column="1"

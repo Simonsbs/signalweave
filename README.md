@@ -183,6 +183,7 @@ The `samples/` directory contains starter network and pattern files:
 
 - `xor.swcfg` and `xor.pat`
 - `echo-srn.swcfg` and `echo-srn.pat`
+- `seventeen-patterns-7x7-modern.swproj.json`
 
 ## Compatibility note
 

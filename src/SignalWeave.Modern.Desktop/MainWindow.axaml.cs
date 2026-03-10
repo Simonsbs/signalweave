@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private NetworkDefinition? _definition;
     private PatternSet _patterns = new([]);
     private string? _currentProjectPath;
+    private TestResult? _diagramResult;
     private TrainingPoint? _latestTrainingPoint;
     private List<TrainingPoint> _liveTrainingHistory = [];
     private DispatcherTimer? _trainingProgressTimer;
@@ -41,6 +42,11 @@ public partial class MainWindow : Window
         if (ErrorPlotCanvas is not null)
         {
             ErrorPlotCanvas.SizeChanged += (_, _) => RenderErrorPlot(_trainingHistory);
+        }
+
+        if (NetworkGraphCanvas is not null)
+        {
+            NetworkGraphCanvas.SizeChanged += (_, _) => RenderNetworkGraph();
         }
 
         LoadProjectState(CreateDefaultProject(), null, "Loaded the default Modern sample project.");
@@ -60,7 +66,6 @@ public partial class MainWindow : Window
         MomentumComboBox.ItemsSource = _momentumOptions;
         LearningStepsComboBox.ItemsSource = _learningStepOptions;
         WeightRangeComboBox.ItemsSource = _weightRangeOptions;
-        PlotModeComboBox.SelectedIndex = 0;
     }
 
     private static SignalWeaveProject CreateDefaultProject()
@@ -72,7 +77,7 @@ public partial class MainWindow : Window
             patterns,
             null,
             0,
-            new ProjectWorkspaceState(5000, 0, "Line"));
+            new ProjectWorkspaceState(5000, 0, "Dots"));
     }
 
     private void LoadProjectState(SignalWeaveProject project, string? path, string consoleMessage)
@@ -82,6 +87,7 @@ public partial class MainWindow : Window
         _patterns = project.Patterns;
         _engine = new SignalWeaveEngine(project.Definition, project.Weights);
         _engine.RestoreCompletedCycles(project.CompletedCycles);
+        _diagramResult = null;
         _trainingHistory.Clear();
         _latestTrainingPoint = null;
         _liveTrainingHistory.Clear();
@@ -90,7 +96,6 @@ public partial class MainWindow : Window
         PatternEditorTextBox.Text = PatternSetWriter.Write(project.Patterns);
         LearningStepsComboBox.Text = project.Workspace?.LearningSteps.ToString(CultureInfo.InvariantCulture)
             ?? project.Definition.MaxEpochs.ToString(CultureInfo.InvariantCulture);
-        SetPlotMode(project.Workspace?.ErrorPlotDisplayMode ?? "Line");
         UpdatePatternSelector(project.Workspace?.SelectedPatternIndex ?? 0);
 
         ResultsTextBox.Text = "No run executed yet.";
@@ -104,6 +109,7 @@ public partial class MainWindow : Window
         SyncNetworkKindControls();
         UpdateWorkspaceSummary();
         RenderErrorPlot(_trainingHistory);
+        RenderNetworkGraph();
         AppendConsole(consoleMessage);
         SetStatus(path is null
             ? "Working in an unsaved project."
@@ -154,6 +160,7 @@ public partial class MainWindow : Window
             ProjectSummaryTextBlock.Text = "No active project.";
             WeightsSummaryTextBlock.Text = "No active weights.";
             ProjectStateTextBlock.Text = "No active project loaded.";
+            NetworkGraphSummaryTextBlock.Text = "No graph available.";
             CompletedCyclesTextBlock.Text = "0";
             ProjectPathTextBlock.Text = "Project file: unsaved project";
             return;
@@ -167,6 +174,9 @@ public partial class MainWindow : Window
         WeightsSummaryTextBlock.Text = BuildWeightSummary(_engine.Weights, _definition);
         CompletedCyclesTextBlock.Text = _engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
         ProjectPathTextBlock.Text = $"Project file: {_currentProjectPath ?? "unsaved project"}";
+        NetworkGraphSummaryTextBlock.Text = _diagramResult is null
+            ? $"{_definition.TotalLayerCount}-layer topology"
+            : $"Showing activations for pattern {_diagramResult.Index + 1}: {_diagramResult.Label}";
         ProjectStateTextBlock.Text =
             $"Project saves persist current weights, {_engine.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles, " +
             $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, and selected pattern {Math.Max(PatternSelectorComboBox.SelectedIndex, 0) + 1}.";
@@ -372,11 +382,6 @@ public partial class MainWindow : Window
         SyncNetworkKindControls();
     }
 
-    private void PlotModeComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        RenderErrorPlot(_trainingHistory);
-    }
-
     private void ClearConsole_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         ConsoleTextBox.Text = string.Empty;
@@ -392,6 +397,7 @@ public partial class MainWindow : Window
         try
         {
             ApplyUiToRuntime(preserveWeights: false);
+            _diagramResult = null;
             _trainingHistory.Clear();
             _latestTrainingPoint = null;
             ResultsTextBox.Text = "Weights reset using the current project settings.";
@@ -399,6 +405,7 @@ public partial class MainWindow : Window
             TrainingProgressBar.Value = 0;
             ProgressLabelTextBlock.Text = "Idle";
             RenderErrorPlot(_trainingHistory);
+            RenderNetworkGraph();
             UpdateWorkspaceSummary();
             AppendConsole("Reset network weights from the current project settings.");
             SetStatus("Weights reset.");
@@ -427,6 +434,7 @@ public partial class MainWindow : Window
             _trainingHistory.Clear();
             _liveTrainingHistory = [];
             _latestTrainingPoint = null;
+            _diagramResult = null;
             TrainingProgressBar.Maximum = Math.Max(steps, 1);
             TrainingProgressBar.Value = 0;
             ProgressLabelTextBlock.Text = $"0 / {steps.ToString(CultureInfo.InvariantCulture)}";
@@ -465,6 +473,7 @@ public partial class MainWindow : Window
             LatestRunSummaryTextBlock.Text =
                 $"Training complete. Final displayed average error: {FormatNumber(result.FinalRun.DisplayAverageError)}";
             RenderErrorPlot(_trainingHistory);
+            RenderNetworkGraph();
             UpdateWorkspaceSummary();
             AppendConsole($"Training finished after {result.History.Count.ToString(CultureInfo.InvariantCulture)} steps.");
             SetStatus("Training complete.");
@@ -495,8 +504,10 @@ public partial class MainWindow : Window
 
             var index = PatternSelectorComboBox.SelectedIndex;
             var result = _engine!.TestOne(_patterns, index);
+            _diagramResult = result;
             ResultsTextBox.Text = BuildSingleResultText(result);
             LatestRunSummaryTextBlock.Text = $"Tested pattern {index + 1}: {result.Label}";
+            RenderNetworkGraph();
             UpdateWorkspaceSummary();
             AppendConsole($"Tested pattern {index + 1}: {result.Label}");
             SetStatus("Test one complete.");
@@ -521,8 +532,11 @@ public partial class MainWindow : Window
             EnsurePatternsAvailable();
 
             var result = _engine!.TestAll(_patterns);
+            var selectedIndex = Math.Clamp(PatternSelectorComboBox.SelectedIndex, 0, result.Results.Count - 1);
+            _diagramResult = result.Results.Count == 0 ? null : result.Results[selectedIndex];
             ResultsTextBox.Text = result.ToTable();
             LatestRunSummaryTextBlock.Text = $"Test all complete. Displayed average error: {FormatNumber(result.DisplayAverageError)}";
+            RenderNetworkGraph();
             UpdateWorkspaceSummary();
             AppendConsole($"Test all finished. Displayed average error: {FormatNumber(result.DisplayAverageError)}");
             SetStatus("Test all complete.");
@@ -549,10 +563,12 @@ public partial class MainWindow : Window
         _patterns = nextPatterns;
         _engine = new SignalWeaveEngine(nextDefinition, weights);
         _engine.RestoreCompletedCycles(completedCycles);
+        _diagramResult = canReuseWeights ? _diagramResult : null;
 
         var selectedIndex = Math.Max(PatternSelectorComboBox.SelectedIndex, 0);
         UpdatePatternSelector(selectedIndex);
         UpdateWorkspaceSummary();
+        RenderNetworkGraph();
 
         if (definitionChanged || patternsChanged || !canReuseWeights)
         {
@@ -576,7 +592,7 @@ public partial class MainWindow : Window
         return new ProjectWorkspaceState(
             ParseLearningStepsFromControls(),
             Math.Max(PatternSelectorComboBox.SelectedIndex, 0),
-            GetSelectedPlotMode());
+            "Dots");
     }
 
     private NetworkDefinition BuildDefinitionFromControls()
@@ -858,30 +874,273 @@ public partial class MainWindow : Window
             })
             .ToList();
 
-        if (string.Equals(GetSelectedPlotMode(), "Dots", StringComparison.OrdinalIgnoreCase))
+        foreach (var point in points)
         {
-            foreach (var point in points)
+            var dot = new Ellipse
             {
-                var dot = new Ellipse
-                {
-                    Width = 3,
-                    Height = 3,
-                    Fill = Brush.Parse("#B31B1B")
-                };
-                Canvas.SetLeft(dot, point.X - 1.5);
-                Canvas.SetTop(dot, point.Y - 1.5);
-                ErrorPlotCanvas.Children.Add(dot);
+                Width = 3,
+                Height = 3,
+                Fill = Brush.Parse("#B31B1B")
+            };
+            Canvas.SetLeft(dot, point.X - 1.5);
+            Canvas.SetTop(dot, point.Y - 1.5);
+            ErrorPlotCanvas.Children.Add(dot);
+        }
+    }
+
+    private void RenderNetworkGraph()
+    {
+        if (NetworkGraphCanvas is null)
+        {
+            return;
+        }
+
+        NetworkGraphCanvas.Children.Clear();
+
+        if (_definition is null || _engine is null)
+        {
+            return;
+        }
+
+        var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 620);
+        var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 280);
+        var top = 24.0;
+        var bottom = canvasHeight - 24.0;
+        var left = 94.0;
+        var right = canvasWidth - 24.0;
+        var rows = BuildGraphRows(_definition, _diagramResult);
+        var rowGap = rows.Count == 1 ? 0.0 : (bottom - top) / (rows.Count - 1);
+        var maxNodesInRow = Math.Max(rows.Max(row => row.Values.Length), 1);
+        var nodeSize = Math.Clamp(Math.Min((right - left) / (maxNodesInRow + 0.6), rowGap * 0.62), 24.0, 58.0);
+        var graphRows = new List<List<GraphNode>>(rows.Count);
+
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            var row = rows[rowIndex];
+            var y = top + (rowGap * rowIndex);
+            var title = new TextBlock
+            {
+                Text = row.Label,
+                Foreground = Brush.Parse("#6A6258"),
+                FontSize = 11
+            };
+            Canvas.SetLeft(title, 10);
+            Canvas.SetTop(title, y - 8);
+            NetworkGraphCanvas.Children.Add(title);
+
+            var usableWidth = Math.Max(right - left, nodeSize);
+            var count = Math.Max(row.Values.Length, 1);
+            var spacing = count == 1 ? 0.0 : (usableWidth - nodeSize) / (count - 1);
+            var rowLeft = left + ((usableWidth - ((count - 1) * spacing + nodeSize)) / 2.0);
+            var nodes = new List<GraphNode>(row.Values.Length + (row.HasBias ? 1 : 0));
+
+            if (row.HasBias)
+            {
+                nodes.Add(new GraphNode(left - (nodeSize * 1.18), y, nodeSize * 0.78, 1.0, "B"));
+            }
+
+            for (var index = 0; index < row.Values.Length; index++)
+            {
+                var x = count == 1
+                    ? left + ((usableWidth - nodeSize) / 2.0)
+                    : rowLeft + (spacing * index);
+                nodes.Add(new GraphNode(x, y, nodeSize, row.Values[index], row.ValueLabels[index]));
+            }
+
+            graphRows.Add(nodes);
+        }
+
+        DrawGraphConnections(graphRows);
+
+        foreach (var row in graphRows)
+        {
+            foreach (var node in row)
+            {
+                DrawGraphNode(node);
             }
         }
-        else
+    }
+
+    private void DrawGraphConnections(IReadOnlyList<List<GraphNode>> rows)
+    {
+        if (_definition is null || _engine is null || rows.Count < 2)
         {
-            ErrorPlotCanvas.Children.Add(new Polyline
-            {
-                Points = [.. points],
-                Stroke = Brush.Parse("#B31B1B"),
-                StrokeThickness = 1.8
-            });
+            return;
         }
+
+        if (_definition.IsDirectFeedForward)
+        {
+            DrawWeightMatrixConnections(rows[1], rows[0], _engine.Weights.InputHidden, _definition.UseInputBias);
+            return;
+        }
+
+        if (_definition.HasSecondHiddenLayer)
+        {
+            DrawWeightMatrixConnections(rows[3], rows[2], _engine.Weights.InputHidden, _definition.UseInputBias);
+            DrawWeightMatrixConnections(rows[2], rows[1], _engine.Weights.HiddenHidden!, _definition.UseHiddenBias);
+            DrawWeightMatrixConnections(rows[1], rows[0], _engine.Weights.HiddenOutput, _definition.UseSecondHiddenBias);
+            return;
+        }
+
+        DrawWeightMatrixConnections(rows[2], rows[1], _engine.Weights.InputHidden, _definition.UseInputBias);
+        DrawWeightMatrixConnections(rows[1], rows[0], _engine.Weights.HiddenOutput, _definition.UseHiddenBias);
+
+        if (_definition.NetworkKind == NetworkKind.SimpleRecurrent && _engine.Weights.RecurrentHidden is not null)
+        {
+            DrawRecurrentHints(rows[1], _engine.Weights.RecurrentHidden);
+        }
+    }
+
+    private void DrawWeightMatrixConnections(IReadOnlyList<GraphNode> sourceRow, IReadOnlyList<GraphNode> targetRow, double[,] weights, bool hasBias)
+    {
+        var sourceOffset = hasBias ? 1 : 0;
+        var targetOffset = targetRow.Count > 0 && targetRow[0].IsBias ? 1 : 0;
+
+        for (var sourceIndex = 0; sourceIndex < sourceRow.Count; sourceIndex++)
+        {
+            var matrixRow = sourceIndex < sourceOffset
+                ? weights.GetLength(0) - 1
+                : sourceIndex - sourceOffset;
+
+            for (var targetIndex = targetOffset; targetIndex < targetRow.Count; targetIndex++)
+            {
+                var targetColumn = targetIndex - targetOffset;
+                var weight = weights[matrixRow, targetColumn];
+                NetworkGraphCanvas!.Children.Add(new Line
+                {
+                    StartPoint = new Point(sourceRow[sourceIndex].CenterX, sourceRow[sourceIndex].CenterY),
+                    EndPoint = new Point(targetRow[targetIndex].CenterX, targetRow[targetIndex].CenterY),
+                    Stroke = GetWeightBrush(weight),
+                    StrokeThickness = 0.75 + (Math.Min(Math.Abs(weight), 1.5) * 1.15),
+                    Opacity = 0.72
+                });
+            }
+        }
+    }
+
+    private void DrawRecurrentHints(IReadOnlyList<GraphNode> hiddenRow, double[,] recurrentWeights)
+    {
+        var hiddenOffset = hiddenRow.Count > 0 && hiddenRow[0].IsBias ? 1 : 0;
+        for (var index = hiddenOffset; index < hiddenRow.Count; index++)
+        {
+            var node = hiddenRow[index];
+            var weight = recurrentWeights[index - hiddenOffset, index - hiddenOffset];
+            var loop = new Ellipse
+            {
+                Width = node.Size * 0.75,
+                Height = node.Size * 0.34,
+                Stroke = GetWeightBrush(weight),
+                StrokeThickness = 1.1,
+                Fill = Brushes.Transparent,
+                Opacity = 0.66
+            };
+            Canvas.SetLeft(loop, node.CenterX - (loop.Width / 2.0));
+            Canvas.SetTop(loop, node.CenterY - (node.Size * 0.82));
+            NetworkGraphCanvas!.Children.Add(loop);
+        }
+    }
+
+    private void DrawGraphNode(GraphNode node)
+    {
+        var shape = new Rectangle
+        {
+            Width = node.Size,
+            Height = node.Size,
+            RadiusX = node.IsBias ? 4 : node.Size * 0.18,
+            RadiusY = node.IsBias ? 4 : node.Size * 0.18,
+            Fill = node.IsBias
+                ? Brush.Parse("#E7DED0")
+                : new SolidColorBrush(GetActivationColor(node.Activation)),
+            Stroke = Brush.Parse("#3C372F"),
+            StrokeThickness = 1.05
+        };
+
+        Canvas.SetLeft(shape, node.X);
+        Canvas.SetTop(shape, node.CenterY - (node.Size / 2.0));
+        NetworkGraphCanvas!.Children.Add(shape);
+
+        var label = new TextBlock
+        {
+            Text = node.Label,
+            FontSize = Math.Max(10, node.Size * 0.2),
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brush.Parse("#2A251F")
+        };
+        label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(label, node.CenterX - (label.DesiredSize.Width / 2.0));
+        Canvas.SetTop(label, node.CenterY - (label.DesiredSize.Height / 2.0));
+        NetworkGraphCanvas.Children.Add(label);
+    }
+
+    private IReadOnlyList<GraphRow> BuildGraphRows(NetworkDefinition definition, TestResult? diagramResult)
+    {
+        var rows = new List<GraphRow>
+        {
+            new(
+                "Outputs",
+                diagramResult?.Outputs ?? new double[definition.OutputUnits],
+                Enumerable.Range(1, definition.OutputUnits).Select(index => $"O{index}").ToArray(),
+                false)
+        };
+
+        if (definition.HasSecondHiddenLayer)
+        {
+            var firstHidden = diagramResult?.HiddenActivations.Take(definition.HiddenUnits).ToArray() ?? new double[definition.HiddenUnits];
+            var secondHidden = diagramResult?.HiddenActivations.Skip(definition.HiddenUnits).Take(definition.SecondHiddenUnits).ToArray() ?? new double[definition.SecondHiddenUnits];
+            rows.Add(new GraphRow(
+                "Hidden 2",
+                secondHidden,
+                Enumerable.Range(1, definition.SecondHiddenUnits).Select(index => $"H2-{index}").ToArray(),
+                definition.UseSecondHiddenBias));
+            rows.Add(new GraphRow(
+                "Hidden 1",
+                firstHidden,
+                Enumerable.Range(1, definition.HiddenUnits).Select(index => $"H1-{index}").ToArray(),
+                definition.UseHiddenBias));
+        }
+        else if (!definition.IsDirectFeedForward)
+        {
+            rows.Add(new GraphRow(
+                definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Hidden / Context" : "Hidden",
+                diagramResult?.HiddenActivations ?? new double[definition.HiddenUnits],
+                Enumerable.Range(1, definition.HiddenUnits).Select(index => $"H{index}").ToArray(),
+                definition.UseHiddenBias));
+        }
+
+        rows.Add(new GraphRow(
+            "Inputs",
+            diagramResult?.Inputs ?? new double[definition.InputUnits],
+            Enumerable.Range(1, definition.InputUnits).Select(index => $"I{index}").ToArray(),
+            definition.UseInputBias));
+
+        return rows;
+    }
+
+    private static IBrush GetWeightBrush(double weight)
+    {
+        var magnitude = Math.Min(Math.Abs(weight), 1.0);
+        return weight < 0
+            ? new SolidColorBrush(Color.FromRgb((byte)(122 + (magnitude * 108)), 72, 72))
+            : weight > 0
+                ? new SolidColorBrush(Color.FromRgb(72, (byte)(118 + (magnitude * 116)), 86))
+                : Brush.Parse("#8B8278");
+    }
+
+    private static Color GetActivationColor(double activation)
+    {
+        var clamped = Math.Clamp(activation, 0.0, 1.0);
+        var red = (byte)(247 - (clamped * 82));
+        var green = (byte)(243 - (clamped * 26));
+        var blue = (byte)(237 - (clamped * 122));
+        return Color.FromRgb(red, green, blue);
+    }
+
+    private sealed record GraphRow(string Label, double[] Values, string[] ValueLabels, bool HasBias);
+
+    private sealed record GraphNode(double X, double CenterY, double Size, double Activation, string Label)
+    {
+        public bool IsBias => string.Equals(Label, "B", StringComparison.Ordinal);
+        public double CenterX => X + (Size / 2.0);
     }
 
     private IReadOnlyList<TrainingPoint> DownsampleHistory(IReadOnlyList<TrainingPoint> history, int maxPoints)
@@ -949,22 +1208,6 @@ public partial class MainWindow : Window
     private int ParseLearningStepsFromControls()
     {
         return ParseInt(LearningStepsComboBox.Text, "Learning steps");
-    }
-
-    private void SetPlotMode(string mode)
-    {
-        PlotModeComboBox.SelectedIndex = string.Equals(mode, "Dots", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-    }
-
-    private string GetSelectedPlotMode()
-    {
-        if (PlotModeComboBox.SelectedItem is ComboBoxItem comboBoxItem &&
-            comboBoxItem.Content is string content)
-        {
-            return content;
-        }
-
-        return PlotModeComboBox.SelectedIndex == 1 ? "Dots" : "Line";
     }
 
     private static int ParseInt(string? value, string label)
