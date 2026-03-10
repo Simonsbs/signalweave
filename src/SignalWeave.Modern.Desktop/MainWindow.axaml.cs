@@ -11,6 +11,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Platform.Storage;
@@ -1206,6 +1207,40 @@ public partial class MainWindow : Window
         ConsoleContentHost.Children.Clear();
     }
 
+    private async void SaveConsole_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_consoleMarkdown.Length == 0)
+        {
+            SetStatus("Console is empty.");
+            return;
+        }
+
+        try
+        {
+            var file = await PickSaveFileAsync(
+                "Save console",
+                GetSuggestedArtifactFileName("console", "md"),
+                "md",
+                new FilePickerFileType("Markdown files") { Patterns = ["*.md"] },
+                new FilePickerFileType("Text files") { Patterns = ["*.txt"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(_consoleMarkdown.ToString());
+            SetStatus($"Saved console: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Save console failed: {ex.Message}");
+            SetStatus("Save console failed.");
+        }
+    }
+
     private async void CopyConsole_Click(object? sender, RoutedEventArgs e)
     {
         var topLevel = TopLevel.GetTopLevel(this);
@@ -1216,6 +1251,16 @@ public partial class MainWindow : Window
 
         await topLevel.Clipboard.SetTextAsync(_consoleMarkdown.ToString());
         SetStatus("Console copied to clipboard.");
+    }
+
+    private async void SaveErrorGraph_Click(object? sender, RoutedEventArgs e)
+    {
+        await SaveVisualAsPngAsync(ErrorGraphPanelBorder, "error-graph");
+    }
+
+    private async void SaveNetworkGraph_Click(object? sender, RoutedEventArgs e)
+    {
+        await SaveVisualAsPngAsync(NetworkGraphPanelBorder, "network-graph");
     }
 
     private void Reset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -2427,12 +2472,63 @@ public partial class MainWindow : Window
         });
     }
 
+    private async Task SaveVisualAsPngAsync(Control? control, string artifactName)
+    {
+        if (control is null)
+        {
+            SetStatus("Nothing to export.");
+            return;
+        }
+
+        var width = Math.Max((int)Math.Ceiling(control.Bounds.Width), 1);
+        var height = Math.Max((int)Math.Ceiling(control.Bounds.Height), 1);
+        if (width <= 1 || height <= 1)
+        {
+            SetStatus("Visual is not ready to export.");
+            return;
+        }
+
+        try
+        {
+            var file = await PickSaveFileAsync(
+                $"Save {artifactName}",
+                GetSuggestedArtifactFileName(artifactName, "png"),
+                "png",
+                new FilePickerFileType("PNG image") { Patterns = ["*.png"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var bitmap = new RenderTargetBitmap(new PixelSize(width, height));
+            bitmap.Render(control);
+
+            await using var stream = await file.OpenWriteAsync();
+            bitmap.Save(stream);
+            SetStatus($"Saved image: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Save {artifactName} failed: {ex.Message}");
+            SetStatus($"Save {artifactName} failed.");
+        }
+    }
+
     private string GetSuggestedProjectFileName()
     {
         var rawName = string.IsNullOrWhiteSpace(ProjectNameTextBox.Text) ? "signalweave-modern-project" : ProjectNameTextBox.Text.Trim();
         var invalidChars = System.IO.Path.GetInvalidFileNameChars();
         var cleaned = new string(rawName.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
         return $"{cleaned}.swproj.json";
+    }
+
+    private string GetSuggestedArtifactFileName(string suffix, string extension)
+    {
+        var rawName = string.IsNullOrWhiteSpace(ProjectNameTextBox.Text) ? "signalweave-modern-project" : ProjectNameTextBox.Text.Trim();
+        var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+        var cleaned = new string(rawName.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
+        return $"{cleaned}-{suffix}.{extension}";
     }
 
     private NetworkKind GetSelectedNetworkKind()

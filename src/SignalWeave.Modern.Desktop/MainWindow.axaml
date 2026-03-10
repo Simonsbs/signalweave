@@ -78,12 +78,13 @@
               ColumnDefinitions="2.15*,6,1*">
             <Border Grid.Row="0"
                     Grid.Column="0"
+                    x:Name="NetworkGraphPanelBorder"
                     Classes="card"
                     Padding="0">
                 <Grid RowDefinitions="Auto,*,Auto"
                       RowSpacing="10"
                       Margin="16">
-                    <Grid ColumnDefinitions="*,Auto"
+                    <Grid ColumnDefinitions="*,Auto,Auto"
                           ColumnSpacing="12">
                         <TextBlock Text="Network graph"
                                    Classes="section" />
@@ -92,6 +93,11 @@
                                    Classes="muted"
                                    HorizontalAlignment="Right"
                                    Text="Topology view" />
+                        <Button Grid.Column="2"
+                                Content="🖫"
+                                Width="36"
+                                ToolTip.Tip="Save network graph as PNG"
+                                Click="SaveNetworkGraph_Click" />
                     </Grid>
 
                     <Canvas Grid.Row="1"
@@ -524,7 +530,13 @@
                                         ToolTip.Tip="Copy all console content"
                                         Width="36"
                                         Click="CopyConsole_Click" />
-                                <Button Content="Clear"
+                                <Button Content="🖫"
+                                        ToolTip.Tip="Save console as Markdown"
+                                        Width="36"
+                                        Click="SaveConsole_Click" />
+                                <Button Content="🗑"
+                                        ToolTip.Tip="Clear console"
+                                        Width="36"
                                         Click="ClearConsole_Click" />
                             </StackPanel>
                         </Grid>
@@ -548,13 +560,22 @@
                               ShowsPreview="True" />
 
                 <Border Grid.Column="2"
+                        x:Name="ErrorGraphPanelBorder"
                         Classes="card"
                         Padding="0">
                     <Grid RowDefinitions="Auto,*"
                           RowSpacing="10"
                           Margin="16">
-                        <TextBlock Text="Error graph"
-                                   Classes="section" />
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="12">
+                            <TextBlock Text="Error graph"
+                                       Classes="section" />
+                            <Button Grid.Column="1"
+                                    Content="🖫"
+                                    Width="36"
+                                    ToolTip.Tip="Save error graph as PNG"
+                                    Click="SaveErrorGraph_Click" />
+                        </Grid>
 
                         <Canvas Grid.Row="1"
                                 x:Name="ErrorPlotCanvas"
