@@ -1,0 +1,127 @@
+{
+  "schema": "signalweave-project/v1",
+  "definition": {
+    "name": "Seventeen Patterns 7x7",
+    "networkKind": 0,
+    "inputUnits": 7,
+    "hiddenUnits": 10,
+    "secondHiddenUnits": 0,
+    "outputUnits": 7,
+    "useInputBias": true,
+    "useHiddenBias": true,
+    "useSecondHiddenBias": false,
+    "learningRate": 0.3,
+    "momentum": 0.8,
+    "randomWeightRange": 1.0,
+    "sigmoidPrimeOffset": 0.1,
+    "maxEpochs": 5000,
+    "errorThreshold": 0.02,
+    "updateMode": 0,
+    "costFunction": 0
+  },
+  "patterns": [
+    {
+      "label": "pattern-1",
+      "inputs": [1, 1, 1, 1, 1, 1, 0],
+      "targets": [0, 1, 1, 0, 0, 0, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-2",
+      "inputs": [0, 1, 1, 0, 0, 0, 0],
+      "targets": [0, 1, 1, 0, 0, 0, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-3",
+      "inputs": [1, 1, 0, 1, 0, 1, 1],
+      "targets": [0, 1, 1, 0, 0, 1, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-4",
+      "inputs": [1, 1, 1, 1, 0, 0, 1],
+      "targets": [0, 1, 1, 0, 0, 1, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-5",
+      "inputs": [0, 1, 1, 0, 1, 0, 1],
+      "targets": [0, 1, 1, 0, 1, 0, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-6",
+      "inputs": [1, 0, 1, 1, 1, 0, 1],
+      "targets": [0, 1, 1, 0, 1, 0, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-7",
+      "inputs": [1, 0, 1, 1, 1, 1, 1],
+      "targets": [0, 1, 1, 0, 1, 1, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-8",
+      "inputs": [1, 1, 1, 0, 0, 0, 0],
+      "targets": [0, 1, 1, 0, 1, 1, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-9",
+      "inputs": [1, 1, 1, 1, 1, 1, 1],
+      "targets": [0, 1, 1, 1, 0, 0, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-10",
+      "inputs": [1, 1, 1, 1, 1, 0, 1],
+      "targets": [0, 1, 1, 1, 0, 0, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-11",
+      "inputs": [1, 1, 1, 0, 1, 1, 1],
+      "targets": [1, 0, 0, 0, 0, 0, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-12",
+      "inputs": [0, 0, 1, 1, 1, 1, 1],
+      "targets": [1, 0, 0, 0, 0, 1, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-13",
+      "inputs": [1, 0, 0, 1, 1, 1, 0],
+      "targets": [1, 0, 0, 0, 0, 1, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-14",
+      "inputs": [0, 1, 1, 1, 0, 1, 1],
+      "targets": [1, 0, 0, 0, 1, 0, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-15",
+      "inputs": [1, 0, 0, 1, 1, 1, 1],
+      "targets": [1, 0, 0, 0, 1, 0, 1],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-16",
+      "inputs": [1, 0, 0, 0, 1, 1, 1],
+      "targets": [1, 0, 0, 0, 1, 1, 0],
+      "resetsContextAfter": false
+    },
+    {
+      "label": "pattern-17",
+      "inputs": [0, 1, 1, 0, 1, 1, 1],
+      "targets": [1, 0, 0, 1, 0, 0, 0],
+      "resetsContextAfter": false
+    }
+  ],
+  "weights": null
+}
