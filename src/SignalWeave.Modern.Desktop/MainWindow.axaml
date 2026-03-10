@@ -726,6 +726,63 @@
 							</Grid>
 						</TabItem>
 
+						<TabItem Header="Analysis">
+							<Grid Margin="16"
+                                  RowDefinitions="Auto,Auto,*"
+                                  RowSpacing="12">
+                                <TextBlock Text="Analysis reports"
+                                           Classes="section" />
+
+                                <Grid Grid.Row="1"
+                                      ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto"
+                                      ColumnSpacing="10">
+                                    <TextBlock Text="Report"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="AnalysisReportTypeComboBox"
+                                              Grid.Column="1"
+                                              SelectionChanged="AnalysisSelectionChanged" />
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="Source"
+                                               VerticalAlignment="Center" />
+                                    <ComboBox x:Name="AnalysisSourceComboBox"
+                                              Grid.Column="3"
+                                              SelectionChanged="AnalysisSelectionChanged" />
+
+                                    <Button x:Name="RunAnalysisButton"
+                                            Grid.Column="4"
+                                            Content="Run"
+                                            Click="RunAnalysis_Click" />
+                                    <Button x:Name="CopyAnalysisButton"
+                                            Grid.Column="5"
+                                            Content="⧉"
+                                            Width="36"
+                                            ToolTip.Tip="Copy analysis report"
+                                            Click="CopyAnalysis_Click" />
+                                    <Button x:Name="SaveAnalysisButton"
+                                            Grid.Column="6"
+                                            Content="🖫"
+                                            Width="36"
+                                            ToolTip.Tip="Save analysis report"
+                                            Click="SaveAnalysis_Click" />
+                                </Grid>
+
+                                <Grid Grid.Row="2"
+                                      RowDefinitions="Auto,*"
+                                      RowSpacing="8">
+                                    <TextBlock x:Name="AnalysisReportTitleTextBlock"
+                                               Classes="muted"
+                                               Text="Run an analysis report." />
+                                    <TextBox x:Name="AnalysisReportTextBox"
+                                             Grid.Row="1"
+                                             IsReadOnly="True"
+                                             AcceptsReturn="True"
+                                             TextWrapping="NoWrap"
+                                             FontFamily="Cascadia Mono, Consolas, monospace" />
+                                </Grid>
+							</Grid>
+						</TabItem>
+
 					</TabControl>
 	            </Border>
 

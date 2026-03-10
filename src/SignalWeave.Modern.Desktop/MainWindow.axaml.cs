@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     private readonly string[] _learningStepOptions = ["100", "500", "1000", "5000", "10000", "50000"];
     private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
     private readonly string[] _weightInspectorViewModes = ["Heatmap", "Magnitude", "Values"];
+    private readonly string[] _analysisReportTypes = ["Output clustering", "Hidden-state clustering", "Compatibility summary"];
     private readonly object _trainingProgressGate = new();
     private readonly List<TrainingPoint> _trainingHistory = [];
     private readonly StringBuilder _consoleMarkdown = new();
@@ -55,6 +56,8 @@ public partial class MainWindow : Window
     private bool _isInitializingUi = true;
     private bool _isSyncingPatternText;
     private bool _isSyncingPatternTable;
+    private string _lastAnalysisReportTitle = "Run an analysis report.";
+    private string _lastAnalysisReportText = string.Empty;
 
     public MainWindow()
     {
@@ -114,6 +117,11 @@ public partial class MainWindow : Window
         public override string ToString() => Label;
     }
 
+    private sealed record AnalysisSourceOption(string Id, string Label, WeightSet? Weights)
+    {
+        public override string ToString() => Label;
+    }
+
     private void PopulateStaticOptions()
     {
         LearningRateComboBox.ItemsSource = _learningRateOptions;
@@ -123,6 +131,8 @@ public partial class MainWindow : Window
         WeightRangeComboBox.SelectedIndex = 1;
         WeightInspectorViewModeComboBox.ItemsSource = _weightInspectorViewModes;
         WeightInspectorViewModeComboBox.SelectedIndex = 0;
+        AnalysisReportTypeComboBox.ItemsSource = _analysisReportTypes;
+        AnalysisReportTypeComboBox.SelectedIndex = 0;
     }
 
     private static SignalWeaveProject CreateDefaultProject()
@@ -177,6 +187,8 @@ public partial class MainWindow : Window
         SyncNetworkKindControls();
         UpdateWorkspaceSummary();
         UpdateTrainingSessionLog();
+        UpdateAnalysisSources();
+        ClearAnalysisReport();
         RenderErrorPlot(_trainingHistory);
         RenderNetworkGraph();
         AppendConsole(consoleMessage);
@@ -488,6 +500,21 @@ public partial class MainWindow : Window
         {
             ExportPatternSetHiddenButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
         }
+
+        if (RunAnalysisButton is not null)
+        {
+            RunAnalysisButton.IsEnabled = !_isBusy && _definition is not null && AnalysisReportTypeComboBox?.SelectedItem is not null;
+        }
+
+        if (CopyAnalysisButton is not null)
+        {
+            CopyAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisReportText);
+        }
+
+        if (SaveAnalysisButton is not null)
+        {
+            SaveAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisReportText);
+        }
     }
 
     private void UpdateTrainingSessionLog()
@@ -514,6 +541,7 @@ public partial class MainWindow : Window
         }
 
         UpdateWeightInspectorSources();
+        UpdateAnalysisSources();
         UpdateActionAvailability();
     }
 
@@ -575,6 +603,31 @@ public partial class MainWindow : Window
 
         WeightInspectorLayerComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
         RenderWeightInspector();
+    }
+
+    private void UpdateAnalysisSources()
+    {
+        if (AnalysisSourceComboBox is null)
+        {
+            return;
+        }
+
+        var selectedId = (AnalysisSourceComboBox.SelectedItem as AnalysisSourceOption)?.Id;
+        var options = new List<AnalysisSourceOption>
+        {
+            new("current", "Current", _engine?.Weights.Clone())
+        };
+
+        foreach (var session in _trainingSessions.OrderByDescending(static session => session.SessionNumber))
+        {
+            options.Add(new AnalysisSourceOption(
+                $"session-{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                $"Train #{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                session.Weights.Clone()));
+        }
+
+        AnalysisSourceComboBox.ItemsSource = options;
+        AnalysisSourceComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
     }
 
     private List<WeightLayerOption> BuildWeightLayerOptions(NetworkDefinition definition, WeightSet weights)
@@ -1220,6 +1273,27 @@ public partial class MainWindow : Window
         RenderWeightInspector();
     }
 
+    private void AnalysisSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        ClearAnalysisReport();
+        UpdateActionAvailability();
+    }
+
+    private void ClearAnalysisReport()
+    {
+        _lastAnalysisReportTitle = "Run an analysis report.";
+        _lastAnalysisReportText = string.Empty;
+        if (AnalysisReportTitleTextBlock is not null)
+        {
+            AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
+        }
+
+        if (AnalysisReportTextBox is not null)
+        {
+            AnalysisReportTextBox.Text = string.Empty;
+        }
+    }
+
     private void RollbackTrainingSession_Click(object? sender, RoutedEventArgs e)
     {
         if (_isBusy || _engine is null || TrainingSessionsListBox.SelectedItem is not TrainingSessionOption option)
@@ -1829,6 +1903,86 @@ public partial class MainWindow : Window
 
         await topLevel.Clipboard.SetTextAsync(_consoleMarkdown.ToString());
         SetStatus("Console copied to clipboard.");
+    }
+
+    private async void CopyAnalysis_Click(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.Clipboard is null || string.IsNullOrWhiteSpace(_lastAnalysisReportText))
+        {
+            return;
+        }
+
+        await topLevel.Clipboard.SetTextAsync(_lastAnalysisReportText);
+        SetStatus("Analysis report copied to clipboard.");
+    }
+
+    private async void SaveAnalysis_Click(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastAnalysisReportText))
+        {
+            return;
+        }
+
+        try
+        {
+            var file = await PickSaveFileAsync(
+                "Save analysis report",
+                GetSuggestedArtifactFileName("analysis-report", "txt"),
+                "txt",
+                new FilePickerFileType("Text files") { Patterns = ["*.txt"] },
+                new FilePickerFileType("Markdown files") { Patterns = ["*.md"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(_lastAnalysisReportText);
+            SetStatus($"Saved analysis report: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Save analysis report failed: {ex.Message}");
+            SetStatus("Save analysis report failed.");
+        }
+    }
+
+    private void RunAnalysis_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: true);
+            var reportType = AnalysisReportTypeComboBox?.SelectedItem?.ToString() ?? _analysisReportTypes[0];
+            var source = AnalysisSourceComboBox?.SelectedItem as AnalysisSourceOption;
+            _lastAnalysisReportText = BuildAnalysisReportText(reportType, source);
+            _lastAnalysisReportTitle = $"{reportType} · {(source?.Label ?? "Current")}";
+
+            if (AnalysisReportTitleTextBlock is not null)
+            {
+                AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
+            }
+
+            if (AnalysisReportTextBox is not null)
+            {
+                AnalysisReportTextBox.Text = _lastAnalysisReportText;
+            }
+
+            UpdateActionAvailability();
+            SetStatus("Analysis report ready.");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Analysis failed: {ex.Message}");
+            SetStatus("Analysis failed.");
+        }
     }
 
     private async void ExportSelectedHiddenActivations_Click(object? sender, RoutedEventArgs e)
@@ -3254,6 +3408,28 @@ public partial class MainWindow : Window
         }
 
         return builder.ToString();
+    }
+
+    private string BuildAnalysisReportText(string reportType, AnalysisSourceOption? source)
+    {
+        if (_definition is null)
+        {
+            throw new InvalidOperationException("Load a project before running analysis.");
+        }
+
+        if (string.Equals(reportType, "Compatibility summary", StringComparison.Ordinal))
+        {
+            return CompatibilityProfile.ToDisplayText();
+        }
+
+        EnsurePatternsAvailable();
+        var engine = source?.Weights is null
+            ? _engine ?? new SignalWeaveEngine(_definition)
+            : new SignalWeaveEngine(_definition, source.Weights.Clone());
+
+        return string.Equals(reportType, "Hidden-state clustering", StringComparison.Ordinal)
+            ? engine.ClusterHiddenStates(_patterns).ToDisplayText()
+            : engine.ClusterOutputs(_patterns).ToDisplayText();
     }
 
     private static string EscapeCsv(string value)
