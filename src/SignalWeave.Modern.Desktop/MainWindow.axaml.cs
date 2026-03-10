@@ -478,6 +478,16 @@ public partial class MainWindow : Window
         {
             RollbackButton.IsEnabled = !_isBusy && TrainingSessionsListBox?.SelectedItem is TrainingSessionOption;
         }
+
+        if (ExportSelectedHiddenButton is not null)
+        {
+            ExportSelectedHiddenButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns && selectedPatternIndex >= 0;
+        }
+
+        if (ExportPatternSetHiddenButton is not null)
+        {
+            ExportPatternSetHiddenButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
+        }
     }
 
     private void UpdateTrainingSessionLog()
@@ -1821,6 +1831,74 @@ public partial class MainWindow : Window
         SetStatus("Console copied to clipboard.");
     }
 
+    private async void ExportSelectedHiddenActivations_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = EnsureSelectedPatternResultForExport();
+            var file = await PickSaveFileAsync(
+                "Export selected hidden activations",
+                GetSuggestedArtifactFileName($"pattern-{result.Index + 1}-hidden", "csv"),
+                "csv",
+                new FilePickerFileType("CSV files") { Patterns = ["*.csv"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var csv = BuildSelectedHiddenActivationCsv(result);
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(csv);
+            SetStatus($"Saved hidden activations: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Export selected hidden activations failed: {ex.Message}");
+            SetStatus("Export selected hidden activations failed.");
+        }
+    }
+
+    private async void ExportPatternSetHiddenActivations_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var run = EnsurePatternSetResultsForExport();
+            var file = await PickSaveFileAsync(
+                "Export hidden activations for current pattern set",
+                GetSuggestedArtifactFileName("hidden-activations", "csv"),
+                "csv",
+                new FilePickerFileType("CSV files") { Patterns = ["*.csv"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var csv = BuildPatternSetHiddenActivationCsv(run.Results);
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(csv);
+            SetStatus($"Saved hidden activations: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Export hidden activations failed: {ex.Message}");
+            SetStatus("Export hidden activations failed.");
+        }
+    }
+
     private async void SaveErrorGraph_Click(object? sender, RoutedEventArgs e)
     {
         await SaveVisualAsPngAsync(ErrorGraphPanelBorder, "error-graph");
@@ -3081,6 +3159,111 @@ public partial class MainWindow : Window
             AppendConsole($"Save {artifactName} failed: {ex.Message}");
             SetStatus($"Save {artifactName} failed.");
         }
+    }
+
+    private TestResult EnsureSelectedPatternResultForExport()
+    {
+        ApplyUiToRuntime(preserveWeights: true);
+        EnsurePatternSelectionAvailable();
+        var selectedIndex = GetSelectedPatternIndex();
+        if (_lastTestResults.TryGetValue(selectedIndex, out var cached))
+        {
+            return cached;
+        }
+
+        var result = _engine!.TestOne(_patterns, selectedIndex);
+        _lastTestResults[selectedIndex] = result;
+        _diagramResult = result;
+        UpdatePatternSelector(selectedIndex);
+        RenderNetworkGraph();
+        UpdatePatternInspector();
+        UpdateWorkspaceSummary();
+        return result;
+    }
+
+    private RunResult EnsurePatternSetResultsForExport()
+    {
+        ApplyUiToRuntime(preserveWeights: true);
+        EnsurePatternsAvailable();
+        var run = _engine!.TestAll(_patterns);
+        _lastTestResults.Clear();
+        foreach (var entry in run.Results)
+        {
+            _lastTestResults[entry.Index] = entry;
+        }
+
+        var selectedIndex = Math.Clamp(GetSelectedPatternIndex(), 0, run.Results.Count - 1);
+        _diagramResult = run.Results.Count == 0 ? null : run.Results[selectedIndex];
+        UpdatePatternSelector(selectedIndex);
+        RenderNetworkGraph();
+        UpdatePatternInspector();
+        UpdateWorkspaceSummary();
+        return run;
+    }
+
+    private static string BuildSelectedHiddenActivationCsv(TestResult result)
+    {
+        var builder = new StringBuilder();
+        builder.Append("Index,Label");
+        for (var hidden = 0; hidden < result.HiddenActivations.Length; hidden++)
+        {
+            builder.Append($",H{hidden + 1}");
+        }
+
+        builder.AppendLine();
+        builder.Append(result.Index + 1);
+        builder.Append(',');
+        builder.Append(EscapeCsv(result.Label));
+        foreach (var value in result.HiddenActivations)
+        {
+            builder.Append(',');
+            builder.Append(value.ToString("0.############", CultureInfo.InvariantCulture));
+        }
+
+        builder.AppendLine();
+        return builder.ToString();
+    }
+
+    private static string BuildPatternSetHiddenActivationCsv(IReadOnlyList<TestResult> results)
+    {
+        var hiddenCount = results.Count == 0 ? 0 : results.Max(static result => result.HiddenActivations.Length);
+        var builder = new StringBuilder();
+        builder.Append("Index,Label");
+        for (var hidden = 0; hidden < hiddenCount; hidden++)
+        {
+            builder.Append($",H{hidden + 1}");
+        }
+
+        builder.AppendLine();
+
+        foreach (var result in results)
+        {
+            builder.Append(result.Index + 1);
+            builder.Append(',');
+            builder.Append(EscapeCsv(result.Label));
+            for (var hidden = 0; hidden < hiddenCount; hidden++)
+            {
+                builder.Append(',');
+                if (hidden < result.HiddenActivations.Length)
+                {
+                    builder.Append(result.HiddenActivations[hidden].ToString("0.############", CultureInfo.InvariantCulture));
+                }
+            }
+
+            builder.AppendLine();
+        }
+
+        return builder.ToString();
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r'))
+        {
+            return value;
+        }
+
+        return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 
     private string GetSuggestedProjectFileName()

@@ -533,8 +533,20 @@
                                                     Padding="10">
                                                 <Grid RowDefinitions="Auto,*"
                                                       RowSpacing="8">
-                                                    <TextBlock Text="Hidden activations"
-                                                               FontWeight="SemiBold" />
+                                                    <Grid ColumnDefinitions="*,Auto,Auto"
+                                                          ColumnSpacing="8">
+                                                        <TextBlock Text="Hidden activations"
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center" />
+                                                        <Button x:Name="ExportSelectedHiddenButton"
+                                                                Grid.Column="1"
+                                                                Content="Export selected"
+                                                                Click="ExportSelectedHiddenActivations_Click" />
+                                                        <Button x:Name="ExportPatternSetHiddenButton"
+                                                                Grid.Column="2"
+                                                                Content="Export set"
+                                                                Click="ExportPatternSetHiddenActivations_Click" />
+                                                    </Grid>
                                                     <StackPanel x:Name="PatternInspectorHiddenHost"
                                                                 Grid.Row="1"
                                                                 Spacing="4" />
