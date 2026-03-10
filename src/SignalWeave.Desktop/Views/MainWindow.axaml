@@ -127,50 +127,10 @@
                                                    HorizontalAlignment="Center"
                                                    Text="{Binding WeightLegendRightLabel}" />
                                     </Grid>
-                                    <Canvas Width="250"
+                                    <Canvas x:Name="WeightLegendCanvas"
+                                            Width="250"
                                             Height="24"
-                                            HorizontalAlignment="Center">
-                                        <shapes:Rectangle Width="200"
-                                                          Height="10"
-                                                          Canvas.Left="25"
-                                                          Canvas.Top="7"
-                                                          RadiusX="0"
-                                                          RadiusY="0"
-                                                          Stroke="#4A4A4A"
-                                                          StrokeThickness="1">
-                                            <shapes:Rectangle.Fill>
-                                                <LinearGradientBrush StartPoint="0,0.5"
-                                                                     EndPoint="1,0.5">
-                                                    <GradientStop Offset="0.0"
-                                                                  Color="#FF2020" />
-                                                    <GradientStop Offset="0.5"
-                                                                  Color="#000000" />
-                                                    <GradientStop Offset="1.0"
-                                                                  Color="#1FCB1F" />
-                                                </LinearGradientBrush>
-                                            </shapes:Rectangle.Fill>
-                                        </shapes:Rectangle>
-                                        <shapes:Line StartPoint="25,5"
-                                                     EndPoint="25,19"
-                                                     Stroke="#4A4A4A"
-                                                     StrokeThickness="1" />
-                                        <shapes:Line StartPoint="75,5"
-                                                     EndPoint="75,19"
-                                                     Stroke="#4A4A4A"
-                                                     StrokeThickness="1" />
-                                        <shapes:Line StartPoint="125,3"
-                                                     EndPoint="125,21"
-                                                     Stroke="#4A4A4A"
-                                                     StrokeThickness="1.5" />
-                                        <shapes:Line StartPoint="175,5"
-                                                     EndPoint="175,19"
-                                                     Stroke="#4A4A4A"
-                                                     StrokeThickness="1" />
-                                        <shapes:Line StartPoint="225,5"
-                                                     EndPoint="225,19"
-                                                     Stroke="#4A4A4A"
-                                                     StrokeThickness="1" />
-                                    </Canvas>
+                                            HorizontalAlignment="Center" />
                                     <TextBlock Text="Weight value"
                                                HorizontalAlignment="Center"
                                                Foreground="#676767" />

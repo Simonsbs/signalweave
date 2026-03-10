@@ -32,6 +32,10 @@ public partial class MainWindow : Window
         {
             ErrorPlotCanvas.SizeChanged += HandleErrorPlotCanvasSizeChanged;
         }
+        if (WeightLegendCanvas is not null)
+        {
+            WeightLegendCanvas.SizeChanged += HandleWeightLegendCanvasSizeChanged;
+        }
 
         DataContextChanged += HandleDataContextChanged;
         AttachViewModel(DataContext as MainWindowViewModel);
@@ -67,6 +71,7 @@ public partial class MainWindow : Window
 
         RenderDiagram();
         RenderErrorPlot();
+        RenderWeightLegend();
     }
 
     private async void HandleFeedbackDialogRequested(object? sender, FeedbackDialogRequestEventArgs e)
@@ -116,6 +121,11 @@ public partial class MainWindow : Window
     private void HandleErrorPlotCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         RenderErrorPlot();
+    }
+
+    private void HandleWeightLegendCanvasSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        RenderWeightLegend();
     }
 
     private void RenderErrorPlot()
@@ -223,6 +233,91 @@ public partial class MainWindow : Window
         Canvas.SetLeft(maxLabel, right - 48);
         Canvas.SetTop(maxLabel, bottom - 2);
         ErrorPlotCanvas.Children.Add(maxLabel);
+    }
+
+    private void RenderWeightLegend()
+    {
+        if (WeightLegendCanvas is null)
+        {
+            return;
+        }
+
+        WeightLegendCanvas.Children.Clear();
+
+        const double left = 25;
+        const double top = 7;
+        const double width = 200;
+        const double height = 10;
+        const double right = left + width;
+
+        for (var pixel = 0; pixel < (int)width; pixel++)
+        {
+            var t = pixel / (width - 1);
+            WeightLegendCanvas.Children.Add(new Line
+            {
+                StartPoint = new Point(left + pixel, top),
+                EndPoint = new Point(left + pixel, top + height),
+                Stroke = Brush.Parse(GetLegendColor(t)),
+                StrokeThickness = 1
+            });
+        }
+
+        WeightLegendCanvas.Children.Add(new Rectangle
+        {
+            Width = width,
+            Height = height,
+            Stroke = Brush.Parse("#4A4A4A"),
+            StrokeThickness = 1
+        });
+        Canvas.SetLeft(WeightLegendCanvas.Children[^1], left);
+        Canvas.SetTop(WeightLegendCanvas.Children[^1], top);
+
+        AddWeightLegendTick(left, 1.0);
+        AddWeightLegendTick(left + 50, 1.0);
+        AddWeightLegendTick(left + 100, 1.5);
+        AddWeightLegendTick(left + 150, 1.0);
+        AddWeightLegendTick(right, 1.0);
+    }
+
+    private void AddWeightLegendTick(double x, double thickness)
+    {
+        if (WeightLegendCanvas is null)
+        {
+            return;
+        }
+
+        WeightLegendCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(x, 5),
+            EndPoint = new Point(x, 19),
+            Stroke = Brush.Parse("#4A4A4A"),
+            StrokeThickness = thickness
+        });
+    }
+
+    private static string GetLegendColor(double t)
+    {
+        t = Math.Clamp(t, 0.0, 1.0);
+        return t <= 0.5
+            ? InterpolateColor("#FF2020", "#000000", t / 0.5)
+            : InterpolateColor("#000000", "#1FCB1F", (t - 0.5) / 0.5);
+    }
+
+    private static string InterpolateColor(string startHex, string endHex, double t)
+    {
+        t = Math.Clamp(t, 0.0, 1.0);
+
+        var startR = Convert.ToInt32(startHex.Substring(1, 2), 16);
+        var startG = Convert.ToInt32(startHex.Substring(3, 2), 16);
+        var startB = Convert.ToInt32(startHex.Substring(5, 2), 16);
+        var endR = Convert.ToInt32(endHex.Substring(1, 2), 16);
+        var endG = Convert.ToInt32(endHex.Substring(3, 2), 16);
+        var endB = Convert.ToInt32(endHex.Substring(5, 2), 16);
+
+        var red = (int)Math.Round(startR + ((endR - startR) * t), MidpointRounding.AwayFromZero);
+        var green = (int)Math.Round(startG + ((endG - startG) * t), MidpointRounding.AwayFromZero);
+        var blue = (int)Math.Round(startB + ((endB - startB) * t), MidpointRounding.AwayFromZero);
+        return $"#{red:X2}{green:X2}{blue:X2}";
     }
 
     private void ScrollConsoleToEnd()
