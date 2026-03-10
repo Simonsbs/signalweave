@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -35,7 +34,6 @@ public partial class MainWindow : Window
     private readonly object _trainingProgressGate = new();
     private readonly List<TrainingPoint> _trainingHistory = [];
     private readonly StringBuilder _consoleMarkdown = new();
-    private readonly List<string> _recentProjectPaths = [];
     private readonly List<TrainingSessionSnapshot> _trainingSessions = [];
     private readonly Dictionary<int, TestResult> _lastTestResults = [];
 
@@ -51,7 +49,6 @@ public partial class MainWindow : Window
     private int _currentTrainingSteps;
     private bool _isBusy;
     private bool _isInitializingUi = true;
-    private bool _isUpdatingRecentProjects;
     private bool _isSyncingPatternText;
     private bool _isSyncingPatternTable;
 
@@ -59,8 +56,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         PopulateStaticOptions();
-        LoadRecentProjectsState();
-        PopulateRecentProjectOptions();
+        ProductInfoTextBlock.Text = BuildProductInfoText();
 
         if (ErrorPlotCanvas is not null)
         {
@@ -91,16 +87,6 @@ public partial class MainWindow : Window
         Fail
     }
 
-    private sealed record RecentProjectOption(string Path, string Label)
-    {
-        public override string ToString()
-        {
-            return Label;
-        }
-    }
-
-    private sealed record RecentProjectsState(List<string> Paths);
-
     private sealed record TrainingSessionOption(TrainingSessionSnapshot Snapshot)
     {
         public override string ToString()
@@ -130,87 +116,9 @@ public partial class MainWindow : Window
             new ProjectWorkspaceState(5000, 0, "Dots"));
     }
 
-    private void LoadRecentProjectsState()
-    {
-        try
-        {
-            var path = GetRecentProjectsStatePath();
-            if (!File.Exists(path))
-            {
-                return;
-            }
-
-            var state = JsonSerializer.Deserialize<RecentProjectsState>(File.ReadAllText(path));
-            if (state?.Paths is null)
-            {
-                return;
-            }
-
-            _recentProjectPaths.Clear();
-            _recentProjectPaths.AddRange(state.Paths
-                .Where(static item => !string.IsNullOrWhiteSpace(item))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(5));
-        }
-        catch
-        {
-            _recentProjectPaths.Clear();
-        }
-    }
-
-    private void SaveRecentProjectsState()
-    {
-        var path = GetRecentProjectsStatePath();
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
-        var state = new RecentProjectsState(_recentProjectPaths.Take(5).ToList());
-        File.WriteAllText(path, JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }));
-    }
-
-    private void RegisterRecentProject(string path)
-    {
-        _recentProjectPaths.RemoveAll(existing => string.Equals(existing, path, StringComparison.OrdinalIgnoreCase));
-        _recentProjectPaths.Insert(0, path);
-
-        if (_recentProjectPaths.Count > 5)
-        {
-            _recentProjectPaths.RemoveRange(5, _recentProjectPaths.Count - 5);
-        }
-
-        SaveRecentProjectsState();
-        PopulateRecentProjectOptions();
-    }
-
-    private void PopulateRecentProjectOptions()
-    {
-        if (RecentProjectsComboBox is null)
-        {
-            return;
-        }
-
-        _isUpdatingRecentProjects = true;
-        RecentProjectsComboBox.ItemsSource = _recentProjectPaths
-            .Select(path => new RecentProjectOption(path, $"{System.IO.Path.GetFileName(path)}  |  {path}"))
-            .ToList();
-        RecentProjectsComboBox.SelectedIndex = -1;
-        _isUpdatingRecentProjects = false;
-    }
-
-    private static string GetRecentProjectsStatePath()
-    {
-        return System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "SignalWeave",
-            "modern-ui-recents.json");
-    }
-
     private void LoadProjectState(SignalWeaveProject project, string? path, string consoleMessage)
     {
         _currentProjectPath = path;
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            RegisterRecentProject(path);
-        }
-
         _definition = project.Definition;
         _patterns = project.Patterns;
         _engine = new SignalWeaveEngine(project.Definition, project.Weights);
@@ -337,7 +245,6 @@ public partial class MainWindow : Window
             WeightsSummaryTextBlock.Text = "No active weights.";
             ProjectStateTextBlock.Text = "No active project loaded.";
             NetworkGraphSummaryTextBlock.Text = "No graph available.";
-            CompletedCyclesTextBlock.Text = "0";
             return;
         }
 
@@ -347,7 +254,6 @@ public partial class MainWindow : Window
             _patterns.ToSummary());
 
         WeightsSummaryTextBlock.Text = BuildWeightSummary(_engine.Weights, _definition);
-        CompletedCyclesTextBlock.Text = _engine.CompletedCycles.ToString(CultureInfo.InvariantCulture);
         NetworkGraphSummaryTextBlock.Text = _diagramResult is null
             ? $"{_definition.TotalLayerCount}-layer topology"
             : $"Showing activations for pattern {_diagramResult.Index + 1}: {_diagramResult.Label}";
@@ -1190,40 +1096,6 @@ public partial class MainWindow : Window
         await SaveProjectInternalAsync(forcePicker: true);
     }
 
-    private void RecentProjectsComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializingUi || _isUpdatingRecentProjects || _isBusy || RecentProjectsComboBox.SelectedItem is not RecentProjectOption option)
-        {
-            return;
-        }
-
-        try
-        {
-            if (!File.Exists(option.Path))
-            {
-                _recentProjectPaths.Remove(option.Path);
-                SaveRecentProjectsState();
-                PopulateRecentProjectOptions();
-                AppendConsole($"Recent project not found: {option.Path}");
-                SetStatus("Recent project no longer exists.");
-                return;
-            }
-
-            LoadProjectState(SignalWeaveProjectSerializer.LoadFile(option.Path), option.Path, $"Loaded recent project from {option.Path}.");
-        }
-        catch (Exception ex)
-        {
-            AppendConsole($"Load recent project failed: {ex.Message}");
-            SetStatus("Load recent project failed.");
-        }
-        finally
-        {
-            _isUpdatingRecentProjects = true;
-            RecentProjectsComboBox.SelectedIndex = -1;
-            _isUpdatingRecentProjects = false;
-        }
-    }
-
     private async Task SaveProjectInternalAsync(bool forcePicker)
     {
         if (_isBusy)
@@ -1263,7 +1135,6 @@ public partial class MainWindow : Window
                 CaptureWorkspaceState());
 
             _currentProjectPath = path;
-            RegisterRecentProject(path!);
             UpdateWorkspaceSummary();
             AppendConsole($"Saved project to {path}.");
             SetStatus($"Saved project: {System.IO.Path.GetFileName(path)}");
@@ -1733,6 +1604,12 @@ public partial class MainWindow : Window
     private void SetStatus(string status)
     {
         WorkspaceStatusTextBlock.Text = status;
+    }
+
+    private static string BuildProductInfoText()
+    {
+        var version = typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+        return $"SignalWeave Modern v{version}";
     }
 
     private void AppendConsole(string message)

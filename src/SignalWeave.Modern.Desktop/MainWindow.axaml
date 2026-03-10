@@ -41,33 +41,31 @@
                 Classes="card"
                 Margin="20,20,20,0"
                 Padding="12">
-            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto"
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto"
                   ColumnSpacing="10">
-                <Button Grid.Column="0"
+                <TextBlock x:Name="ProductInfoTextBlock"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="SignalWeave Modern v1.0.0" />
+                <Button Grid.Column="1"
                         Classes="action"
                         Content="✚ New"
                         Click="NewProject_Click" />
-                <Button Grid.Column="1"
+                <Button Grid.Column="2"
                         Classes="action"
                         Content="📂 Load"
                         Click="LoadProject_Click" />
-                <Button Grid.Column="2"
+                <Button Grid.Column="3"
                         Classes="action"
                         Content="💾 Save"
                         Click="SaveProject_Click" />
-                <Button Grid.Column="3"
+                <Button Grid.Column="4"
                         Classes="action"
                         Content="🖫 Save As"
                         Click="SaveProjectAs_Click" />
-                <TextBlock Grid.Column="4"
-                           VerticalAlignment="Center"
-                           Text="🕘 Recent" />
-                <ComboBox x:Name="RecentProjectsComboBox"
-                          Grid.Column="5"
-                          Width="280"
-                          SelectionChanged="RecentProjectsComboBox_SelectionChanged" />
                 <TextBlock x:Name="WorkspaceStatusTextBlock"
-                           Grid.Column="7"
+                           Grid.Column="6"
                            Classes="muted"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Right"
@@ -157,7 +155,7 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <Grid Margin="16"
                                   ColumnDefinitions="Auto,*"
-                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                                   ColumnSpacing="12"
                                   RowSpacing="10">
                                 <TextBlock Text="Project name" VerticalAlignment="Center" />
@@ -274,13 +272,6 @@
 
                                 <TextBlock Grid.Row="10" Text="Error threshold" VerticalAlignment="Center" />
                                 <TextBox x:Name="ErrorThresholdTextBox" Grid.Row="10" Grid.Column="1" />
-
-                                <TextBlock Grid.Row="11" Text="Current cycles" VerticalAlignment="Center" />
-                                <TextBlock x:Name="CompletedCyclesTextBlock"
-                                           Grid.Row="11"
-                                           Grid.Column="1"
-                                           VerticalAlignment="Center"
-                                           Classes="muted" />
                             </Grid>
                         </ScrollViewer>
                     </TabItem>
@@ -290,7 +281,7 @@
                               RowDefinitions="Auto,Auto,Auto,*"
                               RowSpacing="14">
                             <Grid ColumnDefinitions="Auto,*"
-                                  RowDefinitions="Auto,Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto"
                                   ColumnSpacing="12"
                                   RowSpacing="10">
                                 <TextBlock Text="Learning steps" VerticalAlignment="Center" />
@@ -310,11 +301,6 @@
                                           Grid.Column="1"
                                           Content="Cross entropy" />
 
-                                <TextBlock Grid.Row="3" Text="Plot mode" VerticalAlignment="Center" />
-                                <TextBlock Grid.Row="3"
-                                           Grid.Column="1"
-                                           Classes="muted"
-                                           Text="Dots only" />
                             </Grid>
 
                             <UniformGrid Grid.Row="1"
