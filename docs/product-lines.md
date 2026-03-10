@@ -12,6 +12,7 @@ SignalWeave now ships as two desktop product lines that share the same engine an
   - desktop project: `src/SignalWeave.Modern.Desktop`
   - release tags: `modern-vX.Y.Z`
   - current direction: one project-file workflow with in-window `Network` and `Control` tabs instead of separate network/settings popups and per-item load/save actions
+  - backlog: `docs/modern-ui-todo.md`
 
 ## Shared code
 

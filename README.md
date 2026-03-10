@@ -198,3 +198,4 @@ SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JA
 - `docs/e2e-backlog.md`: milestone backlog and implementation tasks
 - `docs/signalweave-schema.md`: native project and checkpoint schema definitions
 - `docs/product-lines.md`: Classic/Modern product-line and release strategy
+- `docs/modern-ui-todo.md`: Modern-specific backlog for porting analysis and utility workflows
