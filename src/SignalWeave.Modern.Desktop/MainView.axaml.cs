@@ -1,0 +1,4206 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Shapes;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+using SignalWeave.Core;
+
+namespace SignalWeave.Modern.Desktop;
+
+public partial class MainView : UserControl
+{
+    private const double PatternLabelColumnWidth = 120;
+    private const double PatternResetColumnWidth = 56;
+    private const double PatternBinaryCellWidth = 38;
+    private const double PatternSeparatorColumnWidth = 12;
+    private const double PatternDeleteColumnWidth = 42;
+    private const double PatternInspectorLabelWidth = 38;
+    private const double PatternInspectorValueWidth = 96;
+
+    private readonly string[] _learningRateOptions = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.8", "1.0"];
+    private readonly string[] _momentumOptions = ["0.0", "0.2", "0.5", "0.8", "0.9"];
+    private readonly string[] _learningStepOptions = ["100", "500", "1000", "5000", "10000", "50000"];
+    private readonly string[] _weightRangeOptions = ["-0.1 - 0.1", "-1 - 1", "-10 - 10"];
+    private readonly string[] _weightInspectorViewModes = ["Heatmap", "Magnitude", "Values"];
+    private readonly string[] _analysisReportTypes = ["Output clustering", "Hidden-state clustering", "Compatibility summary", "Time series", "Surface plot"];
+    private readonly string[] _analysisTimeSeriesKinds = ["Input", "Target", "Output", "Hidden"];
+    private readonly string[] _analysisSurfaceZKinds = ["Target", "Output", "Hidden"];
+    private readonly object _trainingProgressGate = new();
+    private readonly List<TrainingPoint> _trainingHistory = [];
+    private readonly StringBuilder _consoleMarkdown = new();
+    private readonly List<TrainingSessionSnapshot> _trainingSessions = [];
+    private readonly Dictionary<int, TestResult> _lastTestResults = [];
+
+    private SignalWeaveEngine? _engine;
+    private NetworkDefinition? _definition;
+    private PatternSet _patterns = new([]);
+    private string? _currentProjectPath;
+    private TestResult? _diagramResult;
+    private NetworkDefinition? _graphPreviewDefinition;
+    private TrainingPoint? _latestTrainingPoint;
+    private List<TrainingPoint> _liveTrainingHistory = [];
+    private DispatcherTimer? _trainingProgressTimer;
+    private int _currentTrainingSteps;
+    private bool _isBusy;
+    private bool _isInitializingUi = true;
+    private bool _isSyncingPatternText;
+    private bool _isSyncingPatternTable;
+    private bool _isUpdatingAnalysisControls;
+    private string _lastAnalysisReportTitle = "Run an analysis report.";
+    private string _lastAnalysisReportText = string.Empty;
+    private string _lastAnalysisExportText = string.Empty;
+    private IReadOnlyList<double>? _lastAnalysisSeriesValues;
+    private AnalysisSurfaceResult? _lastAnalysisSurface;
+
+    public MainView()
+    {
+        InitializeComponent();
+        PopulateStaticOptions();
+        ProductInfoTextBlock.Text = BuildProductInfoText();
+
+        if (ErrorPlotCanvas is not null)
+        {
+            ErrorPlotCanvas.SizeChanged += (_, _) => RenderErrorPlot(_trainingHistory);
+        }
+
+        if (NetworkGraphCanvas is not null)
+        {
+            NetworkGraphCanvas.SizeChanged += (_, _) => RenderNetworkGraph();
+        }
+
+        if (WeightInspectorCanvas is not null)
+        {
+            WeightInspectorCanvas.SizeChanged += (_, _) => RenderWeightInspector();
+        }
+
+        if (AnalysisTimeSeriesCanvas is not null)
+        {
+            AnalysisTimeSeriesCanvas.SizeChanged += (_, _) => RenderAnalysisChart();
+        }
+
+        LoadProjectState(CreateDefaultProject(), null, "Loaded the default Modern sample project.");
+        _isInitializingUi = false;
+    }
+
+    private sealed record PatternOption(int Index, string Label, string ResultSummary)
+    {
+        public override string ToString()
+        {
+            return $"{Label}{Environment.NewLine}{ResultSummary}";
+        }
+    }
+
+    private enum PatternTestStatus
+    {
+        Unknown,
+        Pass,
+        Fail
+    }
+
+    private sealed record TrainingSessionOption(TrainingSessionSnapshot Snapshot)
+    {
+        public override string ToString()
+        {
+            return $"Train #{Snapshot.SessionNumber}  |  +{Snapshot.StepsExecuted} steps  |  cycles {Snapshot.CompletedCycles}  |  error {Snapshot.DisplayAverageError.ToString("0.000", CultureInfo.InvariantCulture)}";
+        }
+    }
+
+    private sealed record WeightSourceOption(string Id, string Label, WeightSet Weights)
+    {
+        public override string ToString() => Label;
+    }
+
+    private sealed record WeightLayerOption(string Id, string Label, double[,] Matrix, string[] SourceLabels, string[] TargetLabels)
+    {
+        public override string ToString() => Label;
+    }
+
+    private sealed record AnalysisSourceOption(string Id, string Label, WeightSet? Weights)
+    {
+        public override string ToString() => Label;
+    }
+
+    private void PopulateStaticOptions()
+    {
+        LearningRateComboBox.ItemsSource = _learningRateOptions;
+        MomentumComboBox.ItemsSource = _momentumOptions;
+        LearningStepsComboBox.ItemsSource = _learningStepOptions;
+        WeightRangeComboBox.ItemsSource = _weightRangeOptions;
+        WeightRangeComboBox.SelectedIndex = 1;
+        WeightInspectorViewModeComboBox.ItemsSource = _weightInspectorViewModes;
+        WeightInspectorViewModeComboBox.SelectedIndex = 0;
+        AnalysisReportTypeComboBox.ItemsSource = _analysisReportTypes;
+        AnalysisReportTypeComboBox.SelectedIndex = 0;
+        AnalysisTimeSeriesKindComboBox.ItemsSource = _analysisTimeSeriesKinds;
+        AnalysisTimeSeriesKindComboBox.SelectedIndex = 2;
+        AnalysisSurfaceZKindComboBox.ItemsSource = _analysisSurfaceZKinds;
+        AnalysisSurfaceZKindComboBox.SelectedIndex = 1;
+    }
+
+    private static SignalWeaveProject CreateDefaultProject()
+    {
+        var definition = BasicPropNetworkConfigParser.Parse(SignalWeaveSamples.XorConfig, "XOR demo");
+        var patterns = PatternSetParser.Parse(SignalWeaveSamples.XorPatterns, "xor");
+        return new SignalWeaveProject(
+            definition,
+            patterns,
+            null,
+            0,
+            new ProjectWorkspaceState(5000, 0, "Dots"));
+    }
+
+    private void LoadProjectState(SignalWeaveProject project, string? path, string consoleMessage)
+    {
+        _currentProjectPath = path;
+        _definition = project.Definition;
+        _patterns = project.Patterns;
+        _engine = new SignalWeaveEngine(project.Definition, project.Weights);
+        _engine.RestoreCompletedCycles(project.CompletedCycles);
+        _diagramResult = null;
+        _graphPreviewDefinition = null;
+        _trainingHistory.Clear();
+        _latestTrainingPoint = null;
+        _liveTrainingHistory.Clear();
+        _lastTestResults.Clear();
+        _trainingSessions.Clear();
+        if (project.Workspace?.TrainingSessions is not null)
+        {
+            _trainingSessions.AddRange(project.Workspace.TrainingSessions.Select(session => session with
+            {
+                Weights = session.Weights.Clone(),
+                History = session.History?.ToArray()
+            }));
+        }
+
+        ApplyDefinitionToControls(project.Definition);
+        SetPatternEditorText(PatternSetWriter.Write(project.Patterns));
+        LearningStepsComboBox.Text = project.Workspace?.LearningSteps.ToString(CultureInfo.InvariantCulture)
+            ?? project.Definition.MaxEpochs.ToString(CultureInfo.InvariantCulture);
+        UpdatePatternSelector(project.Workspace?.SelectedPatternIndex ?? 0);
+        RenderPatternGraphicTable(project.Patterns);
+
+        LatestRunSummaryTextBlock.Text = "No run executed yet.";
+        ProgressLabelTextBlock.Text = project.CompletedCycles > 0
+            ? $"{project.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles"
+            : "Idle";
+        TrainingProgressBar.Maximum = Math.Max(ParseLearningStepsFromControls(), 1);
+        TrainingProgressBar.Value = 0;
+
+        SyncNetworkKindControls();
+        UpdateWorkspaceSummary();
+        UpdateTrainingSessionLog();
+        UpdateAnalysisSources();
+        ClearAnalysisReport();
+        RenderErrorPlot(_trainingHistory);
+        RenderNetworkGraph();
+        AppendConsole(consoleMessage);
+        SetStatus(path is null
+            ? "Working in an unsaved project."
+            : $"Loaded project: {System.IO.Path.GetFileName(path)}");
+    }
+
+    private void ApplyDefinitionToControls(NetworkDefinition definition)
+    {
+        ProjectNameTextBox.Text = definition.Name;
+        NetworkKindComboBox.SelectedIndex = definition.NetworkKind == NetworkKind.FeedForward ? 0 : 1;
+        InputUnitsSlider.Value = definition.InputUnits;
+        HiddenUnitsSlider.Value = definition.HiddenUnits;
+        SecondHiddenUnitsSlider.Value = definition.SecondHiddenUnits;
+        OutputUnitsSlider.Value = definition.OutputUnits;
+        InputBiasCheckBox.IsChecked = definition.UseInputBias;
+        HiddenBiasCheckBox.IsChecked = definition.UseHiddenBias;
+        SecondHiddenBiasCheckBox.IsChecked = definition.UseSecondHiddenBias;
+        LearningRateComboBox.Text = FormatNumber(definition.LearningRate);
+        MomentumComboBox.Text = FormatNumber(definition.Momentum);
+        WeightRangeComboBox.SelectedItem = FindMatchingWeightRange(definition.RandomWeightRange);
+        ErrorThresholdTextBox.Text = FormatNumber(definition.ErrorThreshold);
+        BatchUpdateCheckBox.IsChecked = definition.UpdateMode == UpdateMode.Batch;
+        CrossEntropyCheckBox.IsChecked = definition.CostFunction == CostFunction.CrossEntropy;
+        UpdateTopologyControlState();
+    }
+
+    private void SyncNetworkKindControls()
+    {
+        if (NetworkKindComboBox is null)
+        {
+            return;
+        }
+
+        UpdateTopologyControlState();
+    }
+
+    private void UpdateTopologyControlState()
+    {
+        if (NetworkKindComboBox is null ||
+            HiddenUnitsSlider is null ||
+            SecondHiddenUnitsSlider is null ||
+            HiddenBiasCheckBox is null ||
+            SecondHiddenBiasCheckBox is null)
+        {
+            return;
+        }
+
+        var isFeedForward = GetSelectedNetworkKind() == NetworkKind.FeedForward;
+        HiddenUnitsSlider.Minimum = isFeedForward ? 0 : 1;
+
+        if (!isFeedForward && HiddenUnitsSlider.Value < 1)
+        {
+            HiddenUnitsSlider.Value = 1;
+        }
+
+        if (HiddenUnitsSlider.Value <= 0)
+        {
+            HiddenBiasCheckBox.IsChecked = false;
+        }
+
+        if (!isFeedForward || HiddenUnitsSlider.Value <= 0)
+        {
+            SecondHiddenUnitsSlider.Value = 0;
+        }
+
+        if (SecondHiddenUnitsSlider.Value <= 0)
+        {
+            SecondHiddenBiasCheckBox.IsChecked = false;
+        }
+
+        SecondHiddenUnitsSlider.IsEnabled = isFeedForward && HiddenUnitsSlider.Value > 0;
+        HiddenBiasCheckBox.IsEnabled = HiddenUnitsSlider.Value > 0;
+        SecondHiddenBiasCheckBox.IsEnabled = isFeedForward && SecondHiddenUnitsSlider.Value > 0;
+        UpdateSliderValueLabels();
+
+        HiddenBiasCheckBox.Opacity = HiddenBiasCheckBox.IsEnabled ? 1.0 : 0.55;
+        SecondHiddenBiasCheckBox.Opacity = SecondHiddenBiasCheckBox.IsEnabled ? 1.0 : 0.55;
+    }
+
+    private void UpdateWorkspaceSummary()
+    {
+        if (_definition is null || _engine is null)
+        {
+            ProjectSummaryTextBlock.Text = "No active project.";
+            WeightsSummaryTextBlock.Text = "No active weights.";
+            ProjectStateTextBlock.Text = "No active project loaded.";
+            NetworkGraphSummaryTextBlock.Text = "No graph available.";
+            return;
+        }
+
+        ProjectSummaryTextBlock.Text = string.Join(
+            Environment.NewLine,
+            _definition.ToSummary(),
+            _patterns.ToSummary());
+
+        WeightsSummaryTextBlock.Text = BuildWeightSummary(_engine.Weights, _definition);
+        NetworkGraphSummaryTextBlock.Text = _diagramResult is null
+            ? $"{_definition.TotalLayerCount}-layer topology"
+            : $"Showing activations for pattern {_diagramResult.Index + 1}: {_diagramResult.Label}";
+        ProjectStateTextBlock.Text =
+            $"Project saves persist current weights, {_engine.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles, " +
+            $"learning steps {ParseLearningStepsFromControls().ToString(CultureInfo.InvariantCulture)}, selected pattern {Math.Max(GetSelectedPatternIndex(), 0) + 1}, and {_trainingSessions.Count.ToString(CultureInfo.InvariantCulture)} training checkpoints.";
+
+        UpdateActionAvailability();
+    }
+
+    private void SetPatternEditorText(string text)
+    {
+        if (PatternEditorTextBox is null)
+        {
+            return;
+        }
+
+        _isSyncingPatternText = true;
+        PatternEditorTextBox.Text = text;
+        _isSyncingPatternText = false;
+    }
+
+    private void PatternEditorTextBox_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_isSyncingPatternText || _isSyncingPatternTable || !ArePatternEditorControlsReady())
+        {
+            return;
+        }
+
+        if (TryParsePatternDraft(PatternEditorTextBox.Text, out var parsed))
+        {
+            _patterns = NormalizePatternSetForDefinition(parsed);
+            RenderPatternGraphicTable(_patterns);
+            UpdatePatternSelector(Math.Max(GetSelectedPatternIndex(), 0));
+            SetPatternEditorStatus($"Pattern text parsed: {_patterns.Examples.Count} rows");
+        }
+        else
+        {
+            SetPatternEditorStatus("Pattern text contains an invalid row. Graphic mode is showing the last valid pattern set.");
+        }
+    }
+
+    private bool ArePatternEditorControlsReady()
+    {
+        return PatternEditorTextBox is not null &&
+               PatternEditorStatusTextBlock is not null &&
+               PatternTableHost is not null &&
+               TestPatternListBox is not null;
+    }
+
+    private void SetPatternEditorStatus(string text)
+    {
+        if (PatternEditorStatusTextBlock is null)
+        {
+            return;
+        }
+
+        PatternEditorStatusTextBlock.Text = text;
+    }
+
+    private bool TryParsePatternDraft(string? text, out PatternSet parsed)
+    {
+        try
+        {
+            parsed = NormalizePatternSetForDefinition(PatternSetParser.Parse(text ?? string.Empty, CurrentPatternDraftName()));
+            return true;
+        }
+        catch
+        {
+            parsed = new PatternSet([]);
+            return false;
+        }
+    }
+
+    private string CurrentPatternDraftName()
+    {
+        return _graphPreviewDefinition?.Name
+            ?? _definition?.Name
+            ?? "pattern";
+    }
+
+    private PatternSet NormalizePatternSetForDefinition(PatternSet patternSet)
+    {
+        if (!AreDefinitionControlsReady())
+        {
+            return patternSet;
+        }
+
+        var definition = BuildDefinitionFromControls();
+        var normalized = patternSet.Examples.Select(example =>
+        {
+            var inputs = NormalizeVector(example.Inputs, definition.InputUnits);
+            var targets = example.Targets is null
+                ? new double[definition.OutputUnits]
+                : NormalizeVector(example.Targets, definition.OutputUnits);
+            return example with
+            {
+                Inputs = inputs,
+                Targets = targets
+            };
+        }).ToArray();
+
+        return new PatternSet(normalized);
+    }
+
+    private static double[] NormalizeVector(double[] values, int length)
+    {
+        var normalized = new double[length];
+        for (var index = 0; index < length; index++)
+        {
+            normalized[index] = index < values.Length ? values[index] : 0.0;
+        }
+
+        return normalized;
+    }
+
+    private void UpdateSliderValueLabels()
+    {
+        if (InputUnitsValueTextBlock is null ||
+            HiddenUnitsValueTextBlock is null ||
+            SecondHiddenUnitsValueTextBlock is null ||
+            OutputUnitsValueTextBlock is null)
+        {
+            return;
+        }
+
+        InputUnitsValueTextBlock.Text = ReadSliderValue(InputUnitsSlider).ToString(CultureInfo.InvariantCulture);
+        HiddenUnitsValueTextBlock.Text = ReadSliderValue(HiddenUnitsSlider).ToString(CultureInfo.InvariantCulture);
+        SecondHiddenUnitsValueTextBlock.Text = ReadSliderValue(SecondHiddenUnitsSlider).ToString(CultureInfo.InvariantCulture);
+        OutputUnitsValueTextBlock.Text = ReadSliderValue(OutputUnitsSlider).ToString(CultureInfo.InvariantCulture);
+    }
+
+    private void RefreshGraphPreview()
+    {
+        if (!AreDefinitionControlsReady())
+        {
+            return;
+        }
+
+        if (TryBuildPreviewDefinition(out var previewDefinition))
+        {
+            _graphPreviewDefinition = previewDefinition;
+            NetworkGraphSummaryTextBlock.Text = $"Preview: {previewDefinition.TotalLayerCount}-layer topology";
+            RenderNetworkGraph();
+        }
+    }
+
+    private bool TryBuildPreviewDefinition(out NetworkDefinition definition)
+    {
+        if (!AreDefinitionControlsReady())
+        {
+            definition = null!;
+            return false;
+        }
+
+        try
+        {
+            definition = BuildDefinitionFromControls();
+            return true;
+        }
+        catch
+        {
+            definition = null!;
+            return false;
+        }
+    }
+
+    private void UpdateActionAvailability()
+    {
+        var hasPatterns = _patterns.Examples.Count > 0;
+        var hasPatternTargets = hasPatterns && _patterns.Examples.All(example => example.Targets is not null);
+        var selectedPatternIndex = GetSelectedPatternIndex();
+
+        if (TestPatternListBox is not null)
+        {
+            TestPatternListBox.IsEnabled = !_isBusy && hasPatterns;
+        }
+
+        if (ResetButton is not null)
+        {
+            ResetButton.IsEnabled = !_isBusy && _definition is not null;
+        }
+
+        if (TrainButton is not null)
+        {
+            TrainButton.IsEnabled = !_isBusy && _definition is not null && hasPatternTargets;
+            TrainButton.Content = $"Train #{(_trainingSessions.Count + 1).ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        if (TestAllButton is not null)
+        {
+            TestAllButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
+        }
+
+        if (TestSelectedButton is not null)
+        {
+            TestSelectedButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns && selectedPatternIndex >= 0;
+        }
+
+        if (RollbackButton is not null)
+        {
+            RollbackButton.IsEnabled = !_isBusy && TrainingSessionsListBox?.SelectedItem is TrainingSessionOption;
+        }
+
+        if (ExportSelectedHiddenButton is not null)
+        {
+            ExportSelectedHiddenButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns && selectedPatternIndex >= 0;
+        }
+
+        if (ExportPatternSetHiddenButton is not null)
+        {
+            ExportPatternSetHiddenButton.IsEnabled = !_isBusy && _definition is not null && hasPatterns;
+        }
+
+        if (RunAnalysisButton is not null)
+        {
+            RunAnalysisButton.IsEnabled = !_isBusy && _definition is not null && AnalysisReportTypeComboBox?.SelectedItem is not null;
+        }
+
+        if (CopyAnalysisButton is not null)
+        {
+            CopyAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisExportText);
+        }
+
+        if (SaveAnalysisButton is not null)
+        {
+            SaveAnalysisButton.IsEnabled = !_isBusy && !string.IsNullOrWhiteSpace(_lastAnalysisExportText);
+        }
+
+        if (SaveAnalysisChartButton is not null)
+        {
+            SaveAnalysisChartButton.IsEnabled = !_isBusy && (IsTimeSeriesAnalysisSelected() || IsSurfaceAnalysisSelected());
+        }
+    }
+
+    private void UpdateTrainingSessionLog()
+    {
+        if (TrainingSessionsListBox is null)
+        {
+            return;
+        }
+
+        var selectedSessionNumber = (TrainingSessionsListBox.SelectedItem as TrainingSessionOption)?.Snapshot.SessionNumber;
+        var options = _trainingSessions
+            .Select(session => new TrainingSessionOption(session))
+            .Reverse()
+            .ToList();
+
+        TrainingSessionsListBox.ItemsSource = options;
+        if (selectedSessionNumber.HasValue)
+        {
+            TrainingSessionsListBox.SelectedItem = options.FirstOrDefault(option => option.Snapshot.SessionNumber == selectedSessionNumber.Value);
+        }
+        else if (options.Count > 0)
+        {
+            TrainingSessionsListBox.SelectedIndex = 0;
+        }
+
+        UpdateWeightInspectorSources();
+        UpdateAnalysisSources();
+        UpdateActionAvailability();
+    }
+
+    private void UpdateWeightInspectorSources()
+    {
+        if (WeightInspectorSourceComboBox is null)
+        {
+            return;
+        }
+
+        var selectedId = (WeightInspectorSourceComboBox.SelectedItem as WeightSourceOption)?.Id;
+        var options = new List<WeightSourceOption>();
+
+        if (_engine is not null)
+        {
+            options.Add(new WeightSourceOption("current", "Current", _engine.Weights.Clone()));
+        }
+
+        foreach (var session in _trainingSessions.OrderByDescending(static session => session.SessionNumber))
+        {
+            options.Add(new WeightSourceOption(
+                $"session-{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                $"Train #{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                session.Weights.Clone()));
+        }
+
+        WeightInspectorSourceComboBox.ItemsSource = options;
+        if (options.Count == 0)
+        {
+            WeightInspectorSourceComboBox.SelectedItem = null;
+            UpdateWeightInspectorLayers();
+            return;
+        }
+
+        WeightInspectorSourceComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
+        UpdateWeightInspectorLayers();
+    }
+
+    private void UpdateWeightInspectorLayers()
+    {
+        if (WeightInspectorLayerComboBox is null)
+        {
+            return;
+        }
+
+        var selectedId = (WeightInspectorLayerComboBox.SelectedItem as WeightLayerOption)?.Id;
+        var source = WeightInspectorSourceComboBox?.SelectedItem as WeightSourceOption;
+        var options = source is null || _definition is null
+            ? []
+            : BuildWeightLayerOptions(_definition, source.Weights);
+
+        WeightInspectorLayerComboBox.ItemsSource = options;
+        if (options.Count == 0)
+        {
+            WeightInspectorLayerComboBox.SelectedItem = null;
+            RenderWeightInspector();
+            return;
+        }
+
+        WeightInspectorLayerComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
+        RenderWeightInspector();
+    }
+
+    private void UpdateAnalysisSources()
+    {
+        if (AnalysisSourceComboBox is null)
+        {
+            return;
+        }
+
+        var selectedId = (AnalysisSourceComboBox.SelectedItem as AnalysisSourceOption)?.Id;
+        var options = new List<AnalysisSourceOption>
+        {
+            new("current", "Current", _engine?.Weights.Clone())
+        };
+
+        foreach (var session in _trainingSessions.OrderByDescending(static session => session.SessionNumber))
+        {
+            options.Add(new AnalysisSourceOption(
+                $"session-{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                $"Train #{session.SessionNumber.ToString(CultureInfo.InvariantCulture)}",
+                session.Weights.Clone()));
+        }
+
+        AnalysisSourceComboBox.ItemsSource = options;
+        AnalysisSourceComboBox.SelectedItem = options.FirstOrDefault(option => option.Id == selectedId) ?? options[0];
+        UpdateAnalysisTimeSeriesIndexOptions();
+        UpdateAnalysisSurfaceOptions();
+    }
+
+    private List<WeightLayerOption> BuildWeightLayerOptions(NetworkDefinition definition, WeightSet weights)
+    {
+        var options = new List<WeightLayerOption>();
+
+        if (definition.IsDirectFeedForward)
+        {
+            options.Add(new WeightLayerOption(
+                "input-output",
+                "Input → Output",
+                weights.InputHidden,
+                BuildInputSourceLabels(definition),
+                BuildOutputLabels(definition.OutputUnits)));
+            return options;
+        }
+
+        options.Add(new WeightLayerOption(
+            "input-hidden1",
+            definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Input → Hidden" : "Input → Hidden 1",
+            weights.InputHidden,
+            BuildInputSourceLabels(definition),
+            BuildHiddenLabels(definition.HiddenUnits, definition.NetworkKind == NetworkKind.SimpleRecurrent ? "H" : "H1")));
+
+        if (definition.HasSecondHiddenLayer && weights.HiddenHidden is not null)
+        {
+            options.Add(new WeightLayerOption(
+                "hidden1-hidden2",
+                "Hidden 1 → Hidden 2",
+                weights.HiddenHidden,
+                BuildHiddenSourceLabels(definition.HiddenUnits, "H1", definition.UseHiddenBias),
+                BuildHiddenLabels(definition.SecondHiddenUnits, "H2")));
+
+            options.Add(new WeightLayerOption(
+                "hidden2-output",
+                "Hidden 2 → Output",
+                weights.HiddenOutput,
+                BuildHiddenSourceLabels(definition.SecondHiddenUnits, "H2", definition.UseSecondHiddenBias),
+                BuildOutputLabels(definition.OutputUnits)));
+        }
+        else
+        {
+            options.Add(new WeightLayerOption(
+                definition.NetworkKind == NetworkKind.SimpleRecurrent ? "hidden-output" : "hidden1-output",
+                definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Hidden → Output" : "Hidden 1 → Output",
+                weights.HiddenOutput,
+                BuildHiddenSourceLabels(definition.HiddenUnits, definition.NetworkKind == NetworkKind.SimpleRecurrent ? "H" : "H1", definition.UseHiddenBias),
+                BuildOutputLabels(definition.OutputUnits)));
+        }
+
+        if (definition.NetworkKind == NetworkKind.SimpleRecurrent && weights.RecurrentHidden is not null)
+        {
+            options.Add(new WeightLayerOption(
+                "recurrent",
+                "Context → Hidden",
+                weights.RecurrentHidden,
+                BuildHiddenLabels(definition.HiddenUnits, "C"),
+                BuildHiddenLabels(definition.HiddenUnits, "H")));
+        }
+
+        return options;
+    }
+
+    private void UpdatePatternSelector(int preferredIndex)
+    {
+        var options = _patterns.Examples
+            .Select((example, index) => new PatternOption(index, BuildPatternLabel(example, index), BuildPatternResultSummary(index)))
+            .ToList();
+
+        if (TestPatternListBox is null)
+        {
+            return;
+        }
+
+        if (options.Count == 0)
+        {
+            TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
+            TestPatternListBox.SelectedIndex = -1;
+            return;
+        }
+
+        TestPatternListBox.ItemsSource = options.Select(BuildPatternListItem).ToList();
+        TestPatternListBox.SelectedIndex = Math.Clamp(preferredIndex, 0, options.Count - 1);
+        UpdatePatternInspector();
+    }
+
+    private int GetSelectedPatternIndex()
+    {
+        return TestPatternListBox?.SelectedItem is PatternOption option
+            ? option.Index
+            : TestPatternListBox?.SelectedIndex ?? -1;
+    }
+
+    private string BuildPatternResultSummary(int patternIndex)
+    {
+        if (!_lastTestResults.TryGetValue(patternIndex, out var result))
+        {
+            return "Not tested yet";
+        }
+
+        var outputs = string.Join(" ", result.Outputs.Select(FormatGraphValue));
+        var targets = result.Targets is null ? "-" : string.Join(" ", result.Targets.Select(FormatGraphValue));
+        return $"last: out {outputs} | target {targets} | err {FormatGraphValue(result.Error)}";
+    }
+
+    private Control BuildPatternListItem(PatternOption option)
+    {
+        var status = GetPatternTestStatus(option.Index);
+        var (icon, color) = status switch
+        {
+            PatternTestStatus.Pass => ("✓", "#2F9B57"),
+            PatternTestStatus.Fail => ("✕", "#C13A3A"),
+            _ => ("•", "#8B8278")
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            RowSpacing = 3,
+            Margin = new Thickness(0, 2)
+        };
+
+        var label = new TextBlock
+        {
+            Text = option.Label,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetColumn(label, 0);
+        Grid.SetRow(label, 0);
+        grid.Children.Add(label);
+
+        var iconBlock = new TextBlock
+        {
+            Text = icon,
+            Foreground = Brush.Parse(color),
+            FontWeight = FontWeight.Bold,
+            FontSize = 18,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(10, 0, 0, 0)
+        };
+        Grid.SetColumn(iconBlock, 1);
+        Grid.SetRowSpan(iconBlock, 2);
+        grid.Children.Add(iconBlock);
+
+        var summary = new TextBlock
+        {
+            Text = option.ResultSummary,
+            Classes = { "muted" },
+            TextWrapping = TextWrapping.Wrap
+        };
+        Grid.SetColumn(summary, 0);
+        Grid.SetRow(summary, 1);
+        grid.Children.Add(summary);
+
+        return grid;
+    }
+
+    private PatternTestStatus GetPatternTestStatus(int patternIndex)
+    {
+        if (!_lastTestResults.TryGetValue(patternIndex, out var result) || result.Targets is null)
+        {
+            return PatternTestStatus.Unknown;
+        }
+
+        for (var index = 0; index < Math.Min(result.Outputs.Length, result.Targets.Length); index++)
+        {
+            var predicted = result.Outputs[index] >= 0.5 ? 1.0 : 0.0;
+            var expected = result.Targets[index] >= 0.5 ? 1.0 : 0.0;
+            if (!predicted.Equals(expected))
+            {
+                return PatternTestStatus.Fail;
+            }
+        }
+
+        return PatternTestStatus.Pass;
+    }
+
+    private void TestPatternListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var selectedPatternIndex = GetSelectedPatternIndex();
+        _diagramResult = _lastTestResults.TryGetValue(selectedPatternIndex, out var result) ? result : null;
+        RenderNetworkGraph();
+        UpdatePatternInspector();
+        UpdateWorkspaceSummary();
+        UpdateActionAvailability();
+    }
+
+    private void UpdatePatternInspector()
+    {
+        if (PatternInspectorTitleTextBlock is null ||
+            PatternInspectorStatusTextBlock is null ||
+            PatternInspectorResultBadgeTextBlock is null ||
+            PatternInspectorErrorTextBlock is null ||
+            PatternInspectorMetaTextBlock is null ||
+            PatternInspectorInputsHost is null ||
+            PatternInspectorTargetsHost is null ||
+            PatternInspectorOutputsHost is null ||
+            PatternInspectorDeltaHost is null ||
+            PatternInspectorHiddenHost is null)
+        {
+            return;
+        }
+
+        PatternInspectorInputsHost.Children.Clear();
+        PatternInspectorTargetsHost.Children.Clear();
+        PatternInspectorOutputsHost.Children.Clear();
+        PatternInspectorDeltaHost.Children.Clear();
+        PatternInspectorHiddenHost.Children.Clear();
+
+        var selectedIndex = GetSelectedPatternIndex();
+        if (selectedIndex < 0 || selectedIndex >= _patterns.Examples.Count)
+        {
+            PatternInspectorTitleTextBlock.Text = "Pattern inspector";
+            PatternInspectorStatusTextBlock.Text = "No pattern selected.";
+            PatternInspectorResultBadgeTextBlock.Text = "Not tested";
+            PatternInspectorResultBadgeTextBlock.Foreground = Brush.Parse("#6A6258");
+            PatternInspectorErrorTextBlock.Text = "Error: -";
+            PatternInspectorMetaTextBlock.Text = "Select a pattern to inspect the current result.";
+            return;
+        }
+
+        var example = _patterns.Examples[selectedIndex];
+        _lastTestResults.TryGetValue(selectedIndex, out var result);
+        var status = GetPatternTestStatus(selectedIndex);
+        var (badgeText, badgeForeground) = status switch
+        {
+            PatternTestStatus.Pass => ("PASS", "#2F9B57"),
+            PatternTestStatus.Fail => ("FAIL", "#C13A3A"),
+            _ => ("NOT TESTED", "#6A6258")
+        };
+
+        PatternInspectorTitleTextBlock.Text = $"{selectedIndex + 1}. {example.Label}";
+        PatternInspectorStatusTextBlock.Text = result is null
+            ? "Pattern selected. No cached test result yet."
+            : "Showing latest cached test result and graph overlay.";
+        PatternInspectorResultBadgeTextBlock.Text = badgeText;
+        PatternInspectorResultBadgeTextBlock.Foreground = Brush.Parse(badgeForeground);
+        PatternInspectorErrorTextBlock.Text = result is null
+            ? "Error: -"
+            : $"Error: {FormatNumber(result.Error)}";
+        PatternInspectorMetaTextBlock.Text =
+            $"Reset after pattern: {(example.ResetsContextAfter ? "Yes" : "No")}  |  " +
+            $"Inputs: {example.Inputs.Length}  |  Targets: {example.Targets?.Length ?? 0}  |  " +
+            $"Hidden values: {result?.HiddenActivations.Length ?? 0}";
+
+        PopulateInspectorVector(PatternInspectorInputsHost, "I", example.Inputs, null);
+        PopulateInspectorVector(PatternInspectorTargetsHost, "T", example.Targets ?? Array.Empty<double>(), null);
+        PopulateInspectorVector(PatternInspectorOutputsHost, "O", result?.Outputs ?? Array.Empty<double>(), example.Targets);
+        PopulateInspectorVector(PatternInspectorDeltaHost, "Δ", BuildDeltaValues(result), example.Targets is null ? null : BuildZeroVector(example.Targets.Length));
+        PopulateInspectorVector(PatternInspectorHiddenHost, "H", result?.HiddenActivations ?? Array.Empty<double>(), null);
+    }
+
+    private void PopulateInspectorVector(StackPanel host, string prefix, IReadOnlyList<double> values, IReadOnlyList<double>? reference)
+    {
+        if (values.Count == 0)
+        {
+            host.Children.Add(new TextBlock
+            {
+                Text = "No data",
+                Foreground = Brush.Parse("#6A6258")
+            });
+            return;
+        }
+
+        for (var index = 0; index < values.Count; index++)
+        {
+            host.Children.Add(BuildInspectorValueRow(
+                $"{prefix}{index + 1}",
+                values[index],
+                reference is not null && index < reference.Count ? reference[index] : null));
+        }
+    }
+
+    private Control BuildInspectorValueRow(string label, double value, double? reference)
+    {
+        var normalized = Math.Clamp(value, 0.0, 1.0);
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions($"{PatternInspectorLabelWidth},*,{PatternInspectorValueWidth}"),
+            ColumnSpacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ClipToBounds = true
+        };
+
+        var labelBlock = new TextBlock
+        {
+            Text = label,
+            Foreground = Brush.Parse("#6A6258"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Width = PatternInspectorLabelWidth,
+            TextAlignment = TextAlignment.Right
+        };
+        Grid.SetColumn(labelBlock, 0);
+        grid.Children.Add(labelBlock);
+
+        var barHost = new Border
+        {
+            Background = Brush.Parse("#F1E8DC"),
+            BorderBrush = Brush.Parse("#E2D8CA"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(3),
+            Height = 16,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ClipToBounds = true
+        };
+        Grid.SetColumn(barHost, 1);
+
+        var barGrid = new Grid
+        {
+            ClipToBounds = true,
+            Margin = new Thickness(1)
+        };
+        barGrid.ColumnDefinitions = new ColumnDefinitions($"{Math.Max(normalized, 0.0001) * 100:0.####}*,{Math.Max(1.0 - normalized, 0.0001) * 100:0.####}*");
+
+        var fill = new Border
+        {
+            Background = Brush.Parse("#7CCB74"),
+            CornerRadius = new CornerRadius(2),
+            Height = 12,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(fill, 0);
+        barGrid.Children.Add(fill);
+        barHost.Child = barGrid;
+        grid.Children.Add(barHost);
+
+        var valueText = reference.HasValue
+            ? $"{FormatGraphValue(value)} / {FormatGraphValue(reference.Value)}"
+            : FormatGraphValue(value);
+
+        var valueBlock = new TextBlock
+        {
+            Text = valueText,
+            Foreground = reference.HasValue && Math.Abs(value - reference.Value) > 0.49
+                ? Brush.Parse("#C13A3A")
+                : Brush.Parse("#2F2B26"),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace"),
+            Width = PatternInspectorValueWidth,
+            TextAlignment = TextAlignment.Right,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        Grid.SetColumn(valueBlock, 2);
+        grid.Children.Add(valueBlock);
+
+        return grid;
+    }
+
+    private static double[] BuildDeltaValues(TestResult? result)
+    {
+        if (result?.Targets is null)
+        {
+            return Array.Empty<double>();
+        }
+
+        var deltas = new double[Math.Min(result.Outputs.Length, result.Targets.Length)];
+        for (var index = 0; index < deltas.Length; index++)
+        {
+            deltas[index] = result.Outputs[index] - result.Targets[index];
+        }
+
+        return deltas;
+    }
+
+    private static double[] BuildZeroVector(int length)
+    {
+        return new double[length];
+    }
+
+    private void RenderPatternGraphicTable(PatternSet patternSet)
+    {
+        if (PatternTableHost is null)
+        {
+            return;
+        }
+
+        _isSyncingPatternTable = true;
+        PatternTableHost.Children.Clear();
+
+        var inputCount = AreDefinitionControlsReady() ? ReadSliderValue(InputUnitsSlider) : _definition?.InputUnits ?? 0;
+        var outputCount = AreDefinitionControlsReady() ? ReadSliderValue(OutputUnitsSlider) : _definition?.OutputUnits ?? 0;
+
+        PatternTableHost.Children.Add(BuildPatternTableHeader(inputCount, outputCount));
+
+        for (var rowIndex = 0; rowIndex < patternSet.Examples.Count; rowIndex++)
+        {
+            PatternTableHost.Children.Add(BuildPatternTableRow(patternSet.Examples[rowIndex], rowIndex, inputCount, outputCount));
+        }
+
+        _isSyncingPatternTable = false;
+    }
+
+    private Grid BuildPatternTableHeader(int inputCount, int outputCount)
+    {
+        var grid = new Grid
+        {
+            ColumnSpacing = 6
+        };
+        grid.ColumnDefinitions = BuildPatternColumnDefinitions(inputCount, outputCount);
+
+        AddPatternHeaderText(grid, "Label", 0);
+        AddPatternHeaderText(grid, "Reset", 1);
+
+        var column = 2;
+        for (var index = 0; index < inputCount; index++, column++)
+        {
+            AddPatternHeaderText(grid, $"I{index + 1}", column);
+        }
+
+        var hasTargets = outputCount > 0;
+        if (hasTargets)
+        {
+            AddPatternSectionSeparator(grid, column, true);
+            column++;
+        }
+
+        for (var index = 0; index < outputCount; index++, column++)
+        {
+            AddPatternHeaderText(grid, $"O{index + 1}", column);
+        }
+
+        AddPatternHeaderText(grid, "Del", column);
+        return grid;
+    }
+
+    private static void AddPatternHeaderText(Grid grid, string text, int column)
+    {
+        var header = new TextBlock
+        {
+            Text = text,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brush.Parse("#6A6258"),
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(header, column);
+        grid.Children.Add(header);
+    }
+
+    private static void AddPatternSectionSeparator(Grid grid, int column, bool isHeader)
+    {
+        var separator = new Border
+        {
+            Width = isHeader ? 12 : 10,
+            MinHeight = isHeader ? 24 : 34,
+            Background = Brush.Parse(isHeader ? "#D0C7BC" : "#E2DCD4"),
+            CornerRadius = new CornerRadius(3),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        Grid.SetColumn(separator, column);
+        grid.Children.Add(separator);
+    }
+
+    private Grid BuildPatternTableRow(PatternExample example, int rowIndex, int inputCount, int outputCount)
+    {
+        var grid = new Grid
+        {
+            ColumnSpacing = 6
+        };
+        grid.ColumnDefinitions = BuildPatternColumnDefinitions(inputCount, outputCount);
+
+        var labelBox = new TextBox
+        {
+            Text = example.Label,
+            Tag = new PatternCellTag(rowIndex, PatternCellKind.Label, -1),
+            Width = PatternLabelColumnWidth
+        };
+        labelBox.LostFocus += PatternTableTextBox_LostFocus;
+        Grid.SetColumn(labelBox, 0);
+        grid.Children.Add(labelBox);
+
+        var resetCheckBox = new CheckBox
+        {
+            IsChecked = example.ResetsContextAfter,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            Tag = new PatternCellTag(rowIndex, PatternCellKind.Reset, -1)
+        };
+        resetCheckBox.Click += PatternTableReset_Click;
+        Grid.SetColumn(resetCheckBox, 1);
+        grid.Children.Add(resetCheckBox);
+
+        var column = 2;
+        for (var index = 0; index < inputCount; index++, column++)
+        {
+            grid.Children.Add(BuildPatternBinaryCell(example.Inputs.ElementAtOrDefault(index), rowIndex, PatternCellKind.Input, index, column));
+        }
+
+        var hasTargets = outputCount > 0;
+        if (hasTargets)
+        {
+            AddPatternSectionSeparator(grid, column, false);
+            column++;
+        }
+
+        var targets = example.Targets ?? new double[outputCount];
+        for (var index = 0; index < outputCount; index++, column++)
+        {
+            grid.Children.Add(BuildPatternBinaryCell(targets.ElementAtOrDefault(index), rowIndex, PatternCellKind.Target, index, column));
+        }
+
+        var deleteButton = new Button
+        {
+            Content = "X",
+            Tag = rowIndex,
+            Padding = new Thickness(6, 2)
+        };
+        deleteButton.Click += DeletePatternRow_Click;
+        Grid.SetColumn(deleteButton, column);
+        grid.Children.Add(deleteButton);
+
+        return grid;
+    }
+
+    private Button BuildPatternBinaryCell(double value, int rowIndex, PatternCellKind kind, int vectorIndex, int column)
+    {
+        var button = new Button
+        {
+            Content = ToBinaryCellText(value),
+            Width = PatternBinaryCellWidth,
+            Height = 30,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Background = Brush.Parse(kind == PatternCellKind.Input ? "#E9F1FA" : "#F7EEE0"),
+            BorderBrush = Brush.Parse(kind == PatternCellKind.Input ? "#8BAFD0" : "#C9A36B"),
+            BorderThickness = new Thickness(1),
+            Tag = new PatternCellTag(rowIndex, kind, vectorIndex)
+        };
+        button.Click += PatternToggleButton_Click;
+        Grid.SetColumn(button, column);
+        return button;
+    }
+
+    private static ColumnDefinitions BuildPatternColumnDefinitions(int inputCount, int outputCount)
+    {
+        var columns = new ColumnDefinitions
+        {
+            new ColumnDefinition(PatternLabelColumnWidth, GridUnitType.Pixel),
+            new ColumnDefinition(PatternResetColumnWidth, GridUnitType.Pixel)
+        };
+
+        for (var index = 0; index < inputCount + outputCount; index++)
+        {
+            columns.Add(new ColumnDefinition(PatternBinaryCellWidth, GridUnitType.Pixel));
+        }
+
+        if (outputCount > 0)
+        {
+            columns.Insert(2 + inputCount, new ColumnDefinition(PatternSeparatorColumnWidth, GridUnitType.Pixel));
+        }
+
+        columns.Add(new ColumnDefinition(PatternDeleteColumnWidth, GridUnitType.Pixel));
+        return columns;
+    }
+
+    private void AddPatternRow_Click(object? sender, RoutedEventArgs e)
+    {
+        var inputCount = AreDefinitionControlsReady() ? ReadSliderValue(InputUnitsSlider) : _definition?.InputUnits ?? 1;
+        var outputCount = AreDefinitionControlsReady() ? ReadSliderValue(OutputUnitsSlider) : _definition?.OutputUnits ?? 1;
+        var examples = _patterns.Examples.ToList();
+        examples.Add(new PatternExample(
+            $"pattern-{examples.Count + 1}",
+            new double[inputCount],
+            new double[outputCount],
+            false));
+        ApplyGraphicPatternSet(new PatternSet(examples));
+    }
+
+    private void DeletePatternRow_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: int rowIndex })
+        {
+            return;
+        }
+
+        var examples = _patterns.Examples.ToList();
+        if (rowIndex < 0 || rowIndex >= examples.Count)
+        {
+            return;
+        }
+
+        examples.RemoveAt(rowIndex);
+        ApplyGraphicPatternSet(new PatternSet(examples));
+    }
+
+    private void PatternTableReset_Click(object? sender, RoutedEventArgs e)
+    {
+        CommitPatternTableFromGraphic();
+    }
+
+    private void PatternTableTextBox_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        CommitPatternTableFromGraphic();
+    }
+
+    private void PatternToggleButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isSyncingPatternTable || sender is not Button button)
+        {
+            return;
+        }
+
+        button.Content = string.Equals(button.Content?.ToString(), "1", StringComparison.Ordinal) ? "0" : "1";
+        CommitPatternTableFromGraphic();
+    }
+
+    private void TrainingSessionsListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (TrainingSessionsListBox?.SelectedItem is TrainingSessionOption option)
+        {
+            RenderErrorPlot(option.Snapshot.History ?? []);
+            if (WeightInspectorSourceComboBox?.ItemsSource is IEnumerable<WeightSourceOption> sources)
+            {
+                var targetId = $"session-{option.Snapshot.SessionNumber.ToString(CultureInfo.InvariantCulture)}";
+                WeightInspectorSourceComboBox.SelectedItem = sources.FirstOrDefault(source => source.Id == targetId)
+                    ?? WeightInspectorSourceComboBox.SelectedItem;
+            }
+        }
+        else
+        {
+            RenderErrorPlot(_trainingHistory);
+            if (WeightInspectorSourceComboBox?.ItemsSource is IEnumerable<WeightSourceOption> sources)
+            {
+                WeightInspectorSourceComboBox.SelectedItem = sources.FirstOrDefault(source => source.Id == "current")
+                    ?? WeightInspectorSourceComboBox.SelectedItem;
+            }
+        }
+
+        UpdateActionAvailability();
+    }
+
+    private void WeightInspectorSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender == WeightInspectorSourceComboBox)
+        {
+            UpdateWeightInspectorLayers();
+            return;
+        }
+
+        RenderWeightInspector();
+    }
+
+    private void AnalysisSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isUpdatingAnalysisControls)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(sender, AnalysisReportTypeComboBox) || ReferenceEquals(sender, AnalysisTimeSeriesKindComboBox))
+        {
+            UpdateAnalysisTimeSeriesIndexOptions();
+            UpdateAnalysisSurfaceOptions();
+        }
+        else if (ReferenceEquals(sender, AnalysisSurfaceZKindComboBox))
+        {
+            UpdateAnalysisSurfaceOptions();
+        }
+        else
+        {
+            UpdateAnalysisModeVisibility();
+        }
+
+        ClearAnalysisReport();
+        UpdateActionAvailability();
+    }
+
+    private void ClearAnalysisReport()
+    {
+        _lastAnalysisReportTitle = "Run an analysis report.";
+        _lastAnalysisReportText = string.Empty;
+        _lastAnalysisExportText = string.Empty;
+        _lastAnalysisSeriesValues = null;
+        _lastAnalysisSurface = null;
+        if (AnalysisReportTitleTextBlock is not null)
+        {
+            AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
+        }
+
+        if (AnalysisReportTextBox is not null)
+        {
+            AnalysisReportTextBox.Text = string.Empty;
+        }
+
+        if (AnalysisChartTitleTextBlock is not null)
+        {
+            AnalysisChartTitleTextBlock.Text = "Run a time-series analysis.";
+        }
+
+        if (AnalysisChartSummaryTextBlock is not null)
+        {
+            AnalysisChartSummaryTextBlock.Text = string.Empty;
+        }
+
+        UpdateAnalysisModeVisibility();
+        RenderAnalysisChart();
+    }
+
+    private void RollbackTrainingSession_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy || _engine is null || TrainingSessionsListBox.SelectedItem is not TrainingSessionOption option)
+        {
+            return;
+        }
+
+        var session = option.Snapshot;
+        _engine = new SignalWeaveEngine(_definition!, session.Weights.Clone());
+        _engine.RestoreCompletedCycles(session.CompletedCycles);
+        _trainingSessions.RemoveAll(existing => existing.SessionNumber > session.SessionNumber);
+        _diagramResult = null;
+        _lastTestResults.Clear();
+        _trainingHistory.Clear();
+        if (session.History is not null)
+        {
+            _trainingHistory.AddRange(session.History);
+        }
+        _latestTrainingPoint = null;
+        LatestRunSummaryTextBlock.Text = $"Rolled back to Train #{session.SessionNumber}.";
+        ProgressLabelTextBlock.Text = $"{session.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles";
+        TrainingProgressBar.Value = 0;
+        RenderErrorPlot(_trainingHistory);
+        RenderNetworkGraph();
+        UpdateWorkspaceSummary();
+        UpdateTrainingSessionLog();
+        AppendConsole($"## Rollback{Environment.NewLine}{Environment.NewLine}- Restored checkpoint: `Train #{session.SessionNumber}`{Environment.NewLine}- Completed cycles: `{session.CompletedCycles}`{Environment.NewLine}- Displayed average error: `{FormatNumber(session.DisplayAverageError)}`");
+        SetStatus($"Rolled back to Train #{session.SessionNumber}.");
+    }
+
+    private void CommitPatternTableFromGraphic()
+    {
+        if (_isSyncingPatternTable || !ArePatternEditorControlsReady())
+        {
+            return;
+        }
+
+        if (!TryReadPatternTable(out var patternSet))
+        {
+            SetPatternEditorStatus("Graphic mode contains an invalid numeric value.");
+            return;
+        }
+
+        ApplyGraphicPatternSet(patternSet);
+    }
+
+    private void ApplyGraphicPatternSet(PatternSet patternSet)
+    {
+        _patterns = NormalizePatternSetForDefinition(patternSet);
+        RenderPatternGraphicTable(_patterns);
+        if (TestPatternListBox is not null)
+        {
+            var selection = Math.Max(GetSelectedPatternIndex(), 0);
+            UpdatePatternSelector(selection);
+        }
+
+        SetPatternEditorText(PatternSetWriter.Write(_patterns));
+        SetPatternEditorStatus($"Graphic editor updated: {_patterns.Examples.Count} rows");
+    }
+
+    private bool TryReadPatternTable(out PatternSet patternSet)
+    {
+        var inputCount = AreDefinitionControlsReady() ? ReadSliderValue(InputUnitsSlider) : _definition?.InputUnits ?? 0;
+        var outputCount = AreDefinitionControlsReady() ? ReadSliderValue(OutputUnitsSlider) : _definition?.OutputUnits ?? 0;
+        var rowGrids = PatternTableHost.Children.OfType<Grid>().Skip(1).ToList();
+        var examples = new List<PatternExample>(rowGrids.Count);
+
+        foreach (var rowGrid in rowGrids)
+        {
+            var label = rowGrid.Children
+                .OfType<TextBox>()
+                .FirstOrDefault(child => child.Tag is PatternCellTag { Kind: PatternCellKind.Label })?.Text?.Trim();
+
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                label = $"pattern-{examples.Count + 1}";
+            }
+
+            var reset = rowGrid.Children
+                .OfType<CheckBox>()
+                .FirstOrDefault(child => child.Tag is PatternCellTag { Kind: PatternCellKind.Reset })?.IsChecked == true;
+
+            var inputs = new double[inputCount];
+            var targets = new double[outputCount];
+
+            foreach (var button in rowGrid.Children.OfType<Button>())
+            {
+                if (button.Tag is not PatternCellTag tag)
+                {
+                    continue;
+                }
+
+                var value = string.Equals(button.Content?.ToString(), "1", StringComparison.Ordinal) ? 1.0 : 0.0;
+
+                if (tag.Kind == PatternCellKind.Input && tag.Index >= 0 && tag.Index < inputs.Length)
+                {
+                    inputs[tag.Index] = value;
+                }
+                else if (tag.Kind == PatternCellKind.Target && tag.Index >= 0 && tag.Index < targets.Length)
+                {
+                    targets[tag.Index] = value;
+                }
+            }
+
+            examples.Add(new PatternExample(label, inputs, targets, reset));
+        }
+
+        patternSet = new PatternSet(examples);
+        return true;
+    }
+
+    private static string ToBinaryCellText(double value)
+    {
+        return value >= 0.5 ? "1" : "0";
+    }
+
+    private enum PatternCellKind
+    {
+        Label,
+        Reset,
+        Input,
+        Target
+    }
+
+    private sealed record PatternCellTag(int Row, PatternCellKind Kind, int Index);
+
+    private static string BuildPatternLabel(PatternExample example, int index)
+    {
+        var inputs = string.Join(" ", example.Inputs.Select(FormatNumber));
+        var targets = example.Targets is null
+            ? "-"
+            : string.Join(" ", example.Targets.Select(FormatNumber));
+        return $"{index + 1}. {example.Label} | {inputs} => {targets}";
+    }
+
+    private static string BuildWeightSummary(WeightSet weights, NetworkDefinition definition)
+    {
+        var lines = new List<string>
+        {
+            $"Input -> {(definition.IsDirectFeedForward ? "Output" : "Hidden")} {weights.InputHidden.GetLength(0)}x{weights.InputHidden.GetLength(1)}",
+            $"Range {MeasureRange(weights.InputHidden)}"
+        };
+
+        if (weights.HiddenHidden is not null)
+        {
+            lines.Add($"Hidden1 -> Hidden2 {weights.HiddenHidden.GetLength(0)}x{weights.HiddenHidden.GetLength(1)}");
+            lines.Add($"Range {MeasureRange(weights.HiddenHidden)}");
+        }
+
+        if (weights.RecurrentHidden is not null)
+        {
+            lines.Add($"Recurrent {weights.RecurrentHidden.GetLength(0)}x{weights.RecurrentHidden.GetLength(1)}");
+            lines.Add($"Range {MeasureRange(weights.RecurrentHidden)}");
+        }
+
+        if (!definition.IsDirectFeedForward)
+        {
+            lines.Add($"Hidden -> Output {weights.HiddenOutput.GetLength(0)}x{weights.HiddenOutput.GetLength(1)}");
+            lines.Add($"Range {MeasureRange(weights.HiddenOutput)}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string MeasureRange(double[,] matrix)
+    {
+        if (matrix.Length == 0)
+        {
+            return "0 .. 0";
+        }
+
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+
+        foreach (var value in matrix)
+        {
+            min = Math.Min(min, value);
+            max = Math.Max(max, value);
+        }
+
+        return $"{FormatNumber(min)} .. {FormatNumber(max)}";
+    }
+
+    private void RenderWeightInspector()
+    {
+        if (WeightInspectorCanvas is null || WeightInspectorStatsTextBlock is null)
+        {
+            return;
+        }
+
+        WeightInspectorCanvas.Children.Clear();
+
+        if (WeightInspectorLayerComboBox?.SelectedItem is not WeightLayerOption layer)
+        {
+            WeightInspectorStatsTextBlock.Text = "No weight data available.";
+            return;
+        }
+
+        WeightInspectorStatsTextBlock.Text = BuildWeightInspectorStats(layer.Matrix);
+
+        var canvasWidth = Math.Max(WeightInspectorCanvas.Bounds.Width, 260);
+        var canvasHeight = Math.Max(WeightInspectorCanvas.Bounds.Height, 220);
+        var rows = layer.Matrix.GetLength(0);
+        var columns = layer.Matrix.GetLength(1);
+        if (rows == 0 || columns == 0)
+        {
+            WeightInspectorStatsTextBlock.Text += $"{Environment.NewLine}Selected layer has no weights.";
+            return;
+        }
+
+        var leftMargin = 64.0;
+        var topMargin = 32.0;
+        var rightMargin = 20.0;
+        var bottomMargin = 20.0;
+        var plotWidth = Math.Max(canvasWidth - leftMargin - rightMargin, 80.0);
+        var plotHeight = Math.Max(canvasHeight - topMargin - bottomMargin, 80.0);
+        var cellWidth = plotWidth / columns;
+        var cellHeight = plotHeight / rows;
+        var maxAbs = GetMaxAbs(layer.Matrix);
+        var viewMode = WeightInspectorViewModeComboBox?.SelectedItem?.ToString() ?? _weightInspectorViewModes[0];
+        var showValues = string.Equals(viewMode, "Values", StringComparison.Ordinal);
+        var useMagnitude = string.Equals(viewMode, "Magnitude", StringComparison.Ordinal);
+
+        for (var column = 0; column < columns; column++)
+        {
+            var label = new TextBlock
+            {
+                Text = layer.TargetLabels.ElementAtOrDefault(column) ?? $"T{column + 1}",
+                Foreground = Brush.Parse("#6A6258"),
+                FontSize = 11
+            };
+            Canvas.SetLeft(label, leftMargin + (column * cellWidth) + (cellWidth * 0.16));
+            Canvas.SetTop(label, 4);
+            WeightInspectorCanvas.Children.Add(label);
+        }
+
+        for (var row = 0; row < rows; row++)
+        {
+            var label = new TextBlock
+            {
+                Text = layer.SourceLabels.ElementAtOrDefault(row) ?? $"S{row + 1}",
+                Foreground = Brush.Parse("#6A6258"),
+                FontSize = 11
+            };
+            Canvas.SetLeft(label, 8);
+            Canvas.SetTop(label, topMargin + (row * cellHeight) + Math.Max((cellHeight - 14) / 2.0, 0));
+            WeightInspectorCanvas.Children.Add(label);
+        }
+
+        for (var row = 0; row < rows; row++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                var value = layer.Matrix[row, column];
+                var x = leftMargin + (column * cellWidth);
+                var y = topMargin + (row * cellHeight);
+                var rect = new Rectangle
+                {
+                    Width = Math.Max(cellWidth - 2, 4),
+                    Height = Math.Max(cellHeight - 2, 4),
+                    RadiusX = 2,
+                    RadiusY = 2,
+                    Stroke = Brush.Parse("#E2D8CA"),
+                    StrokeThickness = 0.8,
+                    Fill = useMagnitude
+                        ? GetMagnitudeBrush(value, maxAbs)
+                        : showValues
+                            ? Brush.Parse("#FFFDF9")
+                            : GetWeightBrushScaled(value, maxAbs)
+                };
+                Canvas.SetLeft(rect, x);
+                Canvas.SetTop(rect, y);
+                WeightInspectorCanvas.Children.Add(rect);
+
+                if (showValues)
+                {
+                    var text = new TextBlock
+                    {
+                        Text = FormatCompactValue(value),
+                        Foreground = GetTextBrushForValue(value),
+                        FontSize = Math.Max(9, Math.Min(12, Math.Min(cellWidth, cellHeight) * 0.28)),
+                        TextAlignment = TextAlignment.Center,
+                        Width = Math.Max(cellWidth - 4, 10)
+                    };
+                    Canvas.SetLeft(text, x + 2);
+                    Canvas.SetTop(text, y + Math.Max((cellHeight - 14) / 2.0, 0));
+                    WeightInspectorCanvas.Children.Add(text);
+                }
+            }
+        }
+    }
+
+    private static string BuildWeightInspectorStats(double[,] matrix)
+    {
+        if (matrix.Length == 0)
+        {
+            return "No matrix values.";
+        }
+
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+        var sumAbs = 0.0;
+        var nearZero = 0;
+
+        foreach (var value in matrix)
+        {
+            min = Math.Min(min, value);
+            max = Math.Max(max, value);
+            sumAbs += Math.Abs(value);
+            if (Math.Abs(value) < 0.05)
+            {
+                nearZero++;
+            }
+        }
+
+        var count = matrix.Length;
+        return $"Rows: {matrix.GetLength(0)}  |  Columns: {matrix.GetLength(1)}{Environment.NewLine}" +
+               $"Min: {FormatNumber(min)}  |  Max: {FormatNumber(max)}  |  Mean |w|: {FormatNumber(sumAbs / count)}  |  Near zero: {nearZero}/{count}";
+    }
+
+    private static double GetMaxAbs(double[,] matrix)
+    {
+        var maxAbs = 0.0;
+        foreach (var value in matrix)
+        {
+            maxAbs = Math.Max(maxAbs, Math.Abs(value));
+        }
+
+        return Math.Max(maxAbs, 0.0001);
+    }
+
+    private static IBrush GetWeightBrushScaled(double value, double maxAbs)
+    {
+        var normalized = Math.Clamp(value / maxAbs, -1.0, 1.0);
+        if (normalized < 0)
+        {
+            var t = Math.Abs(normalized);
+            return new SolidColorBrush(Color.FromRgb((byte)(40 + (t * 180)), 36, 36));
+        }
+
+        if (normalized > 0)
+        {
+            return new SolidColorBrush(Color.FromRgb(28, (byte)(40 + (normalized * 170)), 46));
+        }
+
+        return Brush.Parse("#161413");
+    }
+
+    private static IBrush GetMagnitudeBrush(double value, double maxAbs)
+    {
+        var intensity = Math.Clamp(Math.Abs(value) / maxAbs, 0.0, 1.0);
+        var channel = (byte)(245 - (intensity * 170));
+        return new SolidColorBrush(Color.FromRgb(channel, channel, channel));
+    }
+
+    private static IBrush GetTextBrushForValue(double value)
+    {
+        return Math.Abs(value) > 0.0001
+            ? GetWeightBrushScaled(value, Math.Max(Math.Abs(value), 0.0001))
+            : Brush.Parse("#2F2B26");
+    }
+
+    private static string FormatCompactValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private static string[] BuildInputSourceLabels(NetworkDefinition definition)
+    {
+        var labels = Enumerable.Range(1, definition.InputUnits)
+            .Select(index => $"I{index}")
+            .ToList();
+        if (definition.UseInputBias)
+        {
+            labels.Add("B");
+        }
+
+        return labels.ToArray();
+    }
+
+    private static string[] BuildHiddenSourceLabels(int count, string prefix, bool includeBias)
+    {
+        var labels = Enumerable.Range(1, count)
+            .Select(index => $"{prefix}{index}")
+            .ToList();
+        if (includeBias)
+        {
+            labels.Add("B");
+        }
+
+        return labels.ToArray();
+    }
+
+    private static string[] BuildHiddenLabels(int count, string prefix)
+    {
+        return Enumerable.Range(1, count).Select(index => $"{prefix}{index}").ToArray();
+    }
+
+    private static string[] BuildOutputLabels(int count)
+    {
+        return Enumerable.Range(1, count).Select(index => $"O{index}").ToArray();
+    }
+
+    private async void NewProject_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        LoadProjectState(CreateDefaultProject(), null, "Started a new project from the default Modern sample.");
+        await Task.CompletedTask;
+    }
+
+    private async void LoadProject_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var file = await PickOpenFileAsync(
+                "Load Project",
+                new FilePickerFileType("SignalWeave project") { Patterns = ["*.swproj.json"] },
+                new FilePickerFileType("JSON files") { Patterns = ["*.json"] },
+                new FilePickerFileType("All files") { Patterns = ["*.*"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var path = file.TryGetLocalPath()
+                ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected project file.");
+            LoadProjectState(SignalWeaveProjectSerializer.LoadFile(path), path, $"Loaded project from {path}.");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Load project failed: {ex.Message}");
+            SetStatus("Load project failed.");
+        }
+    }
+
+    private async void SaveProject_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await SaveProjectInternalAsync(forcePicker: string.IsNullOrWhiteSpace(_currentProjectPath));
+    }
+
+    private async void SaveProjectAs_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        await SaveProjectInternalAsync(forcePicker: true);
+    }
+
+    private async Task SaveProjectInternalAsync(bool forcePicker)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: true);
+
+            var path = _currentProjectPath;
+            if (forcePicker || string.IsNullOrWhiteSpace(path))
+            {
+                var file = await PickSaveFileAsync(
+                    "Save Project",
+                    GetSuggestedProjectFileName(),
+                    ".json",
+                    new FilePickerFileType("SignalWeave project") { Patterns = ["*.swproj.json"] },
+                    new FilePickerFileType("JSON files") { Patterns = ["*.json"] });
+
+                if (file is null)
+                {
+                    return;
+                }
+
+                path = file.TryGetLocalPath()
+                    ?? throw new InvalidOperationException("This platform did not provide a local file path for the selected project file.");
+            }
+
+            SignalWeaveProjectSerializer.SaveFile(
+                path!,
+                _definition!,
+                _patterns,
+                _engine?.Weights.Clone(),
+                _engine?.CompletedCycles ?? 0,
+                CaptureWorkspaceState());
+
+            _currentProjectPath = path;
+            UpdateWorkspaceSummary();
+            AppendConsole($"Saved project to {path}.");
+            SetStatus($"Saved project: {System.IO.Path.GetFileName(path)}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Save project failed: {ex.Message}");
+            SetStatus("Save project failed.");
+        }
+    }
+
+    private void Exit_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window window)
+        {
+            window.Close();
+        }
+    }
+
+    private void NetworkKindComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
+        SyncNetworkKindControls();
+        RefreshGraphPreview();
+    }
+
+    private void TopologySliderChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
+        UpdateTopologyControlState();
+        InvalidateCachedTestVisuals();
+        _patterns = NormalizePatternSetForDefinition(_patterns);
+        RenderPatternGraphicTable(_patterns);
+        SetPatternEditorText(PatternSetWriter.Write(_patterns));
+        RefreshGraphPreview();
+    }
+
+    private void TopologyOptionChanged(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isInitializingUi)
+        {
+            return;
+        }
+
+        InvalidateCachedTestVisuals();
+        _patterns = NormalizePatternSetForDefinition(_patterns);
+        RenderPatternGraphicTable(_patterns);
+        SetPatternEditorText(PatternSetWriter.Write(_patterns));
+        RefreshGraphPreview();
+    }
+
+    private void InvalidateCachedTestVisuals()
+    {
+        _diagramResult = null;
+        _lastTestResults.Clear();
+        LatestRunSummaryTextBlock.Text = "Topology updated. Run a test to view activations.";
+        UpdatePatternSelector(Math.Max(GetSelectedPatternIndex(), 0));
+        UpdateWorkspaceSummary();
+    }
+
+    private void ClearConsole_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _consoleMarkdown.Clear();
+        ConsoleContentHost.Children.Clear();
+    }
+
+    private async void SaveConsole_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_consoleMarkdown.Length == 0)
+        {
+            SetStatus("Console is empty.");
+            return;
+        }
+
+        try
+        {
+            var file = await PickSaveFileAsync(
+                "Save console",
+                GetSuggestedArtifactFileName("console", "md"),
+                "md",
+                new FilePickerFileType("Markdown files") { Patterns = ["*.md"] },
+                new FilePickerFileType("Text files") { Patterns = ["*.txt"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(_consoleMarkdown.ToString());
+            SetStatus($"Saved console: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Save console failed: {ex.Message}");
+            SetStatus("Save console failed.");
+        }
+    }
+
+    private async void CopyConsole_Click(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.Clipboard is null || _consoleMarkdown.Length == 0)
+        {
+            return;
+        }
+
+        await topLevel.Clipboard.SetTextAsync(_consoleMarkdown.ToString());
+        SetStatus("Console copied to clipboard.");
+    }
+
+    private async void CopyAnalysis_Click(object? sender, RoutedEventArgs e)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.Clipboard is null || string.IsNullOrWhiteSpace(_lastAnalysisExportText))
+        {
+            return;
+        }
+
+        await topLevel.Clipboard.SetTextAsync(_lastAnalysisExportText);
+        SetStatus(IsTimeSeriesAnalysisSelected() ? "Time series copied to clipboard." : "Analysis report copied to clipboard.");
+    }
+
+    private async void SaveAnalysis_Click(object? sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(_lastAnalysisExportText))
+        {
+            return;
+        }
+
+        try
+        {
+            var isTimeSeries = IsTimeSeriesAnalysisSelected();
+            var isSurface = IsSurfaceAnalysisSelected();
+            var fileTypes = isTimeSeries
+                ? new FilePickerFileType[]
+                {
+                    new("CSV files") { Patterns = ["*.csv"] }
+                }
+                : isSurface
+                ? new FilePickerFileType[]
+                {
+                    new("CSV files") { Patterns = ["*.csv"] }
+                }
+                : new FilePickerFileType[]
+                {
+                    new("Text files") { Patterns = ["*.txt"] },
+                    new("Markdown files") { Patterns = ["*.md"] }
+                };
+            var file = await PickSaveFileAsync(
+                isTimeSeries ? "Save time series" : isSurface ? "Save surface plot" : "Save analysis report",
+                GetSuggestedArtifactFileName(isTimeSeries ? "time-series" : isSurface ? "surface-plot" : "analysis-report", isTimeSeries || isSurface ? "csv" : "txt"),
+                isTimeSeries || isSurface ? "csv" : "txt",
+                fileTypes);
+
+            if (file is null)
+            {
+                return;
+            }
+
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(_lastAnalysisExportText);
+            SetStatus(isTimeSeries ? $"Saved time series: {file.Name}" : isSurface ? $"Saved surface plot: {file.Name}" : $"Saved analysis report: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"{(IsTimeSeriesAnalysisSelected() ? "Save time series" : IsSurfaceAnalysisSelected() ? "Save surface plot" : "Save analysis report")} failed: {ex.Message}");
+            SetStatus(IsTimeSeriesAnalysisSelected() ? "Save time series failed." : IsSurfaceAnalysisSelected() ? "Save surface plot failed." : "Save analysis report failed.");
+        }
+    }
+
+    private async void SaveAnalysisChart_Click(object? sender, RoutedEventArgs e)
+    {
+        if (!IsTimeSeriesAnalysisSelected() && !IsSurfaceAnalysisSelected())
+        {
+            return;
+        }
+
+        await SaveVisualAsPngAsync(AnalysisChartBorder, IsSurfaceAnalysisSelected() ? "surface-plot" : "time-series");
+    }
+
+    private void RunAnalysis_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: true);
+            var reportType = AnalysisReportTypeComboBox?.SelectedItem?.ToString() ?? _analysisReportTypes[0];
+            var source = AnalysisSourceComboBox?.SelectedItem as AnalysisSourceOption;
+            if (string.Equals(reportType, "Time series", StringComparison.Ordinal))
+            {
+                var series = BuildAnalysisTimeSeries(source);
+                _lastAnalysisSeriesValues = series.Values;
+                _lastAnalysisReportText = string.Empty;
+                _lastAnalysisExportText = BuildAnalysisTimeSeriesCsv(series);
+                _lastAnalysisReportTitle = $"{reportType} · {series.SeriesLabel} · {(source?.Label ?? "Current")}";
+
+                if (AnalysisChartTitleTextBlock is not null)
+                {
+                    AnalysisChartTitleTextBlock.Text = _lastAnalysisReportTitle;
+                }
+
+                if (AnalysisChartSummaryTextBlock is not null)
+                {
+                    AnalysisChartSummaryTextBlock.Text =
+                        $"Points: {series.Values.Count}  |  Min: {series.Values.Min().ToString("0.000", CultureInfo.InvariantCulture)}  |  Max: {series.Values.Max().ToString("0.000", CultureInfo.InvariantCulture)}";
+                }
+
+                if (AnalysisReportTextBox is not null)
+                {
+                    AnalysisReportTextBox.Text = string.Empty;
+                }
+
+                RenderAnalysisChart();
+            }
+            else if (string.Equals(reportType, "Surface plot", StringComparison.Ordinal))
+            {
+                var surface = BuildAnalysisSurface(source);
+                _lastAnalysisSurface = surface;
+                _lastAnalysisSeriesValues = null;
+                _lastAnalysisReportText = string.Empty;
+                _lastAnalysisExportText = BuildAnalysisSurfaceCsv(surface);
+                _lastAnalysisReportTitle = $"{reportType} · {surface.ZLabel} · {(source?.Label ?? "Current")}";
+
+                if (AnalysisChartTitleTextBlock is not null)
+                {
+                    AnalysisChartTitleTextBlock.Text = _lastAnalysisReportTitle;
+                }
+
+                if (AnalysisChartSummaryTextBlock is not null)
+                {
+                    AnalysisChartSummaryTextBlock.Text =
+                        $"Grid: {surface.XValues.Count} × {surface.YValues.Count}  |  X: {surface.XLabel}  |  Y: {surface.YLabel}  |  Z range: {surface.MinValue.ToString("0.000", CultureInfo.InvariantCulture)} to {surface.MaxValue.ToString("0.000", CultureInfo.InvariantCulture)}";
+                }
+
+                if (AnalysisReportTextBox is not null)
+                {
+                    AnalysisReportTextBox.Text = string.Empty;
+                }
+
+                RenderAnalysisChart();
+            }
+            else
+            {
+                _lastAnalysisReportText = BuildAnalysisReportText(reportType, source);
+                _lastAnalysisExportText = _lastAnalysisReportText;
+                _lastAnalysisSeriesValues = null;
+                _lastAnalysisSurface = null;
+                _lastAnalysisReportTitle = $"{reportType} · {(source?.Label ?? "Current")}";
+
+                if (AnalysisReportTitleTextBlock is not null)
+                {
+                    AnalysisReportTitleTextBlock.Text = _lastAnalysisReportTitle;
+                }
+
+                if (AnalysisReportTextBox is not null)
+                {
+                    AnalysisReportTextBox.Text = _lastAnalysisReportText;
+                }
+
+                RenderAnalysisChart();
+            }
+
+            UpdateActionAvailability();
+            SetStatus(string.Equals(reportType, "Time series", StringComparison.Ordinal) ? "Time series ready." : string.Equals(reportType, "Surface plot", StringComparison.Ordinal) ? "Surface plot ready." : "Analysis report ready.");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Analysis failed: {ex.Message}");
+            SetStatus("Analysis failed.");
+        }
+    }
+
+    private async void ExportSelectedHiddenActivations_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = EnsureSelectedPatternResultForExport();
+            var file = await PickSaveFileAsync(
+                "Export selected hidden activations",
+                GetSuggestedArtifactFileName($"pattern-{result.Index + 1}-hidden", "csv"),
+                "csv",
+                new FilePickerFileType("CSV files") { Patterns = ["*.csv"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var csv = BuildSelectedHiddenActivationCsv(result);
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(csv);
+            SetStatus($"Saved hidden activations: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Export selected hidden activations failed: {ex.Message}");
+            SetStatus("Export selected hidden activations failed.");
+        }
+    }
+
+    private async void ExportPatternSetHiddenActivations_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            var run = EnsurePatternSetResultsForExport();
+            var file = await PickSaveFileAsync(
+                "Export hidden activations for current pattern set",
+                GetSuggestedArtifactFileName("hidden-activations", "csv"),
+                "csv",
+                new FilePickerFileType("CSV files") { Patterns = ["*.csv"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var csv = BuildPatternSetHiddenActivationCsv(run.Results);
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream);
+            await writer.WriteAsync(csv);
+            SetStatus($"Saved hidden activations: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Export hidden activations failed: {ex.Message}");
+            SetStatus("Export hidden activations failed.");
+        }
+    }
+
+    private async void SaveErrorGraph_Click(object? sender, RoutedEventArgs e)
+    {
+        await SaveVisualAsPngAsync(ErrorGraphPanelBorder, "error-graph");
+    }
+
+    private async void SaveNetworkGraph_Click(object? sender, RoutedEventArgs e)
+    {
+        await SaveVisualAsPngAsync(NetworkGraphPanelBorder, "network-graph");
+    }
+
+    private void Reset_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: false);
+            _diagramResult = null;
+            _lastTestResults.Clear();
+            _trainingHistory.Clear();
+            _latestTrainingPoint = null;
+            _trainingSessions.Clear();
+            LatestRunSummaryTextBlock.Text = "Weights reset.";
+            TrainingProgressBar.Value = 0;
+            ProgressLabelTextBlock.Text = "Idle";
+            RenderErrorPlot(_trainingHistory);
+            RenderNetworkGraph();
+            UpdateWorkspaceSummary();
+            UpdateTrainingSessionLog();
+            AppendConsole("Reset network weights from the current project settings.");
+            SetStatus("Weights reset.");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Reset failed: {ex.Message}");
+            SetStatus("Reset failed.");
+        }
+    }
+
+    private async void Train_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: true);
+            _patterns.ValidateAgainst(_definition!, requireTargets: true);
+
+            var steps = ParseLearningStepsFromControls();
+            _currentTrainingSteps = steps;
+            _trainingHistory.Clear();
+            _liveTrainingHistory = [];
+            _latestTrainingPoint = null;
+            _diagramResult = null;
+            TrainingProgressBar.Maximum = Math.Max(steps, 1);
+            TrainingProgressBar.Value = 0;
+            ProgressLabelTextBlock.Text = $"0 / {steps.ToString(CultureInfo.InvariantCulture)}";
+            SetBusy(true, "Training is running...");
+            StartTrainingProgressPump();
+
+            TrainResult result;
+            lock (_trainingProgressGate)
+            {
+                _liveTrainingHistory = [];
+                _latestTrainingPoint = null;
+            }
+
+            result = await Task.Factory.StartNew(() =>
+            {
+                var backgroundProgress = new Progress<TrainingPoint>(point =>
+                {
+                    lock (_trainingProgressGate)
+                    {
+                        _latestTrainingPoint = point;
+                        _liveTrainingHistory.Add(point);
+                    }
+                });
+
+                return _engine!.Train(_patterns, steps, backgroundProgress);
+            }, TaskCreationOptions.LongRunning);
+
+            StopTrainingProgressPump();
+            _lastTestResults.Clear();
+            _trainingHistory.Clear();
+            _trainingHistory.AddRange(result.History);
+            TrainingProgressBar.Value = result.History.Count > 0 ? result.History[^1].Epoch : 0;
+            ProgressLabelTextBlock.Text = result.History.Count > 0
+                ? $"{result.History[^1].Epoch.ToString(CultureInfo.InvariantCulture)} / {steps.ToString(CultureInfo.InvariantCulture)}"
+                : "Idle";
+            LatestRunSummaryTextBlock.Text =
+                $"Training complete. Final displayed average error: {FormatNumber(result.FinalRun.DisplayAverageError)}";
+            _trainingSessions.Add(new TrainingSessionSnapshot(
+                _trainingSessions.Count + 1,
+                result.History.Count,
+                _engine!.CompletedCycles,
+                result.FinalRun.DisplayAverageError,
+                DateTimeOffset.UtcNow,
+                _engine.Weights.Clone(),
+                result.History.ToArray()));
+            AppendConsole(BuildTrainingResultMarkdown(result));
+            RenderErrorPlot(_trainingHistory);
+            RenderNetworkGraph();
+            UpdateWorkspaceSummary();
+            UpdateTrainingSessionLog();
+            SetStatus("Training complete.");
+        }
+        catch (Exception ex)
+        {
+            StopTrainingProgressPump();
+            AppendConsole($"Train failed: {ex.Message}");
+            SetStatus("Training failed.");
+        }
+        finally
+        {
+            SetBusy(false, "Ready.");
+        }
+    }
+
+    private void TestOne_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: true);
+            EnsurePatternSelectionAvailable();
+
+            var index = GetSelectedPatternIndex();
+            var result = _engine!.TestOne(_patterns, index);
+            _diagramResult = result;
+            _lastTestResults[index] = result;
+            UpdatePatternSelector(index);
+            LatestRunSummaryTextBlock.Text = $"Tested pattern {index + 1}: {result.Label}";
+            AppendConsole(BuildSingleResultMarkdown(result));
+            RenderNetworkGraph();
+            UpdateWorkspaceSummary();
+            SetStatus("Test one complete.");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Test one failed: {ex.Message}");
+            SetStatus("Test one failed.");
+        }
+    }
+
+    private void TestAll_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyUiToRuntime(preserveWeights: true);
+            EnsurePatternsAvailable();
+
+            var result = _engine!.TestAll(_patterns);
+            _lastTestResults.Clear();
+            foreach (var entry in result.Results)
+            {
+                _lastTestResults[entry.Index] = entry;
+            }
+
+            var selectedIndex = Math.Clamp(GetSelectedPatternIndex(), 0, result.Results.Count - 1);
+            _diagramResult = result.Results.Count == 0 ? null : result.Results[selectedIndex];
+            UpdatePatternSelector(selectedIndex);
+            LatestRunSummaryTextBlock.Text = $"Test all complete. Displayed average error: {FormatNumber(result.DisplayAverageError)}";
+            AppendConsole(BuildRunResultMarkdown("## Test all", result));
+            RenderNetworkGraph();
+            UpdateWorkspaceSummary();
+            SetStatus("Test all complete.");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Test all failed: {ex.Message}");
+            SetStatus("Test all failed.");
+        }
+    }
+
+    private void ApplyUiToRuntime(bool preserveWeights)
+    {
+        var previousDefinition = _definition;
+        var nextDefinition = BuildDefinitionFromControls();
+        var nextPatterns = PatternSetParser.Parse(PatternEditorTextBox.Text ?? string.Empty, nextDefinition.Name);
+        var canReuseWeights = preserveWeights && CanReuseWeights(previousDefinition, nextDefinition) && _engine is not null;
+        var weights = canReuseWeights ? _engine!.Weights.Clone() : null;
+        var completedCycles = canReuseWeights ? _engine!.CompletedCycles : 0;
+        var definitionChanged = previousDefinition is null || !DefinitionsEquivalent(previousDefinition, nextDefinition);
+        var patternsChanged = !PatternSetsEquivalent(_patterns, nextPatterns);
+
+        _definition = nextDefinition;
+        _patterns = nextPatterns;
+        _engine = new SignalWeaveEngine(nextDefinition, weights);
+        _engine.RestoreCompletedCycles(completedCycles);
+        _diagramResult = canReuseWeights ? _diagramResult : null;
+        _graphPreviewDefinition = null;
+
+        var selectedIndex = Math.Max(GetSelectedPatternIndex(), 0);
+        UpdatePatternSelector(selectedIndex);
+        UpdateWorkspaceSummary();
+        UpdateTrainingSessionLog();
+        RenderNetworkGraph();
+
+        if (definitionChanged || patternsChanged || !canReuseWeights)
+        {
+            _trainingHistory.Clear();
+            _lastTestResults.Clear();
+            _trainingSessions.Clear();
+            RenderErrorPlot(_trainingHistory);
+            LatestRunSummaryTextBlock.Text = "Project settings updated.";
+            UpdateTrainingSessionLog();
+        }
+    }
+
+    private ProjectWorkspaceState CaptureWorkspaceState()
+    {
+        return new ProjectWorkspaceState(
+            ParseLearningStepsFromControls(),
+            Math.Max(GetSelectedPatternIndex(), 0),
+            "Dots",
+            _trainingSessions.Select(session => session with { Weights = session.Weights.Clone() }).ToArray());
+    }
+
+    private NetworkDefinition BuildDefinitionFromControls()
+    {
+        if (!AreDefinitionControlsReady())
+        {
+            throw new InvalidOperationException("Network controls are not initialized yet.");
+        }
+
+        var networkKind = GetSelectedNetworkKind();
+        var secondHiddenUnits = networkKind == NetworkKind.FeedForward
+            ? ReadSliderValue(SecondHiddenUnitsSlider)
+            : 0;
+
+        var definition = new NetworkDefinition
+        {
+            Name = string.IsNullOrWhiteSpace(ProjectNameTextBox.Text) ? "Untitled Modern Project" : ProjectNameTextBox.Text.Trim(),
+            NetworkKind = networkKind,
+            InputUnits = ReadSliderValue(InputUnitsSlider),
+            HiddenUnits = ReadSliderValue(HiddenUnitsSlider),
+            SecondHiddenUnits = secondHiddenUnits,
+            OutputUnits = ReadSliderValue(OutputUnitsSlider),
+            UseInputBias = InputBiasCheckBox.IsChecked ?? false,
+            UseHiddenBias = HiddenUnitsSlider.Value > 0 && (HiddenBiasCheckBox.IsChecked ?? false),
+            UseSecondHiddenBias = networkKind == NetworkKind.FeedForward && SecondHiddenUnitsSlider.Value > 0 && (SecondHiddenBiasCheckBox.IsChecked ?? false),
+            LearningRate = ParseDouble(LearningRateComboBox.Text, "Learning rate"),
+            Momentum = ParseDouble(MomentumComboBox.Text, "Momentum"),
+            RandomWeightRange = ParseWeightRange(GetSelectedWeightRangeText()),
+            SigmoidPrimeOffset = 0.1,
+            MaxEpochs = ParseLearningStepsFromControls(),
+            ErrorThreshold = ParseDouble(ErrorThresholdTextBox.Text, "Error threshold"),
+            UpdateMode = BatchUpdateCheckBox.IsChecked == true ? UpdateMode.Batch : UpdateMode.Pattern,
+            CostFunction = CrossEntropyCheckBox.IsChecked == true ? CostFunction.CrossEntropy : CostFunction.SumSquaredError
+        };
+
+        definition.Validate();
+        return definition;
+    }
+
+    private bool AreDefinitionControlsReady()
+    {
+        return ProjectNameTextBox is not null &&
+               InputUnitsSlider is not null &&
+               HiddenUnitsSlider is not null &&
+               SecondHiddenUnitsSlider is not null &&
+               OutputUnitsSlider is not null &&
+               InputBiasCheckBox is not null &&
+               HiddenBiasCheckBox is not null &&
+               SecondHiddenBiasCheckBox is not null &&
+               LearningRateComboBox is not null &&
+               MomentumComboBox is not null &&
+               WeightRangeComboBox is not null &&
+               ErrorThresholdTextBox is not null &&
+               BatchUpdateCheckBox is not null &&
+               CrossEntropyCheckBox is not null &&
+               LearningStepsComboBox is not null;
+    }
+
+    private static bool CanReuseWeights(NetworkDefinition? current, NetworkDefinition next)
+    {
+        if (current is null)
+        {
+            return false;
+        }
+
+        return current.NetworkKind == next.NetworkKind &&
+               current.InputUnits == next.InputUnits &&
+               current.HiddenUnits == next.HiddenUnits &&
+               current.SecondHiddenUnits == next.SecondHiddenUnits &&
+               current.OutputUnits == next.OutputUnits &&
+               current.UseInputBias == next.UseInputBias &&
+               current.UseHiddenBias == next.UseHiddenBias &&
+               current.UseSecondHiddenBias == next.UseSecondHiddenBias;
+    }
+
+    private static bool DefinitionsEquivalent(NetworkDefinition left, NetworkDefinition right)
+    {
+        return left.Name == right.Name &&
+               left.NetworkKind == right.NetworkKind &&
+               left.InputUnits == right.InputUnits &&
+               left.HiddenUnits == right.HiddenUnits &&
+               left.SecondHiddenUnits == right.SecondHiddenUnits &&
+               left.OutputUnits == right.OutputUnits &&
+               left.UseInputBias == right.UseInputBias &&
+               left.UseHiddenBias == right.UseHiddenBias &&
+               left.UseSecondHiddenBias == right.UseSecondHiddenBias &&
+               left.LearningRate.Equals(right.LearningRate) &&
+               left.Momentum.Equals(right.Momentum) &&
+               left.RandomWeightRange.Equals(right.RandomWeightRange) &&
+               left.ErrorThreshold.Equals(right.ErrorThreshold) &&
+               left.MaxEpochs == right.MaxEpochs &&
+               left.UpdateMode == right.UpdateMode &&
+               left.CostFunction == right.CostFunction;
+    }
+
+    private static bool PatternSetsEquivalent(PatternSet left, PatternSet right)
+    {
+        if (left.Examples.Count != right.Examples.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < left.Examples.Count; index++)
+        {
+            var a = left.Examples[index];
+            var b = right.Examples[index];
+
+            if (!string.Equals(a.Label, b.Label, StringComparison.Ordinal) ||
+                a.ResetsContextAfter != b.ResetsContextAfter ||
+                !a.Inputs.SequenceEqual(b.Inputs))
+            {
+                return false;
+            }
+
+            if ((a.Targets is null) != (b.Targets is null))
+            {
+                return false;
+            }
+
+            if (a.Targets is not null && b.Targets is not null && !a.Targets.SequenceEqual(b.Targets))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void StartTrainingProgressPump()
+    {
+        _trainingProgressTimer?.Stop();
+        _trainingProgressTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+        _trainingProgressTimer.Tick += (_, _) =>
+        {
+            TrainingPoint? latestPoint;
+            List<TrainingPoint> snapshot;
+
+            lock (_trainingProgressGate)
+            {
+                latestPoint = _latestTrainingPoint;
+                snapshot = _liveTrainingHistory.Count == 0 ? [] : [.. _liveTrainingHistory];
+            }
+
+            if (latestPoint is not null)
+            {
+                TrainingProgressBar.Value = latestPoint.Epoch;
+                ProgressLabelTextBlock.Text =
+                    $"{latestPoint.Epoch.ToString(CultureInfo.InvariantCulture)} / {_currentTrainingSteps.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            if (snapshot.Count > 0)
+            {
+                RenderErrorPlot(DownsampleHistory(snapshot, 1200));
+            }
+        };
+        _trainingProgressTimer.Start();
+    }
+
+    private void StopTrainingProgressPump()
+    {
+        _trainingProgressTimer?.Stop();
+        _trainingProgressTimer = null;
+    }
+
+    private void SetBusy(bool isBusy, string status)
+    {
+        _isBusy = isBusy;
+        ControlTabs.IsEnabled = !isBusy;
+        PatternEditorTextBox.IsEnabled = !isBusy;
+        UpdateActionAvailability();
+        SetStatus(status);
+    }
+
+    private void SetStatus(string status)
+    {
+        WorkspaceStatusTextBlock.Text = status;
+    }
+
+    private static string BuildProductInfoText()
+    {
+        var version = typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+        return $"SignalWeave Modern v{version}";
+    }
+
+    private void AppendConsole(string message)
+    {
+        if (ConsoleContentHost is null)
+        {
+            return;
+        }
+
+        if (_consoleMarkdown.Length > 0)
+        {
+            _consoleMarkdown.AppendLine();
+            _consoleMarkdown.AppendLine();
+        }
+
+        _consoleMarkdown.Append(message);
+
+        foreach (var control in BuildMarkdownConsoleEntry(message))
+        {
+            ConsoleContentHost.Children.Add(control);
+        }
+
+        ScrollConsoleToEnd();
+    }
+
+    private void ScrollConsoleToEnd()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ConsoleScrollViewer is not null)
+            {
+                ConsoleScrollViewer.Offset = new Vector(ConsoleScrollViewer.Offset.X, ConsoleScrollViewer.Extent.Height);
+            }
+        });
+    }
+
+    private IEnumerable<Control> BuildMarkdownConsoleEntry(string markdown)
+    {
+        var lines = (markdown ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        var controls = new List<Control>();
+        var fencedCodeLines = new List<string>();
+        var inCodeFence = false;
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine ?? string.Empty;
+            var trimmed = line.Trim();
+
+            if (trimmed.StartsWith("```", StringComparison.Ordinal))
+            {
+                if (inCodeFence)
+                {
+                    controls.Add(BuildConsoleCodeBlock(string.Join(Environment.NewLine, fencedCodeLines)));
+                    fencedCodeLines.Clear();
+                    inCodeFence = false;
+                }
+                else
+                {
+                    inCodeFence = true;
+                }
+
+                continue;
+            }
+
+            if (inCodeFence)
+            {
+                fencedCodeLines.Add(line);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                controls.Add(new Border { Height = 6, Background = Brushes.Transparent });
+                continue;
+            }
+
+            if (trimmed.StartsWith("### ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleTextBlock(trimmed[4..], 16, FontWeight.SemiBold));
+                continue;
+            }
+
+            if (trimmed.StartsWith("## ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleTextBlock(trimmed[3..], 18, FontWeight.SemiBold));
+                continue;
+            }
+
+            if (trimmed.StartsWith("# ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleTextBlock(trimmed[2..], 20, FontWeight.Bold));
+                continue;
+            }
+
+            if (trimmed.StartsWith("- ", StringComparison.Ordinal) || trimmed.StartsWith("* ", StringComparison.Ordinal))
+            {
+                controls.Add(BuildConsoleParagraph($"• {trimmed[2..]}"));
+                continue;
+            }
+
+            var orderedPrefixLength = GetOrderedListPrefixLength(trimmed);
+            if (orderedPrefixLength > 0)
+            {
+                controls.Add(BuildConsoleParagraph(trimmed));
+                continue;
+            }
+
+            if (trimmed.All(character => character == '-' || character == '*') && trimmed.Length >= 3)
+            {
+                controls.Add(new Border
+                {
+                    Height = 1,
+                    Margin = new Thickness(0, 4),
+                    Background = Brush.Parse("#D7CCBD")
+                });
+                continue;
+            }
+
+            controls.Add(BuildConsoleParagraph(line));
+        }
+
+        if (fencedCodeLines.Count > 0)
+        {
+            controls.Add(BuildConsoleCodeBlock(string.Join(Environment.NewLine, fencedCodeLines)));
+        }
+
+        return controls;
+    }
+
+    private static int GetOrderedListPrefixLength(string text)
+    {
+        var digitCount = 0;
+        while (digitCount < text.Length && char.IsDigit(text[digitCount]))
+        {
+            digitCount++;
+        }
+
+        return digitCount > 0 &&
+               digitCount + 1 < text.Length &&
+               text[digitCount] == '.' &&
+               text[digitCount + 1] == ' '
+            ? digitCount + 2
+            : 0;
+    }
+
+    private static Control BuildConsoleTextBlock(string text, double fontSize, FontWeight fontWeight)
+    {
+        return new SelectableTextBlock
+        {
+            Text = text,
+            FontSize = fontSize,
+            FontWeight = fontWeight,
+            Foreground = Brush.Parse("#211D19"),
+            TextWrapping = TextWrapping.Wrap
+        };
+    }
+
+    private static Control BuildConsoleParagraph(string text)
+    {
+        var block = new SelectableTextBlock
+        {
+            Foreground = Brush.Parse("#2D2924"),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        if (block.Inlines is { } inlines)
+        {
+            AppendMarkdownInlines(inlines, text);
+        }
+        else
+        {
+            block.Text = text;
+        }
+
+        return block;
+    }
+
+    private static Control BuildConsoleCodeBlock(string text)
+    {
+        return new Border
+        {
+            Background = Brush.Parse("#F1E8DA"),
+            BorderBrush = Brush.Parse("#D7CCBD"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10, 8),
+            Child = new SelectableTextBlock
+            {
+                Text = text,
+                FontFamily = FontFamily.Parse("Consolas, Menlo, monospace"),
+                Foreground = Brush.Parse("#3B3025"),
+                TextWrapping = TextWrapping.Wrap
+            }
+        };
+    }
+
+    private static void AppendMarkdownInlines(InlineCollection inlines, string text)
+    {
+        var index = 0;
+        while (index < text.Length)
+        {
+            if (TryConsumeInline(text, ref index, "**", content => new Run(content) { FontWeight = FontWeight.Bold }, inlines))
+            {
+                continue;
+            }
+
+            if (TryConsumeInline(text, ref index, "`", content =>
+            {
+                var run = new Run(content) { Background = Brush.Parse("#F1E8DA") };
+                return run;
+            }, inlines))
+            {
+                continue;
+            }
+
+            if (TryConsumeInline(text, ref index, "*", content => new Run(content) { FontStyle = FontStyle.Italic }, inlines))
+            {
+                continue;
+            }
+
+            var nextMarker = FindNextMarker(text, index);
+            var length = nextMarker < 0 ? text.Length - index : nextMarker - index;
+            inlines.Add(new Run(text.Substring(index, length)));
+            index += length;
+        }
+    }
+
+    private static bool TryConsumeInline(string text, ref int index, string marker, Func<string, Inline> inlineFactory, InlineCollection inlines)
+    {
+        if (!text.AsSpan(index).StartsWith(marker, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var start = index + marker.Length;
+        var end = text.IndexOf(marker, start, StringComparison.Ordinal);
+        if (end < 0)
+        {
+            return false;
+        }
+
+        inlines.Add(inlineFactory(text[start..end]));
+        index = end + marker.Length;
+        return true;
+    }
+
+    private static int FindNextMarker(string text, int start)
+    {
+        var candidates = new[]
+        {
+            text.IndexOf("**", start, StringComparison.Ordinal),
+            text.IndexOf('*', start),
+            text.IndexOf('`', start)
+        };
+
+        return candidates.Where(candidate => candidate >= 0).DefaultIfEmpty(-1).Min();
+    }
+
+    private string BuildTrainingResultMarkdown(TrainResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("## Training");
+        builder.AppendLine();
+        builder.AppendLine($"- Steps executed: `{result.History.Count.ToString(CultureInfo.InvariantCulture)}`");
+        builder.AppendLine($"- Final displayed average error: `{FormatNumber(result.FinalRun.DisplayAverageError)}`");
+        builder.AppendLine();
+        builder.Append(BuildRunResultMarkdownBody(result.FinalRun));
+        return builder.ToString();
+    }
+
+    private string BuildRunResultMarkdown(string heading, RunResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine(heading);
+        builder.AppendLine();
+        builder.Append(BuildRunResultMarkdownBody(result));
+        return builder.ToString();
+    }
+
+    private string BuildRunResultMarkdownBody(RunResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine($"- Patterns evaluated: `{result.Results.Count.ToString(CultureInfo.InvariantCulture)}`");
+        builder.AppendLine($"- Displayed average error: `{FormatNumber(result.DisplayAverageError)}`");
+        builder.AppendLine();
+        builder.AppendLine("```text");
+        builder.AppendLine("Idx  Label               Outputs                  Targets                  Error");
+
+        foreach (var item in result.Results)
+        {
+            var outputs = FormatVector(item.Outputs);
+            var targets = item.Targets is null ? "-" : FormatVector(item.Targets);
+            builder.AppendLine($"{(item.Index + 1).ToString(CultureInfo.InvariantCulture),-4} {TrimToWidth(item.Label, 18),-18} {TrimToWidth(outputs, 24),-24} {TrimToWidth(targets, 24),-24} {FormatNumber(item.Error)}");
+        }
+
+        builder.AppendLine("```");
+        return builder.ToString();
+    }
+
+    private static string FormatVector(IEnumerable<double> values)
+    {
+        return string.Join(" ", values.Select(FormatNumber));
+    }
+
+    private static string TrimToWidth(string value, int width)
+    {
+        return value.Length <= width ? value : value[..Math.Max(0, width - 1)] + "…";
+    }
+
+    private static string EscapeMarkdown(string value)
+    {
+        return value.Replace("`", "\\`", StringComparison.Ordinal);
+    }
+
+    private void EnsurePatternsAvailable()
+    {
+        if (_patterns.Examples.Count == 0)
+        {
+            throw new InvalidOperationException("The current project does not contain any patterns.");
+        }
+    }
+
+    private void EnsurePatternSelectionAvailable()
+    {
+        EnsurePatternsAvailable();
+
+        if (GetSelectedPatternIndex() < 0)
+        {
+            throw new InvalidOperationException("Select a pattern before running Test One.");
+        }
+    }
+
+    private string BuildSingleResultMarkdown(TestResult result)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("## Test one");
+        builder.AppendLine();
+        builder.AppendLine($"- Pattern: `{result.Index + 1}`");
+        builder.AppendLine($"- Label: `{EscapeMarkdown(result.Label)}`");
+        builder.AppendLine($"- Error: `{FormatNumber(result.Error)}`");
+        builder.AppendLine();
+        builder.AppendLine("```text");
+        builder.AppendLine("Field    Values");
+        builder.AppendLine($"Inputs   {FormatVector(result.Inputs)}");
+        builder.AppendLine($"Outputs  {FormatVector(result.Outputs)}");
+        if (result.Targets is not null)
+        {
+            builder.AppendLine($"Targets  {FormatVector(result.Targets)}");
+        }
+
+        if (result.HiddenActivations.Length > 0)
+        {
+            builder.AppendLine($"Hidden   {FormatVector(result.HiddenActivations)}");
+        }
+
+        builder.AppendLine("```");
+        return builder.ToString();
+    }
+
+    private void RenderErrorPlot(IReadOnlyList<TrainingPoint> history)
+    {
+        if (ErrorPlotCanvas is null)
+        {
+            return;
+        }
+
+        ErrorPlotCanvas.Children.Clear();
+
+        var width = Math.Max(ErrorPlotCanvas.Bounds.Width, 200);
+        var height = Math.Max(ErrorPlotCanvas.Bounds.Height, 140);
+        var left = 40.0;
+        var top = 14.0;
+        var right = width - 14.0;
+        var bottom = height - 30.0;
+        var plotWidth = Math.Max(right - left, 24);
+        var plotHeight = Math.Max(bottom - top, 24);
+
+        ErrorPlotCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, top),
+            EndPoint = new Point(left, bottom),
+            Stroke = Brush.Parse("#554A40"),
+            StrokeThickness = 1.2
+        });
+        ErrorPlotCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, bottom),
+            EndPoint = new Point(right, bottom),
+            Stroke = Brush.Parse("#554A40"),
+            StrokeThickness = 1.2
+        });
+
+        var topValue = history.Count == 0 ? 1.0 : Math.Max(history.Max(point => point.AverageError), 0.001);
+        var pointCount = Math.Max(history.Count, 1);
+
+        ErrorPlotCanvas.Children.Add(new TextBlock
+        {
+            Text = FormatNumber(topValue),
+            Foreground = Brush.Parse("#6A6258")
+        });
+
+        var xLabel = new TextBlock
+        {
+            Text = pointCount.ToString(CultureInfo.InvariantCulture),
+            Foreground = Brush.Parse("#6A6258")
+        };
+        Canvas.SetLeft(xLabel, right - 30);
+        Canvas.SetTop(xLabel, bottom + 4);
+        ErrorPlotCanvas.Children.Add(xLabel);
+
+        if (history.Count == 0)
+        {
+            return;
+        }
+
+        var points = history
+            .Select((point, index) =>
+            {
+                var x = left + (plotWidth * index / Math.Max(history.Count - 1, 1));
+                var y = bottom - ((point.AverageError / topValue) * plotHeight);
+                return new Point(x, Math.Clamp(y, top, bottom));
+            })
+            .ToList();
+
+        foreach (var point in points)
+        {
+            var dot = new Ellipse
+            {
+                Width = 2,
+                Height = 2,
+                Fill = Brush.Parse("#B31B1B")
+            };
+            Canvas.SetLeft(dot, point.X - 1);
+            Canvas.SetTop(dot, point.Y - 1);
+            ErrorPlotCanvas.Children.Add(dot);
+        }
+    }
+
+    private void RenderNetworkGraph()
+    {
+        if (NetworkGraphCanvas is null)
+        {
+            return;
+        }
+
+        NetworkGraphCanvas.Children.Clear();
+
+        var definition = _graphPreviewDefinition ?? _definition;
+        if (definition is null)
+        {
+            return;
+        }
+
+        UpdateWeightLegend(definition);
+
+        var canvasWidth = Math.Max(NetworkGraphCanvas.Bounds.Width, 180);
+        var canvasHeight = Math.Max(NetworkGraphCanvas.Bounds.Height, 140);
+        var showActivationValues = _diagramResult is not null;
+        var rows = BuildGraphRows(definition, _diagramResult);
+        var maxNodesInRow = Math.Max(rows.Max(row => row.Values.Length), 1);
+        var labelGutter = Math.Clamp(canvasWidth * 0.11, 28.0, 56.0);
+        var left = labelGutter + 8.0;
+        var right = canvasWidth - 10.0;
+        var availableWidth = Math.Max(right - left, 36.0);
+        var horizontalNodeLimit = availableWidth / (maxNodesInRow + 1.2);
+        var verticalNodeLimit = (canvasHeight - 24.0) / (rows.Count + 0.65);
+        var nodeSize = Math.Clamp(Math.Min(horizontalNodeLimit, verticalNodeLimit), 10.0, 40.0);
+        var topInset = (nodeSize / 2.0) + 12.0;
+        var bottomInset = (nodeSize / 2.0) + 10.0;
+        var top = topInset;
+        var bottom = Math.Max(topInset, canvasHeight - bottomInset);
+        var availableHeight = Math.Max(bottom - top, 10.0);
+        var rowGap = rows.Count == 1 ? 0.0 : availableHeight / (rows.Count - 1);
+        var graphRows = new List<List<GraphNode>>(rows.Count);
+
+        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        {
+            var row = rows[rowIndex];
+            var y = top + (rowGap * rowIndex);
+            var title = new TextBlock
+            {
+                Text = row.Label,
+                Foreground = Brush.Parse("#6A6258"),
+                FontSize = Math.Max(9, Math.Min(11, nodeSize * 0.28))
+            };
+            Canvas.SetLeft(title, 10);
+            Canvas.SetTop(title, Math.Max(0, y - 8));
+            NetworkGraphCanvas.Children.Add(title);
+
+            var biasReservedWidth = row.HasBias ? (nodeSize * 1.05) : 0.0;
+            var usableWidth = Math.Max(right - left - biasReservedWidth, nodeSize);
+            var count = Math.Max(row.Values.Length, 1);
+            var spacing = count == 1 ? 0.0 : (usableWidth - nodeSize) / (count - 1);
+            var rowLeft = left + biasReservedWidth + ((usableWidth - ((count - 1) * spacing + nodeSize)) / 2.0);
+            var nodes = new List<GraphNode>(row.Values.Length + (row.HasBias ? 1 : 0));
+
+            if (row.HasBias)
+            {
+                nodes.Add(new GraphNode(left, y, nodeSize * 0.74, 1.0, "B", "B", true));
+            }
+
+            for (var index = 0; index < row.Values.Length; index++)
+            {
+                var x = count == 1
+                    ? rowLeft
+                    : rowLeft + (spacing * index);
+                var idLabel = row.ValueLabels[index];
+                var valueText = showActivationValues ? FormatGraphValue(row.Values[index]) : idLabel;
+                nodes.Add(new GraphNode(x, y, nodeSize, row.Values[index], idLabel, valueText, false));
+            }
+
+            graphRows.Add(nodes);
+        }
+
+        DrawGraphConnections(graphRows, definition);
+
+        foreach (var row in graphRows)
+        {
+            foreach (var node in row)
+            {
+                DrawGraphNode(node);
+            }
+        }
+    }
+
+    private void DrawGraphConnections(IReadOnlyList<List<GraphNode>> rows, NetworkDefinition definition)
+    {
+        if (rows.Count < 2)
+        {
+            return;
+        }
+
+        var canUseLiveWeights = _engine is not null && CanReuseWeights(_definition, definition);
+        var weights = canUseLiveWeights ? _engine!.Weights : null;
+
+        if (definition.IsDirectFeedForward)
+        {
+            DrawConnections(rows[1], rows[0], weights?.InputHidden, definition.UseInputBias);
+            return;
+        }
+
+        if (definition.HasSecondHiddenLayer)
+        {
+            DrawConnections(rows[3], rows[2], weights?.InputHidden, definition.UseInputBias);
+            DrawConnections(rows[2], rows[1], weights?.HiddenHidden, definition.UseHiddenBias);
+            DrawConnections(rows[1], rows[0], weights?.HiddenOutput, definition.UseSecondHiddenBias);
+            return;
+        }
+
+        DrawConnections(rows[2], rows[1], weights?.InputHidden, definition.UseInputBias);
+        DrawConnections(rows[1], rows[0], weights?.HiddenOutput, definition.UseHiddenBias);
+
+        if (definition.NetworkKind == NetworkKind.SimpleRecurrent && weights?.RecurrentHidden is not null)
+        {
+            DrawRecurrentHints(rows[1], weights.RecurrentHidden);
+        }
+    }
+
+    private void DrawConnections(IReadOnlyList<GraphNode> sourceRow, IReadOnlyList<GraphNode> targetRow, double[,]? weights, bool hasBias)
+    {
+        var sourceOffset = hasBias ? 1 : 0;
+        var targetOffset = targetRow.Count > 0 && targetRow[0].IsBias ? 1 : 0;
+
+        for (var sourceIndex = 0; sourceIndex < sourceRow.Count; sourceIndex++)
+        {
+            var matrixRow = sourceIndex < sourceOffset
+                ? (weights?.GetLength(0) ?? 1) - 1
+                : sourceIndex - sourceOffset;
+
+            for (var targetIndex = targetOffset; targetIndex < targetRow.Count; targetIndex++)
+            {
+                var targetColumn = targetIndex - targetOffset;
+                var weight = weights is null ? 0.0 : weights[matrixRow, targetColumn];
+                NetworkGraphCanvas!.Children.Add(new Line
+                {
+                    StartPoint = new Point(sourceRow[sourceIndex].CenterX, sourceRow[sourceIndex].CenterY),
+                    EndPoint = new Point(targetRow[targetIndex].CenterX, targetRow[targetIndex].CenterY),
+                    Stroke = weights is null ? Brush.Parse("#B5ADA3") : GetWeightBrush(weight),
+                    StrokeThickness = weights is null ? 1.0 : 0.75 + (Math.Min(Math.Abs(weight), 1.5) * 1.15),
+                    Opacity = weights is null ? 0.48 : 0.72
+                });
+            }
+        }
+    }
+
+    private void DrawRecurrentHints(IReadOnlyList<GraphNode> hiddenRow, double[,] recurrentWeights)
+    {
+        var hiddenOffset = hiddenRow.Count > 0 && hiddenRow[0].IsBias ? 1 : 0;
+        for (var index = hiddenOffset; index < hiddenRow.Count; index++)
+        {
+            var node = hiddenRow[index];
+            var weight = recurrentWeights[index - hiddenOffset, index - hiddenOffset];
+            var loop = new Ellipse
+            {
+                Width = node.Size * 0.75,
+                Height = node.Size * 0.34,
+                Stroke = GetWeightBrush(weight),
+                StrokeThickness = 1.1,
+                Fill = Brushes.Transparent,
+                Opacity = 0.66
+            };
+            Canvas.SetLeft(loop, node.CenterX - (loop.Width / 2.0));
+            Canvas.SetTop(loop, Math.Max(2, node.CenterY - (node.Size * 0.82)));
+            NetworkGraphCanvas!.Children.Add(loop);
+        }
+    }
+
+    private void DrawGraphNode(GraphNode node)
+    {
+        var top = node.CenterY - (node.Size / 2.0);
+        var shape = new Rectangle
+        {
+            Width = node.Size,
+            Height = node.Size,
+            RadiusX = node.IsBias ? 4 : node.Size * 0.18,
+            RadiusY = node.IsBias ? 4 : node.Size * 0.18,
+            Fill = node.IsBias
+                ? Brush.Parse("#E7DED0")
+                : Brush.Parse("#FFF9F1"),
+            Stroke = Brush.Parse("#3C372F"),
+            StrokeThickness = 1.05
+        };
+
+        Canvas.SetLeft(shape, node.X);
+        Canvas.SetTop(shape, top);
+        NetworkGraphCanvas!.Children.Add(shape);
+
+        if (!node.IsBias)
+        {
+            var clampedActivation = Math.Clamp(node.Activation, 0.0, 1.0);
+            var fillHeight = Math.Max(0, (node.Size - 2.0) * clampedActivation);
+            if (fillHeight > 0.0)
+            {
+                var fill = new Rectangle
+                {
+                    Width = Math.Max(0, node.Size - 2.0),
+                    Height = fillHeight,
+                    RadiusX = node.Size * 0.12,
+                    RadiusY = node.Size * 0.12,
+                    Fill = Brush.Parse("#4D9A57"),
+                    ClipToBounds = true
+                };
+                Canvas.SetLeft(fill, node.X + 1.0);
+                Canvas.SetTop(fill, top + node.Size - 1.0 - fillHeight);
+                NetworkGraphCanvas.Children.Add(fill);
+            }
+        }
+
+        var label = new TextBlock
+        {
+            Text = node.DisplayText,
+            FontSize = Math.Max(9, node.Size * 0.18),
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brush.Parse("#2A251F")
+        };
+        label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(label, node.CenterX - (label.DesiredSize.Width / 2.0));
+        Canvas.SetTop(label, node.CenterY - (label.DesiredSize.Height / 2.0));
+        NetworkGraphCanvas.Children.Add(label);
+
+        if (!node.IsBias && node.DisplayText != node.IdLabel)
+        {
+            var idLabel = new TextBlock
+            {
+                Text = node.IdLabel,
+                FontSize = Math.Max(8, node.Size * 0.12),
+                Foreground = Brush.Parse("#6A6258")
+            };
+            idLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(idLabel, node.CenterX - (idLabel.DesiredSize.Width / 2.0));
+            Canvas.SetTop(idLabel, Math.Max(0, top - idLabel.DesiredSize.Height - 2.0));
+            NetworkGraphCanvas.Children.Add(idLabel);
+        }
+    }
+
+    private IReadOnlyList<GraphRow> BuildGraphRows(NetworkDefinition definition, TestResult? diagramResult)
+    {
+        var outputValues = NormalizeVector(diagramResult?.Outputs ?? Array.Empty<double>(), definition.OutputUnits);
+        var rows = new List<GraphRow>
+        {
+            new(
+                "Outputs",
+                outputValues,
+                Enumerable.Range(1, definition.OutputUnits).Select(index => $"O{index}").ToArray(),
+                false)
+        };
+
+        if (definition.HasSecondHiddenLayer)
+        {
+            var hiddenActivations = diagramResult?.HiddenActivations ?? Array.Empty<double>();
+            var firstHidden = NormalizeVector(hiddenActivations.Take(definition.HiddenUnits).ToArray(), definition.HiddenUnits);
+            var secondHidden = NormalizeVector(hiddenActivations.Skip(definition.HiddenUnits).Take(definition.SecondHiddenUnits).ToArray(), definition.SecondHiddenUnits);
+            rows.Add(new GraphRow(
+                "Hidden 2",
+                secondHidden,
+                Enumerable.Range(1, definition.SecondHiddenUnits).Select(index => $"H2-{index}").ToArray(),
+                definition.UseSecondHiddenBias));
+            rows.Add(new GraphRow(
+                "Hidden 1",
+                firstHidden,
+                Enumerable.Range(1, definition.HiddenUnits).Select(index => $"H1-{index}").ToArray(),
+                definition.UseHiddenBias));
+        }
+        else if (!definition.IsDirectFeedForward)
+        {
+            rows.Add(new GraphRow(
+                definition.NetworkKind == NetworkKind.SimpleRecurrent ? "Hidden / Context" : "Hidden",
+                NormalizeVector(diagramResult?.HiddenActivations ?? Array.Empty<double>(), definition.HiddenUnits),
+                Enumerable.Range(1, definition.HiddenUnits).Select(index => $"H{index}").ToArray(),
+                definition.UseHiddenBias));
+        }
+
+        rows.Add(new GraphRow(
+            "Inputs",
+            NormalizeVector(diagramResult?.Inputs ?? Array.Empty<double>(), definition.InputUnits),
+            Enumerable.Range(1, definition.InputUnits).Select(index => $"I{index}").ToArray(),
+            definition.UseInputBias));
+
+        return rows;
+    }
+
+    private static IBrush GetWeightBrush(double weight)
+    {
+        var magnitude = Math.Min(Math.Abs(weight), 1.0);
+        return weight < 0
+            ? new SolidColorBrush(Color.FromRgb((byte)(122 + (magnitude * 108)), 72, 72))
+            : weight > 0
+                ? new SolidColorBrush(Color.FromRgb(72, (byte)(118 + (magnitude * 116)), 86))
+                : Brush.Parse("#8B8278");
+    }
+
+    private static IBrush GetWeightBrush(double weight, double scale)
+    {
+        if (scale <= 0)
+        {
+            return GetWeightBrush(0);
+        }
+
+        return GetWeightBrush(weight / scale);
+    }
+
+    private static Color GetActivationColor(double activation)
+    {
+        var clamped = Math.Clamp(activation, 0.0, 1.0);
+        var red = (byte)(247 - (clamped * 82));
+        var green = (byte)(243 - (clamped * 26));
+        var blue = (byte)(237 - (clamped * 122));
+        return Color.FromRgb(red, green, blue);
+    }
+
+    private void UpdateWeightLegend(NetworkDefinition definition)
+    {
+        if (WeightLegendMinTextBlock is null || WeightLegendMaxTextBlock is null)
+        {
+            return;
+        }
+
+        var range = definition.RandomWeightRange;
+        WeightLegendMinTextBlock.Text = $"-{FormatGraphValue(range)}";
+        WeightLegendMaxTextBlock.Text = FormatGraphValue(range);
+    }
+
+    private static string FormatGraphValue(double value)
+    {
+        return value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private sealed record GraphRow(string Label, double[] Values, string[] ValueLabels, bool HasBias);
+
+    private sealed record GraphNode(double X, double CenterY, double Size, double Activation, string IdLabel, string DisplayText, bool IsBias)
+    {
+        public double CenterX => X + (Size / 2.0);
+    }
+
+    private IReadOnlyList<TrainingPoint> DownsampleHistory(IReadOnlyList<TrainingPoint> history, int maxPoints)
+    {
+        if (history.Count <= maxPoints)
+        {
+            return history;
+        }
+
+        var stride = (double)(history.Count - 1) / (maxPoints - 1);
+        var sampled = new List<TrainingPoint>(maxPoints);
+
+        for (var index = 0; index < maxPoints; index++)
+        {
+            sampled.Add(history[(int)Math.Round(index * stride, MidpointRounding.AwayFromZero)]);
+        }
+
+        return sampled;
+    }
+
+    private async Task<IStorageFile?> PickOpenFileAsync(string title, params FilePickerFileType[] fileTypes)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider is null)
+        {
+            return null;
+        }
+
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = fileTypes.ToList()
+        });
+
+        return files.Count == 0 ? null : files[0];
+    }
+
+    private async Task<IStorageFile?> PickSaveFileAsync(string title, string suggestedName, string defaultExtension, params FilePickerFileType[] fileTypes)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider is null)
+        {
+            return null;
+        }
+
+        return await topLevel.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            SuggestedFileName = suggestedName,
+            DefaultExtension = defaultExtension,
+            FileTypeChoices = fileTypes.ToList(),
+            ShowOverwritePrompt = true
+        });
+    }
+
+    private async Task SaveVisualAsPngAsync(Control? control, string artifactName)
+    {
+        if (control is null)
+        {
+            SetStatus("Nothing to export.");
+            return;
+        }
+
+        var width = Math.Max((int)Math.Ceiling(control.Bounds.Width), 1);
+        var height = Math.Max((int)Math.Ceiling(control.Bounds.Height), 1);
+        if (width <= 1 || height <= 1)
+        {
+            SetStatus("Visual is not ready to export.");
+            return;
+        }
+
+        try
+        {
+            var file = await PickSaveFileAsync(
+                $"Save {artifactName}",
+                GetSuggestedArtifactFileName(artifactName, "png"),
+                "png",
+                new FilePickerFileType("PNG image") { Patterns = ["*.png"] });
+
+            if (file is null)
+            {
+                return;
+            }
+
+            var bitmap = new RenderTargetBitmap(new PixelSize(width, height));
+            bitmap.Render(control);
+
+            await using var stream = await file.OpenWriteAsync();
+            bitmap.Save(stream);
+            SetStatus($"Saved image: {file.Name}");
+        }
+        catch (Exception ex)
+        {
+            AppendConsole($"Save {artifactName} failed: {ex.Message}");
+            SetStatus($"Save {artifactName} failed.");
+        }
+    }
+
+    private TestResult EnsureSelectedPatternResultForExport()
+    {
+        ApplyUiToRuntime(preserveWeights: true);
+        EnsurePatternSelectionAvailable();
+        var selectedIndex = GetSelectedPatternIndex();
+        if (_lastTestResults.TryGetValue(selectedIndex, out var cached))
+        {
+            return cached;
+        }
+
+        var result = _engine!.TestOne(_patterns, selectedIndex);
+        _lastTestResults[selectedIndex] = result;
+        _diagramResult = result;
+        UpdatePatternSelector(selectedIndex);
+        RenderNetworkGraph();
+        UpdatePatternInspector();
+        UpdateWorkspaceSummary();
+        return result;
+    }
+
+    private RunResult EnsurePatternSetResultsForExport()
+    {
+        ApplyUiToRuntime(preserveWeights: true);
+        EnsurePatternsAvailable();
+        var run = _engine!.TestAll(_patterns);
+        _lastTestResults.Clear();
+        foreach (var entry in run.Results)
+        {
+            _lastTestResults[entry.Index] = entry;
+        }
+
+        var selectedIndex = Math.Clamp(GetSelectedPatternIndex(), 0, run.Results.Count - 1);
+        _diagramResult = run.Results.Count == 0 ? null : run.Results[selectedIndex];
+        UpdatePatternSelector(selectedIndex);
+        RenderNetworkGraph();
+        UpdatePatternInspector();
+        UpdateWorkspaceSummary();
+        return run;
+    }
+
+    private static string BuildSelectedHiddenActivationCsv(TestResult result)
+    {
+        var builder = new StringBuilder();
+        builder.Append("Index,Label");
+        for (var hidden = 0; hidden < result.HiddenActivations.Length; hidden++)
+        {
+            builder.Append($",H{hidden + 1}");
+        }
+
+        builder.AppendLine();
+        builder.Append(result.Index + 1);
+        builder.Append(',');
+        builder.Append(EscapeCsv(result.Label));
+        foreach (var value in result.HiddenActivations)
+        {
+            builder.Append(',');
+            builder.Append(value.ToString("0.############", CultureInfo.InvariantCulture));
+        }
+
+        builder.AppendLine();
+        return builder.ToString();
+    }
+
+    private static string BuildPatternSetHiddenActivationCsv(IReadOnlyList<TestResult> results)
+    {
+        var hiddenCount = results.Count == 0 ? 0 : results.Max(static result => result.HiddenActivations.Length);
+        var builder = new StringBuilder();
+        builder.Append("Index,Label");
+        for (var hidden = 0; hidden < hiddenCount; hidden++)
+        {
+            builder.Append($",H{hidden + 1}");
+        }
+
+        builder.AppendLine();
+
+        foreach (var result in results)
+        {
+            builder.Append(result.Index + 1);
+            builder.Append(',');
+            builder.Append(EscapeCsv(result.Label));
+            for (var hidden = 0; hidden < hiddenCount; hidden++)
+            {
+                builder.Append(',');
+                if (hidden < result.HiddenActivations.Length)
+                {
+                    builder.Append(result.HiddenActivations[hidden].ToString("0.############", CultureInfo.InvariantCulture));
+                }
+            }
+
+            builder.AppendLine();
+        }
+
+        return builder.ToString();
+    }
+
+    private string BuildAnalysisReportText(string reportType, AnalysisSourceOption? source)
+    {
+        if (_definition is null)
+        {
+            throw new InvalidOperationException("Load a project before running analysis.");
+        }
+
+        if (string.Equals(reportType, "Compatibility summary", StringComparison.Ordinal))
+        {
+            return CompatibilityProfile.ToDisplayText();
+        }
+
+        EnsurePatternsAvailable();
+        var engine = source?.Weights is null
+            ? _engine ?? new SignalWeaveEngine(_definition)
+            : new SignalWeaveEngine(_definition, source.Weights.Clone());
+
+        return string.Equals(reportType, "Hidden-state clustering", StringComparison.Ordinal)
+            ? engine.ClusterHiddenStates(_patterns).ToDisplayText()
+            : engine.ClusterOutputs(_patterns).ToDisplayText();
+    }
+
+    private void UpdateAnalysisModeVisibility()
+    {
+        var isTimeSeries = IsTimeSeriesAnalysisSelected();
+        var isSurface = IsSurfaceAnalysisSelected();
+        if (AnalysisTimeSeriesControlsGrid is not null)
+        {
+            AnalysisTimeSeriesControlsGrid.IsVisible = isTimeSeries;
+        }
+
+        if (AnalysisSurfaceControlsGrid is not null)
+        {
+            AnalysisSurfaceControlsGrid.IsVisible = isSurface;
+        }
+
+        if (AnalysisTextPanel is not null)
+        {
+            AnalysisTextPanel.IsVisible = !isTimeSeries && !isSurface;
+        }
+
+        if (AnalysisChartPanel is not null)
+        {
+            AnalysisChartPanel.IsVisible = isTimeSeries || isSurface;
+        }
+    }
+
+    private bool IsTimeSeriesAnalysisSelected()
+    {
+        return string.Equals(AnalysisReportTypeComboBox?.SelectedItem?.ToString(), "Time series", StringComparison.Ordinal);
+    }
+
+    private bool IsSurfaceAnalysisSelected()
+    {
+        return string.Equals(AnalysisReportTypeComboBox?.SelectedItem?.ToString(), "Surface plot", StringComparison.Ordinal);
+    }
+
+    private void UpdateAnalysisTimeSeriesIndexOptions()
+    {
+        UpdateAnalysisModeVisibility();
+
+        if (AnalysisTimeSeriesIndexComboBox is null || _definition is null)
+        {
+            return;
+        }
+
+        var selectedKind = AnalysisTimeSeriesKindComboBox?.SelectedItem?.ToString() ?? _analysisTimeSeriesKinds[0];
+        var selectedIndex = AnalysisTimeSeriesIndexComboBox.SelectedIndex;
+        var count = selectedKind switch
+        {
+            "Input" => _definition.InputUnits,
+            "Target" => _definition.OutputUnits,
+            "Output" => _definition.OutputUnits,
+            "Hidden" => GetHiddenActivationCount(_definition),
+            _ => 0
+        };
+
+        var options = Enumerable.Range(0, Math.Max(count, 0))
+            .Select(index => $"{selectedKind} {index + 1}")
+            .ToList();
+        _isUpdatingAnalysisControls = true;
+        try
+        {
+            AnalysisTimeSeriesIndexComboBox.ItemsSource = options;
+            AnalysisTimeSeriesIndexComboBox.SelectedIndex = options.Count == 0
+                ? -1
+                : Math.Clamp(selectedIndex < 0 ? 0 : selectedIndex, 0, options.Count - 1);
+        }
+        finally
+        {
+            _isUpdatingAnalysisControls = false;
+        }
+    }
+
+    private void UpdateAnalysisSurfaceOptions()
+    {
+        UpdateAnalysisModeVisibility();
+
+        if (_definition is null ||
+            AnalysisSurfaceXComboBox is null ||
+            AnalysisSurfaceYComboBox is null ||
+            AnalysisSurfaceZKindComboBox is null ||
+            AnalysisSurfaceZIndexComboBox is null)
+        {
+            return;
+        }
+
+        _isUpdatingAnalysisControls = true;
+        try
+        {
+            var xSelected = AnalysisSurfaceXComboBox.SelectedIndex;
+            var ySelected = AnalysisSurfaceYComboBox.SelectedIndex;
+            var zSelected = AnalysisSurfaceZIndexComboBox.SelectedIndex;
+            var inputOptions = Enumerable.Range(0, _definition.InputUnits).Select(index => $"Input {index + 1}").ToList();
+            AnalysisSurfaceXComboBox.ItemsSource = inputOptions;
+            AnalysisSurfaceYComboBox.ItemsSource = inputOptions;
+            AnalysisSurfaceXComboBox.SelectedIndex = inputOptions.Count == 0 ? -1 : Math.Clamp(xSelected < 0 ? 0 : xSelected, 0, inputOptions.Count - 1);
+            var yDefault = ySelected < 0 ? Math.Min(1, Math.Max(0, inputOptions.Count - 1)) : ySelected;
+            AnalysisSurfaceYComboBox.SelectedIndex = inputOptions.Count == 0 ? -1 : Math.Clamp(yDefault, 0, inputOptions.Count - 1);
+
+            var selectedKind = AnalysisSurfaceZKindComboBox.SelectedItem?.ToString() ?? _analysisSurfaceZKinds[0];
+            var count = selectedKind switch
+            {
+                "Target" => _definition.OutputUnits,
+                "Output" => _definition.OutputUnits,
+                "Hidden" => GetHiddenActivationCount(_definition),
+                _ => 0
+            };
+            var zOptions = Enumerable.Range(0, Math.Max(count, 0)).Select(index => $"{selectedKind} {index + 1}").ToList();
+            AnalysisSurfaceZIndexComboBox.ItemsSource = zOptions;
+            AnalysisSurfaceZIndexComboBox.SelectedIndex = zOptions.Count == 0 ? -1 : Math.Clamp(zSelected < 0 ? 0 : zSelected, 0, zOptions.Count - 1);
+        }
+        finally
+        {
+            _isUpdatingAnalysisControls = false;
+        }
+    }
+
+    private sealed record AnalysisTimeSeriesResult(string SeriesLabel, IReadOnlyList<double> Values);
+    private sealed record AnalysisSurfaceResult(
+        string XLabel,
+        string YLabel,
+        string ZLabel,
+        IReadOnlyList<double> XValues,
+        IReadOnlyList<double> YValues,
+        double?[,] Grid,
+        double MinValue,
+        double MaxValue);
+
+    private AnalysisTimeSeriesResult BuildAnalysisTimeSeries(AnalysisSourceOption? source)
+    {
+        if (_definition is null)
+        {
+            throw new InvalidOperationException("Load a project before running analysis.");
+        }
+
+        EnsurePatternsAvailable();
+        var selectedKind = AnalysisTimeSeriesKindComboBox?.SelectedItem?.ToString() ?? _analysisTimeSeriesKinds[0];
+        var selectedIndex = AnalysisTimeSeriesIndexComboBox?.SelectedIndex ?? -1;
+        if (selectedIndex < 0)
+        {
+            throw new InvalidOperationException("Select a series index.");
+        }
+
+        var engine = source?.Weights is null
+            ? _engine ?? new SignalWeaveEngine(_definition)
+            : new SignalWeaveEngine(_definition, source.Weights.Clone());
+        var run = engine.TestAll(_patterns);
+        var values = new List<double>(run.Results.Count);
+
+        foreach (var result in run.Results)
+        {
+            values.Add(selectedKind switch
+            {
+                "Input" => selectedIndex < result.Inputs.Length ? result.Inputs[selectedIndex] : 0,
+                "Target" => result.Targets is not null && selectedIndex < result.Targets.Length ? result.Targets[selectedIndex] : 0,
+                "Output" => selectedIndex < result.Outputs.Length ? result.Outputs[selectedIndex] : 0,
+                "Hidden" => selectedIndex < result.HiddenActivations.Length ? result.HiddenActivations[selectedIndex] : 0,
+                _ => 0
+            });
+        }
+
+        return new AnalysisTimeSeriesResult($"{selectedKind} {selectedIndex + 1}", values);
+    }
+
+    private string BuildAnalysisTimeSeriesCsv(AnalysisTimeSeriesResult series)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("step,series,value");
+
+        for (var index = 0; index < series.Values.Count; index++)
+        {
+            builder
+                .Append(index.ToString(CultureInfo.InvariantCulture))
+                .Append(',')
+                .Append(EscapeCsv(series.SeriesLabel))
+                .Append(',')
+                .AppendLine(series.Values[index].ToString("0.############", CultureInfo.InvariantCulture));
+        }
+
+        return builder.ToString();
+    }
+
+    private static int GetHiddenActivationCount(NetworkDefinition definition)
+    {
+        return definition.HasSecondHiddenLayer
+            ? definition.HiddenUnits + definition.SecondHiddenUnits
+            : definition.HiddenUnits;
+    }
+
+    private AnalysisSurfaceResult BuildAnalysisSurface(AnalysisSourceOption? source)
+    {
+        if (_definition is null)
+        {
+            throw new InvalidOperationException("Load a project before running analysis.");
+        }
+
+        EnsurePatternsAvailable();
+        var xIndex = AnalysisSurfaceXComboBox?.SelectedIndex ?? -1;
+        var yIndex = AnalysisSurfaceYComboBox?.SelectedIndex ?? -1;
+        var zIndex = AnalysisSurfaceZIndexComboBox?.SelectedIndex ?? -1;
+        var zKind = AnalysisSurfaceZKindComboBox?.SelectedItem?.ToString() ?? _analysisSurfaceZKinds[0];
+        if (xIndex < 0 || yIndex < 0 || zIndex < 0)
+        {
+            throw new InvalidOperationException("Select valid X, Y, and Z values.");
+        }
+
+        var engine = source?.Weights is null
+            ? _engine ?? new SignalWeaveEngine(_definition)
+            : new SignalWeaveEngine(_definition, source.Weights.Clone());
+        var run = engine.TestAll(_patterns);
+        var xValues = run.Results.Select(result => xIndex < result.Inputs.Length ? result.Inputs[xIndex] : 0).Distinct().OrderBy(value => value).ToList();
+        var yValues = run.Results.Select(result => yIndex < result.Inputs.Length ? result.Inputs[yIndex] : 0).Distinct().OrderBy(value => value).ToList();
+        if (xValues.Count == 0 || yValues.Count == 0)
+        {
+            throw new InvalidOperationException("The current patterns do not contain enough data for a surface plot.");
+        }
+
+        var grid = new double?[yValues.Count, xValues.Count];
+        var buckets = new Dictionary<(int X, int Y), List<double>>();
+        foreach (var result in run.Results)
+        {
+            var xValue = xIndex < result.Inputs.Length ? result.Inputs[xIndex] : 0;
+            var yValue = yIndex < result.Inputs.Length ? result.Inputs[yIndex] : 0;
+            var xPos = xValues.IndexOf(xValue);
+            var yPos = yValues.IndexOf(yValue);
+            if (xPos < 0 || yPos < 0)
+            {
+                continue;
+            }
+
+            var zValue = zKind switch
+            {
+                "Target" => result.Targets is not null && zIndex < result.Targets.Length ? result.Targets[zIndex] : 0,
+                "Output" => zIndex < result.Outputs.Length ? result.Outputs[zIndex] : 0,
+                "Hidden" => zIndex < result.HiddenActivations.Length ? result.HiddenActivations[zIndex] : 0,
+                _ => 0
+            };
+
+            if (!buckets.TryGetValue((xPos, yPos), out var values))
+            {
+                values = [];
+                buckets[(xPos, yPos)] = values;
+            }
+
+            values.Add(zValue);
+        }
+
+        foreach (var entry in buckets)
+        {
+            grid[entry.Key.Y, entry.Key.X] = entry.Value.Average();
+        }
+
+        var presentValues = grid.Cast<double?>().Where(value => value.HasValue).Select(value => value!.Value).ToList();
+        if (presentValues.Count == 0)
+        {
+            throw new InvalidOperationException("The current patterns do not contain enough data for a surface plot.");
+        }
+
+        return new AnalysisSurfaceResult(
+            $"Input {xIndex + 1}",
+            $"Input {yIndex + 1}",
+            $"{zKind} {zIndex + 1}",
+            xValues,
+            yValues,
+            grid,
+            presentValues.Min(),
+            presentValues.Max());
+    }
+
+    private string BuildAnalysisSurfaceCsv(AnalysisSurfaceResult surface)
+    {
+        var builder = new StringBuilder();
+        builder.Append("y/x");
+        foreach (var x in surface.XValues)
+        {
+            builder.Append(',').Append(x.ToString("0.############", CultureInfo.InvariantCulture));
+        }
+        builder.AppendLine();
+
+        for (var y = 0; y < surface.YValues.Count; y++)
+        {
+            builder.Append(surface.YValues[y].ToString("0.############", CultureInfo.InvariantCulture));
+            for (var x = 0; x < surface.XValues.Count; x++)
+            {
+                builder.Append(',');
+                if (surface.Grid[y, x].HasValue)
+                {
+                    builder.Append(surface.Grid[y, x]!.Value.ToString("0.############", CultureInfo.InvariantCulture));
+                }
+            }
+
+            builder.AppendLine();
+        }
+
+        return builder.ToString();
+    }
+
+    private void RenderAnalysisChart()
+    {
+        if (AnalysisTimeSeriesCanvas is null)
+        {
+            return;
+        }
+
+        AnalysisTimeSeriesCanvas.Children.Clear();
+        if (IsSurfaceAnalysisSelected())
+        {
+            RenderAnalysisSurface();
+            return;
+        }
+
+        if (_lastAnalysisSeriesValues is null || _lastAnalysisSeriesValues.Count == 0 || !IsTimeSeriesAnalysisSelected())
+        {
+            return;
+        }
+
+        var width = Math.Max(AnalysisTimeSeriesCanvas.Bounds.Width, 280);
+        var height = Math.Max(AnalysisTimeSeriesCanvas.Bounds.Height, 200);
+        var left = 44d;
+        var right = width - 14d;
+        var top = 10d;
+        var bottom = height - 28d;
+        var plotWidth = Math.Max(1, right - left);
+        var plotHeight = Math.Max(1, bottom - top);
+        var minValue = _lastAnalysisSeriesValues.Min();
+        var maxValue = _lastAnalysisSeriesValues.Max();
+
+        if (Math.Abs(maxValue - minValue) < 1e-9)
+        {
+            minValue -= 0.5;
+            maxValue += 0.5;
+        }
+
+        AnalysisTimeSeriesCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, bottom),
+            EndPoint = new Point(right, bottom),
+            Stroke = new SolidColorBrush(Color.Parse("#B59E87")),
+            StrokeThickness = 1
+        });
+        AnalysisTimeSeriesCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, top),
+            EndPoint = new Point(left, bottom),
+            Stroke = new SolidColorBrush(Color.Parse("#B59E87")),
+            StrokeThickness = 1
+        });
+
+        AddAnalysisAxisLabel(left - 38, top - 6, maxValue.ToString("0.000", CultureInfo.InvariantCulture));
+        AddAnalysisAxisLabel(left - 38, bottom - 12, minValue.ToString("0.000", CultureInfo.InvariantCulture));
+        AddAnalysisAxisLabel(Math.Max(left, right - 34), bottom + 4, "step");
+
+        Point? previous = null;
+        for (var index = 0; index < _lastAnalysisSeriesValues.Count; index++)
+        {
+            var x = _lastAnalysisSeriesValues.Count == 1
+                ? left + (plotWidth / 2.0)
+                : left + (plotWidth * index / (_lastAnalysisSeriesValues.Count - 1));
+            var normalized = (_lastAnalysisSeriesValues[index] - minValue) / (maxValue - minValue);
+            var y = top + ((1 - normalized) * plotHeight);
+            var point = new Point(x, y);
+
+            if (previous is Point prior)
+            {
+                AnalysisTimeSeriesCanvas.Children.Add(new Line
+                {
+                    StartPoint = prior,
+                    EndPoint = point,
+                    Stroke = new SolidColorBrush(Color.Parse("#B7312C")),
+                    StrokeThickness = 1.25
+                });
+            }
+
+            var dot = new Ellipse
+            {
+                Width = 4,
+                Height = 4,
+                Fill = new SolidColorBrush(Color.Parse("#B7312C"))
+            };
+            Canvas.SetLeft(dot, x - 2);
+            Canvas.SetTop(dot, y - 2);
+            AnalysisTimeSeriesCanvas.Children.Add(dot);
+            previous = point;
+        }
+    }
+
+    private void RenderAnalysisSurface()
+    {
+        if (AnalysisTimeSeriesCanvas is null || _lastAnalysisSurface is null || !IsSurfaceAnalysisSelected())
+        {
+            return;
+        }
+
+        var width = Math.Max(AnalysisTimeSeriesCanvas.Bounds.Width, 280);
+        var height = Math.Max(AnalysisTimeSeriesCanvas.Bounds.Height, 220);
+        var left = 48d;
+        var right = width - 18d;
+        var top = 12d;
+        var bottom = height - 40d;
+        var plotWidth = Math.Max(1, right - left);
+        var plotHeight = Math.Max(1, bottom - top);
+
+        AnalysisTimeSeriesCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, bottom),
+            EndPoint = new Point(right, bottom),
+            Stroke = new SolidColorBrush(Color.Parse("#B59E87")),
+            StrokeThickness = 1
+        });
+        AnalysisTimeSeriesCanvas.Children.Add(new Line
+        {
+            StartPoint = new Point(left, top),
+            EndPoint = new Point(left, bottom),
+            Stroke = new SolidColorBrush(Color.Parse("#B59E87")),
+            StrokeThickness = 1
+        });
+
+        var cellWidth = plotWidth / _lastAnalysisSurface.XValues.Count;
+        var cellHeight = plotHeight / _lastAnalysisSurface.YValues.Count;
+        var zRange = Math.Max(Math.Abs(_lastAnalysisSurface.MinValue), Math.Abs(_lastAnalysisSurface.MaxValue));
+        if (zRange < 1e-9)
+        {
+            zRange = 1;
+        }
+
+        for (var y = 0; y < _lastAnalysisSurface.YValues.Count; y++)
+        {
+            for (var x = 0; x < _lastAnalysisSurface.XValues.Count; x++)
+            {
+                var rect = new Rectangle
+                {
+                    Width = Math.Max(1, cellWidth - 1),
+                    Height = Math.Max(1, cellHeight - 1),
+                    Stroke = new SolidColorBrush(Color.Parse("#E6DCCD")),
+                    StrokeThickness = 0.5,
+                    Fill = _lastAnalysisSurface.Grid[y, x].HasValue
+                        ? GetWeightBrush(_lastAnalysisSurface.Grid[y, x]!.Value, zRange)
+                        : new SolidColorBrush(Color.Parse("#F7F1E7"))
+                };
+                Canvas.SetLeft(rect, left + (x * cellWidth));
+                Canvas.SetTop(rect, top + ((_lastAnalysisSurface.YValues.Count - 1 - y) * cellHeight));
+                AnalysisTimeSeriesCanvas.Children.Add(rect);
+            }
+        }
+
+        for (var x = 0; x < _lastAnalysisSurface.XValues.Count; x++)
+        {
+            AddAnalysisAxisLabel(
+                left + (x * cellWidth) + Math.Max(0, (cellWidth / 2.0) - 10),
+                bottom + 4,
+                _lastAnalysisSurface.XValues[x].ToString("0.##", CultureInfo.InvariantCulture));
+        }
+
+        for (var y = 0; y < _lastAnalysisSurface.YValues.Count; y++)
+        {
+            var labelY = top + ((_lastAnalysisSurface.YValues.Count - 1 - y) * cellHeight) + Math.Max(0, (cellHeight / 2.0) - 7);
+            AddAnalysisAxisLabel(6, labelY, _lastAnalysisSurface.YValues[y].ToString("0.##", CultureInfo.InvariantCulture));
+        }
+
+        AddAnalysisAxisLabel(Math.Max(left, right - 44), bottom + 20, _lastAnalysisSurface.XLabel);
+        AddAnalysisAxisLabel(6, top - 6, _lastAnalysisSurface.YLabel);
+        AddAnalysisAxisLabel(right - 64, top - 6, _lastAnalysisSurface.ZLabel);
+    }
+
+    private void AddAnalysisAxisLabel(double x, double y, string text)
+    {
+        if (AnalysisTimeSeriesCanvas is null)
+        {
+            return;
+        }
+
+        var label = new TextBlock
+        {
+            Text = text,
+            FontSize = 10,
+            Foreground = new SolidColorBrush(Color.Parse("#5E5348"))
+        };
+        Canvas.SetLeft(label, x);
+        Canvas.SetTop(label, y);
+        AnalysisTimeSeriesCanvas.Children.Add(label);
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r'))
+        {
+            return value;
+        }
+
+        return $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    private string GetSuggestedProjectFileName()
+    {
+        var rawName = string.IsNullOrWhiteSpace(ProjectNameTextBox.Text) ? "signalweave-modern-project" : ProjectNameTextBox.Text.Trim();
+        var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+        var cleaned = new string(rawName.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
+        return $"{cleaned}.swproj.json";
+    }
+
+    private string GetSuggestedArtifactFileName(string suffix, string extension)
+    {
+        var rawName = string.IsNullOrWhiteSpace(ProjectNameTextBox.Text) ? "signalweave-modern-project" : ProjectNameTextBox.Text.Trim();
+        var invalidChars = System.IO.Path.GetInvalidFileNameChars();
+        var cleaned = new string(rawName.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
+        return $"{cleaned}-{suffix}.{extension}";
+    }
+
+    private NetworkKind GetSelectedNetworkKind()
+    {
+        if (NetworkKindComboBox is null)
+        {
+            return NetworkKind.FeedForward;
+        }
+
+        return NetworkKindComboBox.SelectedIndex == 1
+            ? NetworkKind.SimpleRecurrent
+            : NetworkKind.FeedForward;
+    }
+
+    private int ParseLearningStepsFromControls()
+    {
+        return ParseInt(LearningStepsComboBox.Text, "Learning steps");
+    }
+
+    private static int ParseInt(string? value, string label)
+    {
+        if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+        {
+            throw new InvalidOperationException($"{label} must be a whole number.");
+        }
+
+        return parsed;
+    }
+
+    private static double ParseDouble(string? value, string label)
+    {
+        if (!double.TryParse(value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var parsed))
+        {
+            throw new InvalidOperationException($"{label} must be numeric.");
+        }
+
+        return parsed;
+    }
+
+    private static double ParseWeightRange(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException("Weight range must be provided.");
+        }
+
+        var tokens = value
+            .Replace("to", " ", StringComparison.OrdinalIgnoreCase)
+            .Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(token => double.TryParse(token, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : (double?)null)
+            .Where(parsed => parsed.HasValue)
+            .Select(parsed => parsed!.Value)
+            .ToArray();
+
+        if (tokens.Length == 0)
+        {
+            throw new InvalidOperationException("Weight range must contain at least one numeric bound.");
+        }
+
+        return tokens.Max(bound => Math.Abs(bound));
+    }
+
+    private static string FormatWeightRange(double range)
+    {
+        return $"-{FormatNumber(range)} - {FormatNumber(range)}";
+    }
+
+    private static int ReadSliderValue(Slider? slider)
+    {
+        if (slider is null)
+        {
+            return 0;
+        }
+
+        return (int)Math.Round(slider.Value, MidpointRounding.AwayFromZero);
+    }
+
+    private string GetSelectedWeightRangeText()
+    {
+        return WeightRangeComboBox.SelectedItem as string
+            ?? WeightRangeComboBox.SelectionBoxItem as string
+            ?? _weightRangeOptions[1];
+    }
+
+    private string FindMatchingWeightRange(double range)
+    {
+        var desired = FormatWeightRange(range);
+        return _weightRangeOptions.FirstOrDefault(option => string.Equals(option, desired, StringComparison.Ordinal))
+            ?? _weightRangeOptions.OrderBy(option => Math.Abs(ParseWeightRange(option) - range)).First();
+    }
+
+    private static string FormatNumber(double value)
+    {
+        return value.ToString("0.###", CultureInfo.InvariantCulture);
+    }
+}
