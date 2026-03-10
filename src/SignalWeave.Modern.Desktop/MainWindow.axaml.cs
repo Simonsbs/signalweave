@@ -98,7 +98,6 @@ public partial class MainWindow : Window
             ?? project.Definition.MaxEpochs.ToString(CultureInfo.InvariantCulture);
         UpdatePatternSelector(project.Workspace?.SelectedPatternIndex ?? 0);
 
-        ResultsTextBox.Text = "No run executed yet.";
         LatestRunSummaryTextBlock.Text = "No run executed yet.";
         ProgressLabelTextBlock.Text = project.CompletedCycles > 0
             ? $"{project.CompletedCycles.ToString(CultureInfo.InvariantCulture)} completed cycles"
@@ -400,7 +399,6 @@ public partial class MainWindow : Window
             _diagramResult = null;
             _trainingHistory.Clear();
             _latestTrainingPoint = null;
-            ResultsTextBox.Text = "Weights reset using the current project settings.";
             LatestRunSummaryTextBlock.Text = "Weights reset.";
             TrainingProgressBar.Value = 0;
             ProgressLabelTextBlock.Text = "Idle";
@@ -469,9 +467,9 @@ public partial class MainWindow : Window
             ProgressLabelTextBlock.Text = result.History.Count > 0
                 ? $"{result.History[^1].Epoch.ToString(CultureInfo.InvariantCulture)} / {steps.ToString(CultureInfo.InvariantCulture)}"
                 : "Idle";
-            ResultsTextBox.Text = result.FinalRun.ToTable();
             LatestRunSummaryTextBlock.Text =
                 $"Training complete. Final displayed average error: {FormatNumber(result.FinalRun.DisplayAverageError)}";
+            AppendConsole(result.FinalRun.ToTable());
             RenderErrorPlot(_trainingHistory);
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
@@ -505,8 +503,8 @@ public partial class MainWindow : Window
             var index = PatternSelectorComboBox.SelectedIndex;
             var result = _engine!.TestOne(_patterns, index);
             _diagramResult = result;
-            ResultsTextBox.Text = BuildSingleResultText(result);
             LatestRunSummaryTextBlock.Text = $"Tested pattern {index + 1}: {result.Label}";
+            AppendConsole(BuildSingleResultText(result));
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
             AppendConsole($"Tested pattern {index + 1}: {result.Label}");
@@ -534,8 +532,8 @@ public partial class MainWindow : Window
             var result = _engine!.TestAll(_patterns);
             var selectedIndex = Math.Clamp(PatternSelectorComboBox.SelectedIndex, 0, result.Results.Count - 1);
             _diagramResult = result.Results.Count == 0 ? null : result.Results[selectedIndex];
-            ResultsTextBox.Text = result.ToTable();
             LatestRunSummaryTextBlock.Text = $"Test all complete. Displayed average error: {FormatNumber(result.DisplayAverageError)}";
+            AppendConsole(result.ToTable());
             RenderNetworkGraph();
             UpdateWorkspaceSummary();
             AppendConsole($"Test all finished. Displayed average error: {FormatNumber(result.DisplayAverageError)}");
@@ -574,16 +572,7 @@ public partial class MainWindow : Window
         {
             _trainingHistory.Clear();
             RenderErrorPlot(_trainingHistory);
-            if (resultsChangedTextRequired())
-            {
-                ResultsTextBox.Text = "Project settings updated. Run Train, Test One, or Test All to refresh results.";
-                LatestRunSummaryTextBlock.Text = "Project settings updated.";
-            }
-        }
-
-        bool resultsChangedTextRequired()
-        {
-            return true;
+            LatestRunSummaryTextBlock.Text = "Project settings updated.";
         }
     }
 
