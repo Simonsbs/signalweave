@@ -1760,3 +1760,2395 @@ This is expected.
 - [modern-ui-guide.md](/home/simon/signalweave/docs/modern-ui-guide.md)
 - [signalweave-schema.md](/home/simon/signalweave/docs/signalweave-schema.md)
 - [product-lines.md](/home/simon/signalweave/docs/product-lines.md)
+
+## 11. Complete control inventory
+
+This appendix is the exhaustive control-by-control reference for the current `Modern` UI.
+
+It is intentionally literal:
+- every visible tab, button, slider, checkbox, combo box, text box, list, canvas, panel, and splitter is covered
+- dynamic controls inside the `Graphic mode` pattern editor are also covered
+- where a control is non-interactive, this section still explains what it displays and why it exists
+
+Use this section when you need an exact answer to:
+- what a control does
+- what values it accepts
+- what it changes
+- what it represents
+
+## 11.1 Navigation and layout controls
+
+### Main left workspace tabs
+
+Controls:
+- `Network Graph`
+- `Weights`
+- `Analysis`
+
+What they do:
+- switch the left workspace between topology view, weight inspection, and analysis tools
+
+What they affect:
+- only the visible workspace content, not the underlying project state
+
+What they represent:
+- the three primary ways to inspect the active project
+
+### Right control stack tabs
+
+Controls:
+- `Network`
+- `Training`
+- `Tests`
+- `Patterns`
+- `Summary`
+
+What they do:
+- switch the right-side workflow panel between project setup, operation, inspection, editing, and overview
+
+What they affect:
+- only the visible control panel content
+
+What they represent:
+- the operational control surface for the project
+
+### Pattern mode tabs
+
+Controls:
+- `Text mode`
+- `Graphic mode`
+
+What they do:
+- switch the Patterns editor between raw text editing and table editing
+
+What they affect:
+- only the editing view, not the underlying pattern set
+
+What they represent:
+- two synchronized interfaces over the same pattern data
+
+### Vertical splitter between left workspace and right control stack
+
+What it does:
+- resizes the width balance between the main workspace and the side control stack
+
+What it affects:
+- available space for graph, weights, analysis, and right-side tabs
+
+What it represents:
+- user control over workspace emphasis
+
+### Horizontal splitter between middle workspace and bottom output area
+
+What it does:
+- resizes the height balance between the top workspace and the bottom output area
+
+What it affects:
+- visible area available for the main graph/work tabs versus console/error graph
+
+What it represents:
+- user control over inspection versus output space
+
+### Vertical splitter between Tests pattern list and Tests inspector
+
+What it does:
+- resizes the width balance between the pattern list and the detailed pattern inspector
+
+What it affects:
+- how much space is available for scanning patterns versus reading selected-pattern detail
+
+What it represents:
+- user control over test navigation versus test detail
+
+### Vertical splitter between Console and Error graph
+
+What it does:
+- resizes the width balance between the console and the error graph
+
+What it affects:
+- visible area for logs versus training-history plotting
+
+What it represents:
+- user control over textual versus graphical output
+
+## 11.2 Top toolbar controls
+
+### Product/version label
+
+Visible text:
+- for example `SignalWeave Modern v1.0.0`
+
+Control type:
+- text display
+
+What it does:
+- shows the product line and running version
+
+What it affects:
+- nothing in the project or engine
+
+What it represents:
+- the exact application build the user is running
+
+### `✚ New`
+
+Control type:
+- button
+
+What it does:
+- creates a new working project based on the default sample-style starting state
+
+What it affects:
+- current definition
+- current patterns
+- current weights
+- training history
+- cached test results
+- current file association
+
+What it represents:
+- start a fresh project
+
+### `📂 Load`
+
+Control type:
+- button
+
+What it does:
+- opens a project file from disk
+
+What it affects:
+- replaces the active project state with the loaded one
+
+What it represents:
+- resume an existing SignalWeave Modern project
+
+Accepted content:
+- the Modern project format currently loads `signalweave-project/v1` through `signalweave-project/v4`
+
+### `💾 Save`
+
+Control type:
+- button
+
+What it does:
+- saves the current project to its existing path
+
+What it affects:
+- writes the active project state to disk
+
+What it represents:
+- persist the current session
+
+### `🖫 Save As`
+
+Control type:
+- button
+
+What it does:
+- saves the current project to a new path
+
+What it affects:
+- creates a new saved copy without requiring reuse of the current file path
+
+What it represents:
+- save the current session under a different name or location
+
+### Workspace status text
+
+Examples:
+- `Ready.`
+- `Working in an unsaved project.`
+- `Loaded project: seventeen-patterns-7x7-modern.swproj.json`
+
+Control type:
+- text display
+
+What it does:
+- reports the current high-level workspace state
+
+What it affects:
+- nothing directly
+
+What it represents:
+- file/workspace condition and recent file action status
+
+## 11.3 Left workspace controls
+
+## 11.3.1 Network Graph tab
+
+### `Network Graph`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the topology/activation graph workspace
+
+What it affects:
+- only the visible left-side content
+
+What it represents:
+- the primary visual model view
+
+### `Network graph`
+
+Control type:
+- section title
+
+What it does:
+- labels the graph workspace
+
+What it affects:
+- nothing
+
+What it represents:
+- the current tab purpose
+
+### Graph summary text
+
+Examples:
+- `3-layer topology`
+- `Showing activations for pattern 4: pattern-4`
+
+Control type:
+- text display
+
+What it does:
+- states whether the graph is showing plain topology or a selected test-result overlay
+
+What it affects:
+- nothing directly
+
+What it represents:
+- current graph context
+
+### Network graph save button `🖫`
+
+Control type:
+- button
+
+What it does:
+- saves the visible network graph as a PNG image
+
+What it affects:
+- creates an image file only
+
+What it represents:
+- export the current network visualization
+
+### Network graph canvas
+
+Control type:
+- drawing canvas
+
+What it does:
+- renders nodes, bias nodes, connection lines, activation bars, and numeric values
+
+What it affects:
+- visual inspection only
+
+What it represents:
+- the active topology and, if available, the currently selected test-result overlay
+
+### Weight legend minimum text
+
+Examples:
+- `-0.1`
+- `-1.0`
+- `-10.0`
+
+Control type:
+- text display
+
+What it does:
+- shows the negative end of the graph’s weight color scale
+
+What it affects:
+- how the user interprets connection colors
+
+What it represents:
+- the current lower reference bound for graph weight coloring
+
+### Weight legend gradient bar
+
+Control type:
+- visual scale panel
+
+What it does:
+- shows the red-to-black-to-green mapping used for graph edge colors
+
+What it affects:
+- user interpretation only
+
+What it represents:
+- negative weight to positive weight color meaning
+
+Interpretation:
+- red = negative
+- black/dark = near zero
+- green = positive
+
+### Weight legend maximum text
+
+Examples:
+- `0.1`
+- `1.0`
+- `10.0`
+
+Control type:
+- text display
+
+What it does:
+- shows the positive end of the graph’s weight color scale
+
+What it affects:
+- how the user interprets connection colors
+
+What it represents:
+- the current upper reference bound for graph weight coloring
+
+## 11.3.2 Weights tab
+
+### `Weights`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the dedicated weight inspection workspace
+
+What it affects:
+- only the visible left-side content
+
+What it represents:
+- the detailed weight-inspection mode
+
+### `Weight inspector`
+
+Control type:
+- section title
+
+What it does:
+- labels the weight workspace
+
+What it affects:
+- nothing
+
+What it represents:
+- the purpose of the tab
+
+### `Source`
+
+Control type:
+- combo box
+
+Allowed values:
+- `Current`
+- `Train #N` for each saved training session
+
+Default behavior:
+- points at the active weight state when no session-specific selection overrides it
+
+What it does:
+- selects which saved weight set is inspected
+
+What it affects:
+- stats text
+- layer list
+- weight matrix display
+
+What it represents:
+- the time point in training history whose weights you want to inspect
+
+### `Layer`
+
+Control type:
+- combo box
+
+Allowed values depend on topology and may include:
+- `Input → Output`
+- `Input → Hidden`
+- `Input → Hidden 1`
+- `Hidden 1 → Hidden 2`
+- `Hidden 1 → Output`
+- `Hidden 2 → Output`
+- `Context → Hidden`
+
+What it does:
+- chooses the specific matrix to inspect
+
+What it affects:
+- stats text
+- visual matrix content
+- row/column labels used internally for rendering
+
+What it represents:
+- one connection set within the selected weight source
+
+### `View`
+
+Control type:
+- combo box
+
+Allowed values:
+- `Heatmap`
+- `Magnitude`
+- `Values`
+
+Default:
+- `Heatmap`
+
+What it does:
+- changes the rendering style of the selected matrix
+
+What it affects:
+- the way the weight matrix is visualized
+
+What it represents:
+- sign-and-scale view, absolute-strength view, or numeric-value view
+
+### Weight stats text
+
+Example contents:
+- rows
+- columns
+- min
+- max
+- mean absolute weight
+- near-zero count
+
+Control type:
+- text display
+
+What it does:
+- summarizes the currently selected matrix numerically
+
+What it affects:
+- nothing directly
+
+What it represents:
+- numeric properties of the selected matrix
+
+### Weight inspector canvas
+
+Control type:
+- drawing canvas
+
+What it does:
+- renders the selected matrix in the chosen view mode
+
+What it affects:
+- visual inspection only
+
+What it represents:
+- the currently selected weight matrix
+
+## 11.3.3 Analysis tab
+
+### `Analysis`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the dataset-level analysis workspace
+
+What it affects:
+- only the visible left-side content
+
+What it represents:
+- the broader report/chart analysis mode
+
+### `Analysis reports`
+
+Control type:
+- section title
+
+What it does:
+- labels the analysis workspace
+
+What it affects:
+- nothing
+
+What it represents:
+- the purpose of the tab
+
+### `Mode`
+
+Control type:
+- combo box
+
+Allowed values:
+- `Output clustering`
+- `Hidden-state clustering`
+- `Compatibility summary`
+- `Time series`
+- `Surface plot`
+
+Default:
+- `Output clustering`
+
+What it does:
+- chooses the type of analysis to run
+
+What it affects:
+- whether text or chart panels are shown
+- which secondary controls become visible
+- what the save/copy actions export
+
+What it represents:
+- the analysis family being requested
+
+### `Source`
+
+Control type:
+- combo box
+
+Allowed values:
+- `Current`
+- `Train #N` for each saved training session
+
+What it does:
+- chooses which weight state the analysis runs against
+
+What it affects:
+- analysis output content
+
+What it represents:
+- the checkpoint being analyzed
+
+### `Run`
+
+Control type:
+- button
+
+What it does:
+- executes the selected analysis with the current source and secondary parameters
+
+What it affects:
+- current report text or chart content
+
+What it represents:
+- perform the current analysis request
+
+### Analysis copy button `⧉`
+
+Control type:
+- button
+
+What it does:
+- copies the current analysis output to the clipboard
+
+What it affects:
+- clipboard contents only
+
+What it represents:
+- quick external reuse of the current analysis output
+
+Behavior:
+- report modes copy text
+- chart modes copy CSV-formatted data
+
+### Analysis save button `🖫`
+
+Control type:
+- button
+
+What it does:
+- saves the current analysis output to a file
+
+What it affects:
+- writes a text or CSV file
+
+What it represents:
+- persistent export of analysis results
+
+Behavior:
+- report modes save text
+- chart modes save CSV
+
+### Analysis chart save button `🖼`
+
+Control type:
+- button
+
+What it does:
+- saves the current visible chart as a PNG image
+
+What it affects:
+- creates an image file only
+
+What it represents:
+- visual export of the current chart
+
+### Time-series controls grid
+
+Control type:
+- dynamic control group
+
+Visibility:
+- visible only when `Mode = Time series`
+
+What it does:
+- contains the controls specific to time-series plotting
+
+What it affects:
+- chart configuration for time-series mode
+
+What it represents:
+- the parameter set needed to choose one plotted signal
+
+### `Series`
+
+Control type:
+- combo box
+
+Allowed values:
+- `Input`
+- `Target`
+- `Output`
+- `Hidden`
+
+Default:
+- `Output`
+
+What it does:
+- selects the signal family to chart across the ordered pattern set
+
+What it affects:
+- charted values
+- index list contents
+
+What it represents:
+- the type of signal being tracked over sequence order
+
+### Time-series `Index`
+
+Control type:
+- combo box
+
+Allowed values:
+- dynamically generated for the selected series kind, for example `Input 1`, `Output 3`, `Hidden 2`
+
+What it does:
+- selects the specific signal dimension to chart
+
+What it affects:
+- which values are plotted
+
+What it represents:
+- the exact input, target, output, or hidden unit being inspected
+
+### Surface controls grid
+
+Control type:
+- dynamic control group
+
+Visibility:
+- visible only when `Mode = Surface plot`
+
+What it does:
+- contains the controls specific to surface plotting
+
+What it affects:
+- chart configuration for surface mode
+
+What it represents:
+- the parameter set needed to define a 2D input surface
+
+### Surface `X input`
+
+Control type:
+- combo box
+
+Allowed values:
+- dynamically generated input indices, for example `Input 1`, `Input 2`
+
+What it does:
+- chooses the input dimension used for the X axis
+
+What it affects:
+- horizontal axis of the generated grid
+
+What it represents:
+- the first spatial input variable
+
+### Surface `Y input`
+
+Control type:
+- combo box
+
+Allowed values:
+- dynamically generated input indices, for example `Input 1`, `Input 2`
+
+What it does:
+- chooses the input dimension used for the Y axis
+
+What it affects:
+- vertical axis of the generated grid
+
+What it represents:
+- the second spatial input variable
+
+### Surface `Z series`
+
+Control type:
+- combo box
+
+Allowed values:
+- `Target`
+- `Output`
+- `Hidden`
+
+Default:
+- `Output`
+
+What it does:
+- chooses the kind of value plotted over the X/Y plane
+
+What it affects:
+- surface content
+- Z-index list contents
+
+What it represents:
+- whether the surface shows expected values, actual predictions, or hidden-unit responses
+
+### Surface `Index`
+
+Control type:
+- combo box
+
+Allowed values:
+- dynamically generated series indices, for example `Target 1`, `Output 2`, `Hidden 3`
+
+What it does:
+- chooses the specific Z dimension to plot
+
+What it affects:
+- exact plotted values on the surface
+
+What it represents:
+- the exact output/target/hidden dimension being visualized
+
+### Analysis report title text
+
+Examples:
+- `Run an analysis report.`
+- a report-specific heading after a run
+
+Control type:
+- text display
+
+What it does:
+- titles the current text report output
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the current report context
+
+### Analysis report text box
+
+Control type:
+- read-only multiline text box
+
+What it does:
+- shows clustering and compatibility text reports
+
+What it affects:
+- text-mode analysis display only
+
+What it represents:
+- the current report output
+
+### Analysis chart title text
+
+Examples:
+- `Run a time-series analysis.`
+
+Control type:
+- text display
+
+What it does:
+- titles the current chart output
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the current chart context
+
+### Analysis chart border panel
+
+Control type:
+- container
+
+What it does:
+- frames the analysis chart area
+
+What it affects:
+- chart presentation only
+
+What it represents:
+- the visible chart surface boundary
+
+### Analysis chart canvas
+
+Control type:
+- drawing canvas
+
+What it does:
+- renders time-series and surface-plot charts
+
+What it affects:
+- visual analysis only
+
+What it represents:
+- the current analysis chart result
+
+### Analysis chart summary text
+
+Control type:
+- text display
+
+What it does:
+- summarizes the currently rendered chart
+
+What it affects:
+- nothing directly
+
+What it represents:
+- chart metadata or explanatory note for the current analysis result
+
+## 11.4 Right control stack controls
+
+## 11.4.1 Network tab
+
+### `Network`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the network-definition editor
+
+What it affects:
+- only the visible right-side content
+
+What it represents:
+- the architecture and definition-editing area
+
+### `Project name`
+
+Control type:
+- text box
+
+Accepted values:
+- free text
+
+What it does:
+- sets the project name stored in the network definition and project file
+
+What it affects:
+- summaries
+- saved project metadata
+- status and labeling context
+
+What it represents:
+- the human-readable identity of the project
+
+### `Network type`
+
+Control type:
+- combo box
+
+Allowed values:
+- `FeedForward`
+- `SimpleRecurrent`
+
+Default:
+- `FeedForward`
+
+What it does:
+- chooses the active network family
+
+What it affects:
+- topology rules
+- graph structure
+- available layer combinations
+- weight matrix shapes
+- recurrent behavior
+
+What it represents:
+- whether the model is feed-forward or recurrent
+
+### `Inputs`
+
+Control type:
+- slider plus value label
+
+Range:
+- `1` to `32`
+
+Step:
+- `1`
+
+What it does:
+- sets the number of input units
+
+What it affects:
+- pattern validation
+- graph size
+- input-side weights
+- analysis input selectors
+
+What it represents:
+- how many input values each pattern must contain
+
+### Inputs value label
+
+Control type:
+- text display
+
+What it does:
+- shows the current slider value
+
+What it affects:
+- nothing directly
+
+What it represents:
+- current input count
+
+### `Hidden layer 1`
+
+Control type:
+- slider plus value label
+
+Range:
+- `0` to `32` in feed-forward mode
+- forced to at least `1` in simple recurrent mode
+
+Step:
+- `1`
+
+What it does:
+- sets the size of the first hidden layer
+
+What it affects:
+- graph structure
+- hidden-side weights
+- hidden activation count
+- availability of second hidden layer
+
+What it represents:
+- the first internal feature layer
+
+### Hidden layer 1 value label
+
+Control type:
+- text display
+
+What it does:
+- shows the current first-hidden-layer size
+
+What it affects:
+- nothing directly
+
+What it represents:
+- current hidden-layer-1 count
+
+### `Hidden layer 2`
+
+Control type:
+- slider plus value label
+
+Range:
+- `0` to `32`
+
+Step:
+- `1`
+
+Special behavior:
+- disabled for `SimpleRecurrent`
+- disabled when `Hidden layer 1 = 0`
+- forced to `0` whenever it is not allowed
+
+What it does:
+- sets the size of the second hidden layer when allowed
+
+What it affects:
+- deeper feed-forward topology
+- hidden-to-hidden and hidden-to-output matrix sizes
+
+What it represents:
+- the second internal feature layer in deeper feed-forward models
+
+### Hidden layer 2 value label
+
+Control type:
+- text display
+
+What it does:
+- shows the current second-hidden-layer size
+
+What it affects:
+- nothing directly
+
+What it represents:
+- current hidden-layer-2 count
+
+### `Outputs`
+
+Control type:
+- slider plus value label
+
+Range:
+- `1` to `32`
+
+Step:
+- `1`
+
+What it does:
+- sets the number of output units
+
+What it affects:
+- pattern validation
+- graph structure
+- output dimensions
+- output analysis options
+
+What it represents:
+- how many values the network produces
+
+### Outputs value label
+
+Control type:
+- text display
+
+What it does:
+- shows the current output count
+
+What it affects:
+- nothing directly
+
+What it represents:
+- current output-unit count
+
+### `Biases` row
+
+Control type:
+- grouped checkbox set
+
+What it does:
+- controls whether bias sources exist on specific transitions
+
+What it affects:
+- graph bias nodes
+- weight matrix shapes
+
+What it represents:
+- where constant bias contributions are enabled
+
+### `Input` bias
+
+Control type:
+- checkbox
+
+Values:
+- checked
+- unchecked
+
+What it does:
+- enables or disables the input-side bias term
+
+What it affects:
+- the first transition’s weight matrix structure
+
+What it represents:
+- whether the first transition includes a constant bias source
+
+### `Hidden 1` bias
+
+Control type:
+- checkbox
+
+Values:
+- checked
+- unchecked
+
+Special behavior:
+- disabled automatically when `Hidden layer 1 = 0`
+
+What it does:
+- enables or disables the first hidden layer’s outgoing bias term
+
+What it affects:
+- the outgoing matrix from hidden layer 1
+
+What it represents:
+- whether the first hidden layer contributes a constant bias source
+
+### `Hidden 2` bias
+
+Control type:
+- checkbox
+
+Values:
+- checked
+- unchecked
+
+Special behavior:
+- enabled only when `Network type = FeedForward` and `Hidden layer 2 > 0`
+
+What it does:
+- enables or disables the second hidden layer’s outgoing bias term
+
+What it affects:
+- the outgoing matrix from hidden layer 2
+
+What it represents:
+- whether the second hidden layer contributes a constant bias source
+
+### `Weight range`
+
+Control type:
+- combo box
+
+Allowed values:
+- `-0.1 - 0.1`
+- `-1 - 1`
+- `-10 - 10`
+
+Default:
+- `-1 - 1`
+
+What it does:
+- selects the random initialization/reset range for weights
+
+What it affects:
+- new weights created during reset or project initialization
+- graph legend interpretation
+
+What it represents:
+- the allowed random span for freshly generated weights
+
+## 11.4.2 Training tab
+
+### `Training`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the training controls and checkpoint history
+
+What it affects:
+- only the visible right-side content
+
+What it represents:
+- the model-learning control area
+
+### `Learning rate`
+
+Control type:
+- editable combo box
+
+Default offered values:
+- `0.1`
+- `0.2`
+- `0.3`
+- `0.4`
+- `0.5`
+- `0.8`
+- `1.0`
+
+Default starting value in the sample project:
+- `0.3`
+
+Editable:
+- yes
+
+What it does:
+- sets the per-update learning scale
+
+What it affects:
+- weight update magnitude during training
+
+What it represents:
+- how aggressively the model learns from each update
+
+### `Momentum`
+
+Control type:
+- editable combo box
+
+Default offered values:
+- `0.0`
+- `0.2`
+- `0.5`
+- `0.8`
+- `0.9`
+
+Default starting value in the sample project:
+- `0.8`
+
+Editable:
+- yes
+
+What it does:
+- sets the amount of previous update direction carried into the next update
+
+What it affects:
+- training smoothness and persistence
+
+What it represents:
+- directional inertia in learning
+
+### `Error threshold`
+
+Control type:
+- text box
+
+Default starting value in the sample project:
+- `0.02`
+
+Accepted values:
+- numeric text parsed as a floating-point threshold
+
+What it does:
+- sets the target error threshold used by training stop logic
+
+What it affects:
+- whether a run can stop once the target error is sufficiently low
+
+What it represents:
+- the run’s target error level
+
+### `Learning steps`
+
+Control type:
+- editable combo box
+
+Default offered values:
+- `100`
+- `500`
+- `1000`
+- `5000`
+- `10000`
+- `50000`
+
+Default starting value in the sample project:
+- `5000`
+
+Editable:
+- yes
+
+What it does:
+- sets the number of training steps in one explicit training run
+
+What it affects:
+- train-button run length
+- progress-bar maximum
+- checkpoint step count
+
+What it represents:
+- the size of one visible training block
+
+### `Batch update`
+
+Control type:
+- checkbox
+
+Values:
+- checked
+- unchecked
+
+Default starting state in the sample project:
+- unchecked
+
+What it does:
+- switches training between batch and per-pattern updates
+
+What it affects:
+- update rule used during learning
+
+What it represents:
+- whether learning accumulates updates over a batch or applies them pattern by pattern
+
+### `Cross entropy`
+
+Control type:
+- checkbox
+
+Values:
+- checked
+- unchecked
+
+Default starting state in the sample project:
+- unchecked
+
+What it does:
+- switches the output-layer loss function between cross-entropy and sum-squared error
+
+What it affects:
+- training gradients
+- displayed error behavior
+
+What it represents:
+- the cost function used for learning
+
+### `Reset`
+
+Control type:
+- button
+
+What it does:
+- rebuilds the active weight state from fresh random values using the current network definition and weight range
+
+What it affects:
+- clears learned weights
+- resets training progress state
+- invalidates stale test-result interpretations
+
+What it represents:
+- restart learning from fresh randomized weights
+
+### `Train #N`
+
+Control type:
+- button
+
+Displayed values:
+- `Train #1`
+- `Train #2`
+- `Train #3`
+- and so on
+
+What it does:
+- runs one more training block from the current weight state
+
+What it affects:
+- weights
+- completed cycles
+- error history
+- training session list
+- rollback availability
+
+What it represents:
+- continue training from the current model state
+
+### `Progress`
+
+Control type:
+- label plus readout area
+
+What it does:
+- labels the progress subsection
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the training progress display area
+
+### Progress readout text
+
+Examples:
+- `Idle`
+- active run progress text
+- restored-checkpoint cycle text
+
+Control type:
+- text display
+
+What it does:
+- reports the current progress state
+
+What it affects:
+- nothing directly
+
+What it represents:
+- whether the model is idle, training, or restored to a prior checkpoint
+
+### Training progress bar
+
+Control type:
+- progress bar
+
+Range:
+- minimum `0`
+- maximum set from the current training-step value
+
+What it does:
+- visualizes progress through the current training block
+
+What it affects:
+- nothing directly
+
+What it represents:
+- how much of the current training run has completed
+
+### `Training sessions`
+
+Control type:
+- subsection title
+
+What it does:
+- labels the checkpoint list
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the saved training-session history area
+
+### `Rollback`
+
+Control type:
+- button
+
+What it does:
+- restores the selected training session
+
+What it affects:
+- weights
+- displayed error history
+- current run summary
+- current project state
+
+What it represents:
+- return the project to an earlier training checkpoint
+
+### Training sessions list
+
+Control type:
+- list box
+
+Item format:
+- `Train #N | +steps | cycles X | error Y`
+
+What it does:
+- selects a visible training checkpoint
+
+What it affects:
+- rollback target
+- weight inspector source linkage
+- error graph history selection
+
+What it represents:
+- the visible milestone history created by training
+
+## 11.4.3 Tests tab
+
+### `Tests`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the pattern-testing and pattern-inspection workflow
+
+What it affects:
+- only the visible right-side content
+
+What it represents:
+- the pattern-by-pattern behavior inspection area
+
+### `Test selected`
+
+Control type:
+- button
+
+What it does:
+- runs the currently selected pattern through the active model
+
+What it affects:
+- cached result for that pattern
+- graph activation overlay
+- inspector contents
+- pass/fail marker for that row
+
+What it represents:
+- inspect one pattern in detail
+
+### `Test all`
+
+Control type:
+- button
+
+What it does:
+- evaluates the full pattern set
+
+What it affects:
+- cached results for every pattern
+- pass/fail markers
+- summary output
+
+What it represents:
+- inspect whole-dataset behavior
+
+### Tests help text
+
+Visible text:
+- `Select a pattern to inspect its inputs, targets, outputs, hidden activations, and latest graph result.`
+
+Control type:
+- text display
+
+What it does:
+- explains how the Tests tab works
+
+What it affects:
+- nothing directly
+
+What it represents:
+- usage guidance
+
+### Pattern list
+
+Control type:
+- list box
+
+What it does:
+- selects which pattern is shown in the inspector
+
+What it affects:
+- network graph overlay
+- inspector contents
+
+What it represents:
+- the navigable list of patterns in the project
+
+List item contents:
+- pattern label
+- latest cached test summary
+- pass/fail/not-tested indicator
+
+### Pattern inspector title
+
+Control type:
+- section title
+
+What it does:
+- labels the selected-pattern detail area
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the purpose of the right-hand Tests inspector
+
+### Pattern inspector status text
+
+Examples:
+- `No pattern selected.`
+- pattern-selection status text after selection
+
+Control type:
+- text display
+
+What it does:
+- summarizes which pattern is currently being inspected
+
+What it affects:
+- nothing directly
+
+What it represents:
+- selected-pattern context
+
+### Pattern inspector result badge
+
+Examples:
+- `Not tested`
+- `Pass`
+- `Fail`
+
+Control type:
+- badge-like text display
+
+What it does:
+- gives a quick selected-pattern outcome state
+
+What it affects:
+- nothing directly
+
+What it represents:
+- latest cached selected-pattern status
+
+### Pattern inspector error text
+
+Examples:
+- `Error: -`
+- `Error: 0.123`
+
+Control type:
+- text display
+
+What it does:
+- shows the selected pattern’s current numeric error
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the gap between target and output for the selected pattern
+
+### Pattern inspector metadata panel
+
+Control type:
+- text display within a bordered panel
+
+What it does:
+- reports metadata such as label, reset state, and pattern context
+
+What it affects:
+- nothing directly
+
+What it represents:
+- descriptive information about the selected pattern
+
+### `Inputs` panel
+
+Control type:
+- bordered inspection panel
+
+What it does:
+- groups the selected pattern’s input values
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the input vector for the selected pattern
+
+### Inputs host
+
+Control type:
+- stack panel
+
+What it does:
+- contains one rendered row per input value
+
+What it affects:
+- selected-pattern display only
+
+What it represents:
+- all input dimensions for the selected pattern
+
+### `Targets` panel
+
+Control type:
+- bordered inspection panel
+
+What it does:
+- groups the selected pattern’s target values
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the expected output vector for the selected pattern
+
+### Targets host
+
+Control type:
+- stack panel
+
+What it does:
+- contains one rendered row per target value
+
+What it affects:
+- selected-pattern display only
+
+What it represents:
+- all expected outputs for the selected pattern
+
+### `Outputs` panel
+
+Control type:
+- bordered inspection panel
+
+What it does:
+- groups the selected pattern’s actual output values
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the model’s produced output vector for the selected pattern
+
+### Outputs host
+
+Control type:
+- stack panel
+
+What it does:
+- contains one rendered row per output value
+
+What it affects:
+- selected-pattern display only
+
+What it represents:
+- all produced outputs for the selected pattern
+
+### `Delta` panel
+
+Control type:
+- bordered inspection panel
+
+What it does:
+- groups target-minus-output or output-versus-target difference values
+
+What it affects:
+- nothing directly
+
+What it represents:
+- how far each output dimension is from the selected pattern’s target
+
+### Delta host
+
+Control type:
+- stack panel
+
+What it does:
+- contains one rendered row per delta value
+
+What it affects:
+- selected-pattern display only
+
+What it represents:
+- per-dimension output error for the selected pattern
+
+### `Hidden activations` panel
+
+Control type:
+- bordered inspection panel
+
+What it does:
+- groups the selected pattern’s hidden-state display and export actions
+
+What it affects:
+- hidden activation display and export only
+
+What it represents:
+- the internal representation of the selected pattern
+
+### `Export selected`
+
+Control type:
+- button
+
+What it does:
+- exports the selected pattern’s hidden activations as CSV
+
+What it affects:
+- creates an export file only
+
+What it represents:
+- save the current selected pattern’s internal representation
+
+### `Export set`
+
+Control type:
+- button
+
+What it does:
+- exports the current pattern set’s hidden activations as CSV using the current weight state
+
+What it affects:
+- creates an export file only
+
+What it represents:
+- save dataset-wide hidden activations for external analysis
+
+### Hidden activations host
+
+Control type:
+- stack panel
+
+What it does:
+- contains one rendered row per hidden activation value
+
+What it affects:
+- selected-pattern display only
+
+What it represents:
+- all hidden activation dimensions for the selected pattern
+
+### Tests footer note
+
+Visible text:
+- `Selecting a pattern updates the network graph with its latest cached test result.`
+
+Control type:
+- text display
+
+What it does:
+- explains the connection between Tests and the graph
+
+What it affects:
+- nothing directly
+
+What it represents:
+- usage guidance for graph/test integration
+
+## 11.4.4 Patterns tab
+
+### `Patterns`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the integrated project pattern editor
+
+What it affects:
+- only the visible right-side content
+
+What it represents:
+- the dataset editing area
+
+### Patterns intro text
+
+Visible text:
+- `Patterns now live in the side control stack. They are saved inside the project file together with settings and weights.`
+
+Control type:
+- text display
+
+What it does:
+- explains the Modern project-file pattern workflow
+
+What it affects:
+- nothing directly
+
+What it represents:
+- how pattern persistence works in Modern
+
+### Pattern editor status text
+
+Examples:
+- `Pattern editor ready.`
+- `Pattern text parsed: 17 rows`
+- invalid-row messages
+
+Control type:
+- text display
+
+What it does:
+- reports pattern-editor parse/sync status
+
+What it affects:
+- nothing directly
+
+What it represents:
+- whether the pattern editor is currently valid and synchronized
+
+### `Text mode`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the raw text editor for the pattern set
+
+What it affects:
+- only the visible editor mode
+
+What it represents:
+- direct textual editing of the pattern file content
+
+### Pattern editor text box
+
+Control type:
+- multiline text box
+
+Accepted content:
+- SignalWeave pattern text format
+
+What it does:
+- lets the user edit the raw pattern text directly
+
+What it affects:
+- the live pattern set when the text parses successfully
+- the synchronized graphic table
+
+What it represents:
+- the authoritative text representation of the pattern set
+
+### `Graphic mode`
+
+Control type:
+- tab selector
+
+What it does:
+- shows the table-style pattern editor
+
+What it affects:
+- only the visible editor mode
+
+What it represents:
+- structured pattern editing
+
+### Graphic-mode help text
+
+Visible text:
+- `Edit patterns in a table view. Changes are mirrored back into the text editor.`
+
+Control type:
+- text display
+
+What it does:
+- explains the synchronization behavior of graphic mode
+
+What it affects:
+- nothing directly
+
+What it represents:
+- usage guidance
+
+### `Add pattern`
+
+Control type:
+- button
+
+What it does:
+- appends a new pattern row to the graphic editor
+
+What it affects:
+- the live pattern set
+- synchronized text-mode content
+
+What it represents:
+- add a new example to the dataset
+
+### Pattern table host
+
+Control type:
+- stack panel inside a scroll viewer
+
+What it does:
+- contains all rendered pattern rows and the header row in graphic mode
+
+What it affects:
+- graphic pattern editing display only
+
+What it represents:
+- the full table representation of the pattern set
+
+### Graphic-mode header row
+
+Control type:
+- dynamic table header
+
+What it does:
+- labels the pattern-table columns
+
+What it affects:
+- readability only
+
+What it represents:
+- the meaning of each pattern-table column
+
+### Graphic-mode row label editor
+
+Control type:
+- text box
+
+What it does:
+- edits the label of one pattern row
+
+What it affects:
+- that pattern’s label
+- synchronized text-mode content
+- Tests pattern list labeling
+
+What it represents:
+- the human-readable name of the pattern
+
+### Graphic-mode row reset checkbox
+
+Control type:
+- checkbox
+
+Values:
+- checked
+- unchecked
+
+What it does:
+- marks whether the pattern resets recurrent context after that row
+
+What it affects:
+- sequence interpretation for recurrent testing/training
+- synchronized text-mode content
+
+What it represents:
+- sequence-boundary information
+
+### Graphic-mode input cell toggle buttons
+
+Control type:
+- toggle-style binary buttons
+
+Values:
+- `0`
+- `1`
+
+What they do:
+- change one input cell between binary off and on
+
+What they affect:
+- the corresponding input value in that pattern
+- synchronized text-mode content
+
+What they represent:
+- one binary input dimension in one pattern row
+
+### Graphic-mode target cell toggle buttons
+
+Control type:
+- toggle-style binary buttons
+
+Values:
+- `0`
+- `1`
+
+What they do:
+- change one target cell between binary off and on
+
+What they affect:
+- the corresponding target value in that pattern
+- synchronized text-mode content
+
+What they represent:
+- one binary target dimension in one pattern row
+
+### Graphic-mode input/target separator
+
+Control type:
+- visual spacer/separator column
+
+What it does:
+- visually separates input columns from target columns
+
+What it affects:
+- readability only
+
+What it represents:
+- the boundary between input vector and target vector
+
+### Graphic-mode row delete button
+
+Control type:
+- button
+
+What it does:
+- removes that pattern row
+
+What it affects:
+- the live pattern set
+- synchronized text-mode content
+- Tests pattern list contents
+
+What it represents:
+- delete one example from the dataset
+
+## 11.4.5 Summary tab
+
+### `Summary`
+
+Control type:
+- tab selector
+
+What it does:
+- shows textual summary information about the active project
+
+What it affects:
+- only the visible right-side content
+
+What it represents:
+- compact textual overview mode
+
+### `Summary` title
+
+Control type:
+- section title
+
+What it does:
+- labels the summary tab contents
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the purpose of the tab
+
+### Latest run summary text
+
+Examples:
+- `No run executed yet.`
+- train/test summary text after activity
+
+Control type:
+- text display
+
+What it does:
+- summarizes the most recent significant run result
+
+What it affects:
+- nothing directly
+
+What it represents:
+- latest run outcome
+
+### `Project summary`
+
+Control type:
+- subsection title
+
+What it does:
+- labels the project-summary text block
+
+What it affects:
+- nothing directly
+
+What it represents:
+- definition and pattern-set overview area
+
+### Project summary text
+
+Control type:
+- text display
+
+What it does:
+- summarizes the current network definition and pattern-set shape
+
+What it affects:
+- nothing directly
+
+What it represents:
+- high-level project configuration
+
+### `Weights`
+
+Control type:
+- subsection title
+
+What it does:
+- labels the weight-summary text block
+
+What it affects:
+- nothing directly
+
+What it represents:
+- weight-summary area
+
+### Weights summary text
+
+Control type:
+- text display
+
+What it does:
+- summarizes the current weight state numerically
+
+What it affects:
+- nothing directly
+
+What it represents:
+- compact current-weight overview
+
+### Project state text
+
+Control type:
+- text display inside a bordered panel
+
+What it does:
+- explains what is currently saved in the project and what state is active
+
+What it affects:
+- nothing directly
+
+What it represents:
+- persistence/status context for the current project
+
+## 11.5 Bottom output controls
+
+## 11.5.1 Console
+
+### `Console`
+
+Control type:
+- section title
+
+What it does:
+- labels the log/output area
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the textual reporting area
+
+### Console copy button `⧉`
+
+Control type:
+- button
+
+What it does:
+- copies the full console content to the clipboard
+
+What it affects:
+- clipboard contents only
+
+What it represents:
+- quick external reuse of console output
+
+### Console save button `🖫`
+
+Control type:
+- button
+
+What it does:
+- saves the full console content as a Markdown file
+
+What it affects:
+- creates a `.md` file
+
+What it represents:
+- persistent export of console content
+
+### Console clear button `🗑`
+
+Control type:
+- button
+
+What it does:
+- clears the current console contents
+
+What it affects:
+- removes visible console history from the current session display
+
+What it represents:
+- manual console cleanup
+
+### Console scroll viewer
+
+Control type:
+- scrollable container
+
+What it does:
+- hosts the rendered Markdown console content and scrolls automatically to new appended output
+
+What it affects:
+- console viewing only
+
+What it represents:
+- the scrollable console viewport
+
+### Console content host
+
+Control type:
+- stack panel
+
+What it does:
+- contains the rendered Markdown blocks that make up the console
+
+What it affects:
+- console presentation only
+
+What it represents:
+- the live rendered console document
+
+## 11.5.2 Error graph
+
+### `Error graph`
+
+Control type:
+- section title
+
+What it does:
+- labels the error-history chart area
+
+What it affects:
+- nothing directly
+
+What it represents:
+- the training-history chart area
+
+### Error graph save button `🖫`
+
+Control type:
+- button
+
+What it does:
+- saves the visible error graph as a PNG image
+
+What it affects:
+- creates an image file only
+
+What it represents:
+- visual export of the training-history chart
+
+### Error plot canvas
+
+Control type:
+- drawing canvas
+
+What it does:
+- renders the training error history as the Modern dot-based error plot
+
+What it affects:
+- visual inspection only
+
+What it represents:
+- training error progression over time
+
+## 11.6 Saved-state note for control values
+
+The project file stores more than topology.
+
+The current Modern project format persists:
+- network definition
+- pattern set
+- weights
+- completed cycles
+- training-step setting
+- selected pattern index
+- training sessions and their saved histories
+
+This means many controls are not just temporary UI values. They represent persistent project state.
+
+Examples of controls whose values are effectively saved in the project:
+- `Project name`
+- `Network type`
+- `Inputs`
+- `Hidden layer 1`
+- `Hidden layer 2`
+- `Outputs`
+- bias checkboxes
+- `Weight range`
+- `Learning rate`
+- `Momentum`
+- `Error threshold`
+- `Learning steps`
+- `Batch update`
+- `Cross entropy`
+- `Patterns` editor content
+- training sessions
+- selected pattern context
+
+## 11.7 Why some controls enable, disable, or change automatically
+
+Some controls have dependency rules. This is intentional and is part of the Modern workflow.
+
+Examples:
+- `Hidden layer 2` disables when it is not valid for the current network type
+- `Hidden 1` bias disables when `Hidden layer 1 = 0`
+- `Hidden 2` bias disables when `Hidden layer 2 = 0`
+- `SimpleRecurrent` forces at least one hidden unit
+- analysis sub-controls appear only for the relevant analysis mode
+- weight and analysis source lists expand as training sessions are created
+
+These automatic changes represent model-validity rules, not random UI behavior.
