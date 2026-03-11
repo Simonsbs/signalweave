@@ -226,6 +226,11 @@ h3 {
   font-size: 1.06rem;
 }
 
+.lead-compact {
+  margin-top: 14px;
+  font-size: 0.98rem;
+}
+
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
