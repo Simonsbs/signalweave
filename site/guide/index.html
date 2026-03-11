@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignalWeave Modern Quick Start | Load a Sample and Train a Neural Network</title>
+  <meta name="description" content="Step-by-step quick start for SignalWeave Modern. Learn how to open the sample project, train the network, test patterns, inspect weights, and run analysis in the desktop or web app." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://signalweave.bestdev.co.il/guide/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="SignalWeave Modern Quick Start" />
+  <meta property="og:description" content="Open the sample project, train it, test patterns, inspect weights, and use the analysis tools in SignalWeave Modern." />
+  <meta property="og:url" content="https://signalweave.bestdev.co.il/guide/" />
+  <meta property="og:image" content="https://signalweave.bestdev.co.il/media/modern-workspace.png" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HowTo",
+      "name": "How to start with SignalWeave Modern",
+      "description": "Open the sample project, train the model, test patterns, inspect weights, and run analysis.",
+      "step": [
+        { "@type": "HowToStep", "name": "Open SignalWeave Modern" },
+        { "@type": "HowToStep", "name": "Load the sample project" },
+        { "@type": "HowToStep", "name": "Train one block" },
+        { "@type": "HowToStep", "name": "Test patterns and inspect the graph" },
+        { "@type": "HowToStep", "name": "Inspect weights and analysis" },
+        { "@type": "HowToStep", "name": "Save the project" }
+      ]
+    }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand-row">
+      <a class="brand" href="/">SignalWeave</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Home</a>
+        <a href="/guide/">Quick Start</a>
+        <a href="/manual/">Manual</a>
+        <a href="/faq/">FAQ</a>
+        <a href="/basicprop-alternative/">BasicProp Alternative</a>
+        <a href="/app/">Web App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page simple-page">
+    <section class="doc-hero">
+      <p class="eyebrow">Quick Start</p>
+      <h1>Use SignalWeave Modern with a real sample project</h1>
+      <p class="lead">
+        This is the fastest path to understanding the app. Open the sample, train one block, test patterns,
+        inspect the graph, then move into weights and analysis.
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="/app/">Launch Web App</a>
+        <a class="button secondary" href="https://raw.githubusercontent.com/Simonsbs/signalweave/main/samples/seventeen-patterns-7x7-modern.swproj.json">Download Sample Project</a>
+      </div>
+    </section>
+
+    <section class="doc-grid">
+      <aside class="toc-card">
+        <p class="product-kicker">On this page</p>
+        <a href="#step-1">1. Open Modern</a>
+        <a href="#step-2">2. Load the sample</a>
+        <a href="#step-3">3. Train the sample</a>
+        <a href="#step-4">4. Test patterns</a>
+        <a href="#step-5">5. Inspect weights</a>
+        <a href="#step-6">6. Run analysis</a>
+        <a href="#step-7">7. Save your work</a>
+      </aside>
+
+      <article class="doc-content">
+        <section class="content-card" id="step-1">
+          <h2>1. Open SignalWeave Modern</h2>
+          <p>You can use SignalWeave Modern in two ways:</p>
+          <ul>
+            <li>Open the browser version at <a href="/app/">/app/</a>.</li>
+            <li>Download the desktop release for Windows, Linux, or macOS from the <a href="/#downloads">homepage downloads section</a>.</li>
+          </ul>
+          <p>When the app opens, the left side is the main workspace, the right side is the control stack, and the bottom shows the console and error graph.</p>
+        </section>
+
+        <section class="content-card" id="step-2">
+          <h2>2. Load the sample project</h2>
+          <p>Use the sample project file:</p>
+          <p><code>seventeen-patterns-7x7-modern.swproj.json</code></p>
+          <ol>
+            <li>Click <code>📂 Load</code>.</li>
+            <li>Select the sample project file.</li>
+            <li>Confirm that the network graph updates and the Patterns tab shows the embedded dataset.</li>
+          </ol>
+          <p>The project file already contains the network definition, patterns, weights, training sessions, and workspace state.</p>
+        </section>
+
+        <section class="content-card" id="step-3">
+          <h2>3. Train the sample</h2>
+          <p>Open the <strong>Training</strong> tab and review the main settings:</p>
+          <ul>
+            <li><strong>Learning rate</strong>: how aggressively weights change</li>
+            <li><strong>Momentum</strong>: how much previous update direction is preserved</li>
+            <li><strong>Error threshold</strong>: target error for stopping logic</li>
+            <li><strong>Learning steps</strong>: size of one visible training block</li>
+          </ul>
+          <p>Click <code>Train #1</code>. The app creates a training session checkpoint, updates the error graph, and appends a structured report to the console.</p>
+          <p>If you click <code>Train #2</code> later, training continues from the current weights rather than restarting from scratch.</p>
+        </section>
+
+        <section class="content-card" id="step-4">
+          <h2>4. Test patterns and inspect the graph</h2>
+          <ol>
+            <li>Open the <strong>Tests</strong> tab.</li>
+            <li>Click <code>Test all</code> to evaluate the full pattern set.</li>
+            <li>Select a pattern from the list.</li>
+          </ol>
+          <p>The selected pattern updates the main network graph and the inspector shows inputs, targets, outputs, delta, hidden activations, and current error.</p>
+          <p>Use <code>Test selected</code> when you want to refresh only one pattern instead of the full set.</p>
+        </section>
+
+        <section class="content-card" id="step-5">
+          <h2>5. Inspect weights</h2>
+          <p>Open the <strong>Weights</strong> workspace tab on the left.</p>
+          <p>Choose the source checkpoint, the layer you want to inspect, and the view mode: <code>Heatmap</code>, <code>Magnitude</code>, or <code>Values</code>.</p>
+          <p>This is the fastest way to compare what changed between checkpoints and understand which connections are strong, weak, positive, or negative.</p>
+        </section>
+
+        <section class="content-card" id="step-6">
+          <h2>6. Run analysis</h2>
+          <p>Open the <strong>Analysis</strong> workspace tab and choose a mode:</p>
+          <ul>
+            <li>Output clustering</li>
+            <li>Hidden-state clustering</li>
+            <li>Compatibility summary</li>
+            <li>Time series</li>
+            <li>Surface plot</li>
+          </ul>
+          <p>Then choose the source checkpoint and click <code>Run</code>. You can copy the result, save text or CSV output, or save chart modes as PNG.</p>
+        </section>
+
+        <section class="content-card" id="step-7">
+          <h2>7. Save your work</h2>
+          <p>Use <code>💾 Save</code> to update the current project file or <code>🖫 Save As</code> to create a new project file.</p>
+          <p>The Modern project format keeps all important state together, including network settings, patterns, weights, completed cycles, and training sessions.</p>
+        </section>
+
+        <section class="content-card">
+          <h2>Next steps</h2>
+          <div class="mini-grid">
+            <a class="feature-link" href="/manual/">Read the full manual</a>
+            <a class="feature-link" href="/faq/">Open the FAQ</a>
+            <a class="feature-link" href="/basicprop-alternative/">See why SignalWeave is a BasicProp alternative</a>
+          </div>
+        </section>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>SignalWeave Modern is the primary product line for training, testing, and analysis.</p>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/manual/">Manual</a>
+      <a href="/faq/">FAQ</a>
+      <a href="/app/">Web app</a>
+      <a href="https://github.com/Simonsbs/signalweave" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+  </footer>
+</body>
+</html>

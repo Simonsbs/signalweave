@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignalWeave Modern User Manual | Controls, Settings, Training, Tests, Weights, Analysis</title>
+  <meta name="description" content="User manual for SignalWeave Modern. Learn what every main area does, how the controls affect the model, and how network settings, training, tests, patterns, weights, and analysis work together." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://signalweave.bestdev.co.il/manual/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="SignalWeave Modern User Manual" />
+  <meta property="og:description" content="Reference manual for SignalWeave Modern controls, settings, training, tests, weights, patterns, and analysis." />
+  <meta property="og:url" content="https://signalweave.bestdev.co.il/manual/" />
+  <meta property="og:image" content="https://signalweave.bestdev.co.il/media/modern-workspace.png" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand-row">
+      <a class="brand" href="/">SignalWeave</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Home</a>
+        <a href="/guide/">Quick Start</a>
+        <a href="/manual/">Manual</a>
+        <a href="/faq/">FAQ</a>
+        <a href="/basicprop-alternative/">BasicProp Alternative</a>
+        <a href="/app/">Web App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page simple-page">
+    <section class="doc-hero">
+      <p class="eyebrow">Manual</p>
+      <h1>SignalWeave Modern user manual</h1>
+      <p class="lead">
+        This manual explains what the main areas of SignalWeave Modern do, what the key controls represent,
+        and how network definition, training, tests, weights, patterns, and analysis fit together.
+      </p>
+    </section>
+
+    <section class="doc-grid">
+      <aside class="toc-card">
+        <p class="product-kicker">Contents</p>
+        <a href="#layout">Application layout</a>
+        <a href="#toolbar">Top toolbar</a>
+        <a href="#network">Network tab</a>
+        <a href="#training">Training tab</a>
+        <a href="#tests">Tests tab</a>
+        <a href="#patterns">Patterns tab</a>
+        <a href="#weights">Weights workspace</a>
+        <a href="#analysis">Analysis workspace</a>
+        <a href="#exports">Exports</a>
+        <a href="#full-reference">Complete reference</a>
+      </aside>
+
+      <article class="doc-content">
+        <section class="content-card" id="layout">
+          <h2>Application layout</h2>
+          <p>SignalWeave Modern is organized into three zones:</p>
+          <ul>
+            <li><strong>Top toolbar</strong>: project-level actions</li>
+            <li><strong>Middle workspace</strong>: left inspection area and right control stack</li>
+            <li><strong>Bottom output area</strong>: console and error graph</li>
+          </ul>
+          <p>The left workspace is used for visualization and analysis. The right stack is used for configuration, training, testing, pattern editing, and summary. The bottom is used for logs and error progression.</p>
+        </section>
+
+        <section class="content-card" id="toolbar">
+          <h2>Top toolbar</h2>
+          <ul>
+            <li><strong>✚ New</strong>: create a fresh project</li>
+            <li><strong>📂 Load</strong>: load an existing project file</li>
+            <li><strong>💾 Save</strong>: save the current project</li>
+            <li><strong>🖫 Save As</strong>: save to a new path</li>
+            <li><strong>Status text</strong>: shows whether the workspace is ready, unsaved, or loaded from a file</li>
+          </ul>
+          <p>The toolbar operates on the entire project, not on separate network, weight, or pattern files.</p>
+        </section>
+
+        <section class="content-card" id="network">
+          <h2>Network tab</h2>
+          <p>The <strong>Network</strong> tab defines the model itself.</p>
+          <ul>
+            <li><strong>Project name</strong>: the display name stored in the project</li>
+            <li><strong>Network type</strong>: <code>FeedForward</code> or <code>SimpleRecurrent</code></li>
+            <li><strong>Inputs</strong>: number of input units</li>
+            <li><strong>Hidden layer 1</strong>: size of the first hidden layer</li>
+            <li><strong>Hidden layer 2</strong>: size of the second hidden layer when allowed</li>
+            <li><strong>Outputs</strong>: number of output units</li>
+            <li><strong>Biases</strong>: input, hidden 1, and hidden 2 bias toggles</li>
+            <li><strong>Weight range</strong>: random range used when weights are initialized or reset</li>
+          </ul>
+          <p>Changing these settings changes the topology, graph layout, weight matrix shapes, and pattern validation rules.</p>
+        </section>
+
+        <section class="content-card" id="training">
+          <h2>Training tab</h2>
+          <p>The <strong>Training</strong> tab controls how the model learns.</p>
+          <ul>
+            <li><strong>Learning rate</strong>: scale of each weight update</li>
+            <li><strong>Momentum</strong>: carry-over from previous updates</li>
+            <li><strong>Error threshold</strong>: target error level</li>
+            <li><strong>Learning steps</strong>: length of one training block</li>
+            <li><strong>Batch update</strong>: switch between batch and per-pattern updates</li>
+            <li><strong>Cross entropy</strong>: switch loss function</li>
+            <li><strong>Reset</strong>: rebuild weights from fresh random values</li>
+            <li><strong>Train #N</strong>: continue training from current weights</li>
+          </ul>
+          <p>The tab also contains the progress readout, progress bar, training-session list, and rollback button.</p>
+        </section>
+
+        <section class="content-card" id="tests">
+          <h2>Tests tab</h2>
+          <p>The <strong>Tests</strong> tab is the pattern-by-pattern inspection workflow.</p>
+          <ul>
+            <li><strong>Test selected</strong>: run the currently selected pattern</li>
+            <li><strong>Test all</strong>: run the full dataset</li>
+            <li><strong>Pattern list</strong>: shows each example and its latest status</li>
+            <li><strong>Pattern inspector</strong>: shows inputs, targets, outputs, delta, hidden activations, and current error</li>
+          </ul>
+          <p>Selecting a pattern also updates the main network graph with that pattern’s latest cached result.</p>
+        </section>
+
+        <section class="content-card" id="patterns">
+          <h2>Patterns tab</h2>
+          <p>The <strong>Patterns</strong> tab edits the dataset stored inside the project.</p>
+          <ul>
+            <li><strong>Text mode</strong>: raw text editing</li>
+            <li><strong>Graphic mode</strong>: row-and-cell editing in a table view</li>
+            <li><strong>Add pattern</strong>: append a new pattern row</li>
+            <li><strong>Graphic row controls</strong>: label editor, reset checkbox, binary input toggles, binary target toggles, delete action</li>
+          </ul>
+          <p>Both modes edit the same live pattern set and stay synchronized.</p>
+        </section>
+
+        <section class="content-card" id="weights">
+          <h2>Weights workspace</h2>
+          <p>The <strong>Weights</strong> workspace is the dedicated matrix inspector.</p>
+          <ul>
+            <li><strong>Source</strong>: current weights or a saved training checkpoint</li>
+            <li><strong>Layer</strong>: choose which matrix to inspect</li>
+            <li><strong>View</strong>: <code>Heatmap</code>, <code>Magnitude</code>, or <code>Values</code></li>
+            <li><strong>Stats panel</strong>: matrix dimensions, min, max, mean absolute weight, near-zero count</li>
+          </ul>
+          <p>Use this when the main graph is too dense for detailed weight inspection.</p>
+        </section>
+
+        <section class="content-card" id="analysis">
+          <h2>Analysis workspace</h2>
+          <p>The <strong>Analysis</strong> workspace is for whole-dataset inspection.</p>
+          <ul>
+            <li><strong>Output clustering</strong></li>
+            <li><strong>Hidden-state clustering</strong></li>
+            <li><strong>Compatibility summary</strong></li>
+            <li><strong>Time series</strong></li>
+            <li><strong>Surface plot</strong></li>
+          </ul>
+          <p>Most analysis modes can run against either the current weights or an earlier <code>Train #N</code> checkpoint.</p>
+        </section>
+
+        <section class="content-card" id="exports">
+          <h2>Exports</h2>
+          <ul>
+            <li><strong>Network graph</strong>: PNG</li>
+            <li><strong>Error graph</strong>: PNG</li>
+            <li><strong>Console</strong>: Markdown file</li>
+            <li><strong>Analysis</strong>: text, CSV, or PNG depending on mode</li>
+            <li><strong>Hidden activations</strong>: selected pattern or full set as CSV</li>
+          </ul>
+        </section>
+
+        <section class="content-card" id="full-reference">
+          <h2>Complete reference</h2>
+          <p>This site page is the public web manual. The repository also contains the full control-by-control reference used by the project itself:</p>
+          <p><a class="inline-link" href="https://github.com/Simonsbs/signalweave/blob/main/docs/modern-user-manual.md" target="_blank" rel="noreferrer">Open the repository manual source</a></p>
+          <p>That reference covers every visible control in the current Modern UI, including tabs, splitters, pattern-table controls, export buttons, and status displays.</p>
+        </section>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>SignalWeave Modern is the primary SignalWeave workflow.</p>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/guide/">Quick Start</a>
+      <a href="/faq/">FAQ</a>
+      <a href="/app/">Web app</a>
+    </div>
+  </footer>
+</body>
+</html>

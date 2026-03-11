@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignalWeave FAQ | Modern Neural Network App Questions and Answers</title>
+  <meta name="description" content="Frequently asked questions about SignalWeave Modern, including project files, training, testing, analysis, browser use, BasicProp migration, and desktop downloads." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://signalweave.bestdev.co.il/faq/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="SignalWeave FAQ" />
+  <meta property="og:description" content="Answers to common questions about SignalWeave Modern, BasicProp replacement workflows, project files, browser use, training, and analysis." />
+  <meta property="og:url" content="https://signalweave.bestdev.co.il/faq/" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SignalWeave Modern used for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SignalWeave Modern is used to train, test, inspect, and analyze feed-forward and simple recurrent neural networks from a single project file."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is inside a Modern project file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A Modern project file stores the network definition, patterns, weights, completed cycles, training sessions, rollback checkpoints, and workspace-oriented state."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need Classic to use SignalWeave?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Modern is the main recommended workflow. Classic exists as a side product for users who specifically want the BasicProp-style interaction model."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use SignalWeave in the browser?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. SignalWeave Modern is available as a WebAssembly app in the browser and shares the same .NET engine and general workflow as the desktop build."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What does Train #2 mean?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Train #2 means continue training from the current weights for one more configured training block. It does not restart the model from scratch."
+          }
+        }
+      ]
+    }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand-row">
+      <a class="brand" href="/">SignalWeave</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Home</a>
+        <a href="/guide/">Quick Start</a>
+        <a href="/manual/">Manual</a>
+        <a href="/faq/">FAQ</a>
+        <a href="/basicprop-alternative/">BasicProp Alternative</a>
+        <a href="/app/">Web App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page simple-page">
+    <section class="doc-hero">
+      <p class="eyebrow">FAQ</p>
+      <h1>Frequently asked questions about SignalWeave Modern</h1>
+      <p class="lead">This page answers the practical questions new users usually ask before they decide whether to use the browser build, the desktop build, or the sample project.</p>
+    </section>
+
+    <section class="faq-list faq-list-page">
+      <details class="faq-item" open>
+        <summary>What is SignalWeave Modern used for?</summary>
+        <p>SignalWeave Modern is a cross-platform neural network trainer and analysis workbench. It is designed for people who want an application with project files, graphs, testing, pattern inspection, and analysis rather than just a code library.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What kinds of networks does it support?</summary>
+        <p>Modern supports feed-forward networks with direct, 3-layer, and 4-layer topologies as well as simple recurrent networks.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What is stored in the project file?</summary>
+        <p>The project file stores the network definition, embedded patterns, current weights, completed cycles, training sessions, rollback checkpoints, and related workspace state. Modern intentionally avoids separate network, pattern, and weight files in the main workflow.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I use SignalWeave in the browser?</summary>
+        <p>Yes. The WebAssembly build is available at <a href="/app/">/app/</a>. The desktop and browser editions share the same .NET engine and general workflow.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What does Train #2 or Train #3 mean?</summary>
+        <p>It means continue training from the current weights for one more training block. It does not mean restart from scratch and it does not switch to a different algorithm.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why are there training sessions and rollback?</summary>
+        <p>Each explicit training run creates a visible checkpoint. That lets you compare weight states, inspect historical error graphs, and roll back to an earlier checkpoint if a later run performs worse.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What is the difference between Modern and Classic?</summary>
+        <p>Modern is organized around one project file and integrated tabs for network settings, training, tests, weights, patterns, and analysis. Classic preserves the BasicProp-style workflow and is useful mainly if you want that exact reference surface.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is SignalWeave a replacement for BasicProp?</summary>
+        <p>Yes. SignalWeave was built as a maintained, cross-platform, open-source alternative after BasicProp was retired. Modern is the recommended workflow, while Classic preserves the reference-oriented BasicProp-style surface.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How do I start quickly?</summary>
+        <p>Open the sample project, run <code>Train #1</code>, then inspect the result in <strong>Tests</strong>, <strong>Weights</strong>, and <strong>Analysis</strong>. The <a href="/guide/">Quick Start guide</a> walks through that sequence.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is SignalWeave open source?</summary>
+        <p>Yes. Source, releases, and project history are available on <a href="https://github.com/Simonsbs/signalweave" target="_blank" rel="noreferrer">GitHub</a>.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>SignalWeave Modern is the primary SignalWeave workflow.</p>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/guide/">Quick Start</a>
+      <a href="/manual/">Manual</a>
+      <a href="/app/">Web app</a>
+    </div>
+  </footer>
+</body>
+</html>
