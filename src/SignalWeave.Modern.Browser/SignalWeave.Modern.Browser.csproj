@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <PropertyGroup>
+    <TargetFramework>net8.0-browser</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>SignalWeave.Modern.Browser</AssemblyName>
+    <RootNamespace>SignalWeave.Modern.Browser</RootNamespace>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <WasmBuildNative>true</WasmBuildNative>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Browser" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.12" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SignalWeave.Core\SignalWeave.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Include="..\SignalWeave.Modern.Desktop\App.axaml" Link="App.axaml" />
+    <AvaloniaXaml Include="..\SignalWeave.Modern.Desktop\MainView.axaml" Link="MainView.axaml" />
+    <AvaloniaXaml Include="..\SignalWeave.Modern.Desktop\MainWindow.axaml" Link="MainWindow.axaml" />
+
+    <Compile Include="..\SignalWeave.Modern.Desktop\App.axaml.cs" Link="App.axaml.cs" />
+    <Compile Include="..\SignalWeave.Modern.Desktop\MainView.axaml.cs" Link="MainView.axaml.cs" />
+    <Compile Include="..\SignalWeave.Modern.Desktop\MainWindow.axaml.cs" Link="MainWindow.axaml.cs" />
+  </ItemGroup>
+</Project>

@@ -2,10 +2,27 @@ using System.Text.Json;
 
 namespace SignalWeave.Core;
 
+public sealed record ProjectWorkspaceState(
+    int LearningSteps = 5000,
+    int SelectedPatternIndex = 0,
+    string ErrorPlotDisplayMode = "Line",
+    IReadOnlyList<TrainingSessionSnapshot>? TrainingSessions = null);
+
+public sealed record TrainingSessionSnapshot(
+    int SessionNumber,
+    int StepsExecuted,
+    int CompletedCycles,
+    double DisplayAverageError,
+    DateTimeOffset CompletedAtUtc,
+    WeightSet Weights,
+    IReadOnlyList<TrainingPoint>? History = null);
+
 public sealed record SignalWeaveProject(
     NetworkDefinition Definition,
     PatternSet Patterns,
-    WeightSet? Weights);
+    WeightSet? Weights,
+    int CompletedCycles = 0,
+    ProjectWorkspaceState? Workspace = null);
 
 public sealed record SignalWeaveCheckpoint(
     NetworkDefinition Definition,
@@ -16,16 +33,57 @@ public sealed record SignalWeaveCheckpoint(
 
 public static class SignalWeaveProjectSerializer
 {
-    public const string SchemaId = "signalweave-project/v1";
+    public const string SchemaId = "signalweave-project/v4";
+    public const string CompatibilitySchemaId = "signalweave-project/v3";
+    public const string CompatibilitySchemaId2 = "signalweave-project/v2";
+    public const string LegacySchemaId = "signalweave-project/v1";
 
     public static void SaveFile(string path, NetworkDefinition definition, PatternSet patterns, WeightSet? weights = null)
+    {
+        SaveFile(path, definition, patterns, weights, 0, null);
+    }
+
+    public static void SaveFile(
+        string path,
+        NetworkDefinition definition,
+        PatternSet patterns,
+        WeightSet? weights,
+        int completedCycles,
+        ProjectWorkspaceState? workspace)
     {
         var document = new ProjectDocument
         {
             Schema = SchemaId,
             Definition = definition,
             Patterns = ToDocumentPatterns(patterns),
-            Weights = weights is null ? null : WeightSetDocumentMapper.ToDocument(weights)
+            Weights = weights is null ? null : WeightSetDocumentMapper.ToDocument(weights),
+            CompletedCycles = completedCycles,
+            Workspace = workspace is null
+                ? null
+                : new WorkspaceDocument
+                {
+                    LearningSteps = workspace.LearningSteps,
+                    SelectedPatternIndex = workspace.SelectedPatternIndex,
+                    ErrorPlotDisplayMode = workspace.ErrorPlotDisplayMode,
+                    TrainingSessions = workspace.TrainingSessions?
+                        .Select(session => new TrainingSessionDocument
+                        {
+                            SessionNumber = session.SessionNumber,
+                            StepsExecuted = session.StepsExecuted,
+                            CompletedCycles = session.CompletedCycles,
+                            DisplayAverageError = session.DisplayAverageError,
+                            CompletedAtUtc = session.CompletedAtUtc,
+                            Weights = WeightSetDocumentMapper.ToDocument(session.Weights),
+                            History = session.History?
+                                .Select(point => new TrainingPointDocument
+                                {
+                                    Epoch = point.Epoch,
+                                    AverageError = point.AverageError
+                                })
+                                .ToList()
+                        })
+                        .ToList()
+                }
         };
 
         WriteDocument(path, document);
@@ -34,12 +92,32 @@ public static class SignalWeaveProjectSerializer
     public static SignalWeaveProject LoadFile(string path)
     {
         var document = ReadDocument<ProjectDocument>(path);
-        EnsureSchema(document.Schema, SchemaId, "project");
+        EnsureSchema(document.Schema, [SchemaId, CompatibilitySchemaId, CompatibilitySchemaId2, LegacySchemaId], "project");
 
         return new SignalWeaveProject(
             document.Definition ?? throw new InvalidOperationException("Project file is missing the network definition."),
             new PatternSet(ToPatternExamples(document.Patterns)),
-            document.Weights is null ? null : WeightSetDocumentMapper.FromDocument(document.Weights));
+            document.Weights is null ? null : WeightSetDocumentMapper.FromDocument(document.Weights),
+            document.CompletedCycles,
+            document.Workspace is null
+                ? null
+                : new ProjectWorkspaceState(
+                    document.Workspace.LearningSteps,
+                    document.Workspace.SelectedPatternIndex,
+                    document.Workspace.ErrorPlotDisplayMode ?? "Line",
+                    document.Workspace.TrainingSessions?
+                        .Where(static session => session.Weights is not null)
+                        .Select(session => new TrainingSessionSnapshot(
+                            session.SessionNumber,
+                            session.StepsExecuted,
+                            session.CompletedCycles,
+                            session.DisplayAverageError,
+                            session.CompletedAtUtc,
+                            WeightSetDocumentMapper.FromDocument(session.Weights!),
+                            session.History?
+                                .Select(point => new TrainingPoint(point.Epoch, point.AverageError))
+                                .ToArray()))
+                        .ToArray()));
     }
 
     private static List<PatternExampleDocument> ToDocumentPatterns(PatternSet patterns)
@@ -79,11 +157,11 @@ public static class SignalWeaveProjectSerializer
             ?? throw new InvalidOperationException($"File '{path}' is empty or invalid.");
     }
 
-    private static void EnsureSchema(string? actual, string expected, string type)
+    private static void EnsureSchema(string? actual, IReadOnlyList<string> expected, string type)
     {
-        if (!string.Equals(actual, expected, StringComparison.Ordinal))
+        if (actual is null || !expected.Contains(actual, StringComparer.Ordinal))
         {
-            throw new InvalidOperationException($"Unsupported {type} schema '{actual ?? "<missing>"}'. Expected '{expected}'.");
+            throw new InvalidOperationException($"Unsupported {type} schema '{actual ?? "<missing>"}'. Expected one of: {string.Join(", ", expected)}.");
         }
     }
 
@@ -99,7 +177,34 @@ public static class SignalWeaveProjectSerializer
         public NetworkDefinition? Definition { get; set; }
         public List<PatternExampleDocument> Patterns { get; set; } = [];
         public WeightDocument? Weights { get; set; }
+        public int CompletedCycles { get; set; }
+        public WorkspaceDocument? Workspace { get; set; }
     }
+}
+
+internal sealed class WorkspaceDocument
+{
+    public int LearningSteps { get; set; } = 5000;
+    public int SelectedPatternIndex { get; set; }
+    public string? ErrorPlotDisplayMode { get; set; } = "Line";
+    public List<TrainingSessionDocument>? TrainingSessions { get; set; }
+}
+
+internal sealed class TrainingSessionDocument
+{
+    public int SessionNumber { get; set; }
+    public int StepsExecuted { get; set; }
+    public int CompletedCycles { get; set; }
+    public double DisplayAverageError { get; set; }
+    public DateTimeOffset CompletedAtUtc { get; set; }
+    public WeightDocument? Weights { get; set; }
+    public List<TrainingPointDocument>? History { get; set; }
+}
+
+internal sealed class TrainingPointDocument
+{
+    public int Epoch { get; set; }
+    public double AverageError { get; set; }
 }
 
 public static class SignalWeaveCheckpointSerializer

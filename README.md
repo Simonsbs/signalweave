@@ -54,14 +54,21 @@ Implemented now:
 Deliberate differences:
 
 - legacy BasicProp file compatibility is out of scope by project decision
-- SignalWeave uses native `signalweave-project/v1` and `signalweave-checkpoint/v1` formats instead of the retired BasicProp file formats
+- SignalWeave uses native `signalweave-project/v2` and `signalweave-checkpoint/v1` formats instead of the retired BasicProp file formats
 
 ## Product lines
 
 - `Classic`: the current BasicProp-style desktop experience in `src/SignalWeave.Classic.Desktop`
-- `Modern`: a separate desktop product line for the next workflow/UI in `src/SignalWeave.Modern.Desktop`
+- `Modern`: a separate desktop product line for the next workflow/UI in `src/SignalWeave.Modern.Desktop`, centered on a single project-file workflow
 
 Both apps share the same engine and general logic through `src/SignalWeave.Core`.
+
+Modern workflow direction:
+
+- one project file stores network settings, embedded patterns, current weights, completed cycles, and Modern control-panel state
+- Modern no longer needs separate load/save actions for network settings, weights, or patterns
+- the network settings surface lives inside the main window as a control-panel tab instead of a popup dialog
+- detailed Modern usage docs live in `docs/modern-ui-guide.md`
 
 ## Projects
 
@@ -97,7 +104,7 @@ The Classic desktop app ships with built-in XOR and SRN demos and now exposes a 
 - top-level `Network`, `Weights`, `Patterns`, `Utilities`, and `Help` menus
 - startup with a default feed-forward network, no loaded patterns, and the original BasicProp-style prompt to load patterns before running simulations
 - desktop dialogs for configuring networks and loading/saving SignalWeave files
-- native desktop workflows for loading/saving `signalweave-project/v1` and `signalweave-checkpoint/v1` documents from the `Network` menu
+- native desktop workflows for loading/saving `signalweave-project/v2` and `signalweave-checkpoint/v1` documents
 - progress state now follows cumulative completed training cycles more closely across repeated `Train` runs
 - per-step training progress now updates the progress display during active learning instead of only changing at the start and end of a run
 - the error-progress plot now updates live during active learning instead of only after the run completes
@@ -147,6 +154,35 @@ The Classic desktop app ships with built-in XOR and SRN demos and now exposes a 
 - hidden-activation export from the desktop app through a save dialog using the BasicProp `getHiddenActs()` helper semantics and raw concatenated `.dat` rows
 - screenshot-driven main-shell cleanup now trims some wasted network-pane space while keeping the existing diagram visible
 
+The Modern desktop app uses a single-project workflow instead:
+
+- top toolbar for `New`, `Load`, `Save`, and `Save As`
+- left workspace tabs for `Network Graph`, `Weights`, and `Analysis`
+- right workflow tabs for `Network`, `Training`, `Tests`, `Patterns`, and `Summary`
+- bottom `Console` and `Error graph` panels
+- project-first save/load using `.swproj.json`
+
+Quick start for Modern:
+
+1. Start the app:
+
+```bash
+dotnet run --project src/SignalWeave.Modern.Desktop
+```
+
+2. Click `📂 Load`
+3. Open `samples/seventeen-patterns-7x7-modern.swproj.json`
+4. Open `Training` and click `Train #1`
+5. Open `Tests` and click `Test all`
+6. Inspect the result in:
+- `Network Graph`
+- `Weights`
+- `Analysis`
+
+Full step-by-step instructions are in:
+
+- `docs/modern-ui-guide.md`
+
 ## Release automation
 
 - `.github/workflows/ci.yml` runs restore, release build, and core tests on Linux, Windows, and macOS.
@@ -177,6 +213,7 @@ The `samples/` directory contains starter network and pattern files:
 
 - `xor.swcfg` and `xor.pat`
 - `echo-srn.swcfg` and `echo-srn.pat`
+- `seventeen-patterns-7x7-modern.swproj.json`
 
 ## Compatibility note
 
@@ -191,3 +228,5 @@ SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JA
 - `docs/e2e-backlog.md`: milestone backlog and implementation tasks
 - `docs/signalweave-schema.md`: native project and checkpoint schema definitions
 - `docs/product-lines.md`: Classic/Modern product-line and release strategy
+- `docs/modern-ui-todo.md`: Modern-specific backlog for porting analysis and utility workflows
+- `docs/modern-ui-guide.md`: step-by-step guide for loading, training, testing, analyzing, and saving Modern projects

@@ -1,0 +1,962 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="SignalWeave.Modern.Desktop.MainView"
+             Background="#F4F0E8">
+    <UserControl.Styles>
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFDF9" />
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+        <Style Selector="TextBlock.title">
+            <Setter Property="FontSize" Value="28" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#211D19" />
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#2D2924" />
+        </Style>
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="#6A6258" />
+        </Style>
+        <Style Selector="Button.action">
+            <Setter Property="MinWidth" Value="110" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+        <!-- Tab styles: reduce tab title size by 20% and make bottom line continuous -->
+        <Style Selector="TabControl">
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="Background" Value="#FFFDF9" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="13.6" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="CornerRadius" Value="6,6,0,0" />
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="FontSize" Value="13.6" />
+            <Setter Property="Background" Value="#FFFDF9" />
+            <Setter Property="BorderBrush" Value="#D7CCBD" />
+            <Setter Property="BorderThickness" Value="1,1,1,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="CornerRadius" Value="6,6,0,0" />
+        </Style>
+    </UserControl.Styles>
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top"
+                Classes="card"
+                Margin="20,20,20,0"
+                Padding="12">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto"
+                  ColumnSpacing="10">
+                <TextBlock x:Name="ProductInfoTextBlock"
+                           Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="SignalWeave Modern v1.0.0" />
+                <Button Grid.Column="1"
+                        Classes="action"
+                        Content="✚ New"
+                        Click="NewProject_Click" />
+                <Button Grid.Column="2"
+                        Classes="action"
+                        Content="📂 Load"
+                        Click="LoadProject_Click" />
+                <Button Grid.Column="3"
+                        Classes="action"
+                        Content="💾 Save"
+                        Click="SaveProject_Click" />
+                <Button Grid.Column="4"
+                        Classes="action"
+                        Content="🖫 Save As"
+                        Click="SaveProjectAs_Click" />
+                <TextBlock x:Name="WorkspaceStatusTextBlock"
+                           Grid.Column="6"
+                           Classes="muted"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           Text="Ready." />
+            </Grid>
+        </Border>
+
+        <Grid Margin="20"
+              RowDefinitions="*,6,280"
+              ColumnDefinitions="2.15*,6,1*">
+            <Border Grid.Row="0"
+                    Grid.Column="0"
+                    Classes="card"
+                    Padding="0">
+                <TabControl Margin="0"
+                            TabStripPlacement="Top">
+                    <TabItem Header="Network Graph">
+                        <Border x:Name="NetworkGraphPanelBorder"
+                                Background="Transparent"
+                                Padding="0">
+                            <Grid RowDefinitions="Auto,*,Auto"
+                                  RowSpacing="10"
+                                  Margin="16">
+                                <Grid ColumnDefinitions="*,Auto,Auto"
+                                      ColumnSpacing="12">
+                                    <TextBlock Text="Network graph"
+                                               Classes="section" />
+                                    <TextBlock x:Name="NetworkGraphSummaryTextBlock"
+                                               Grid.Column="1"
+                                               Classes="muted"
+                                               HorizontalAlignment="Right"
+                                               Text="Topology view" />
+                                    <Button Grid.Column="2"
+                                            Content="🖫"
+                                            Width="36"
+                                            ToolTip.Tip="Save network graph as PNG"
+                                            Click="SaveNetworkGraph_Click" />
+                                </Grid>
+
+                                <Canvas Grid.Row="1"
+                                        x:Name="NetworkGraphCanvas"
+                                        Background="#FFF9F1"
+                                        ClipToBounds="True"
+                                        MinHeight="220" />
+
+                                <Grid Grid.Row="2"
+                                      ColumnDefinitions="Auto,*,Auto"
+                                      ColumnSpacing="10"
+                                      VerticalAlignment="Center">
+                                    <TextBlock x:Name="WeightLegendMinTextBlock"
+                                               Classes="muted"
+                                               VerticalAlignment="Center"
+                                               Text="-1.0" />
+                                    <Border Grid.Column="1"
+                                            Height="12"
+                                            CornerRadius="3"
+                                            BorderBrush="#3C372F"
+                                            BorderThickness="1">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                                                <GradientStop Offset="0.0" Color="#C13A3A" />
+                                                <GradientStop Offset="0.5" Color="#111111" />
+                                                <GradientStop Offset="1.0" Color="#2F9B57" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                    <TextBlock x:Name="WeightLegendMaxTextBlock"
+                                               Grid.Column="2"
+                                               Classes="muted"
+                                               VerticalAlignment="Center"
+                                               Text="1.0" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </TabItem>
+
+                    <TabItem Header="Weights">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,Auto,Auto,*"
+                              RowSpacing="12">
+                            <TextBlock Text="Weight inspector"
+                                       Classes="section" />
+
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="Auto,*,Auto,*,Auto,*"
+                                  ColumnSpacing="10"
+                                  RowSpacing="8">
+                                <TextBlock Text="Source"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightInspectorSourceComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="WeightInspectorSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Layer"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightInspectorLayerComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="WeightInspectorSelectionChanged" />
+
+                                <TextBlock Grid.Column="4"
+                                           Text="View"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightInspectorViewModeComboBox"
+                                          Grid.Column="5"
+                                          SelectionChanged="WeightInspectorSelectionChanged" />
+                            </Grid>
+
+                            <Border Grid.Row="2"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Padding="12">
+                                <TextBlock x:Name="WeightInspectorStatsTextBlock"
+                                           Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="No weight data available." />
+                            </Border>
+
+                            <Border Grid.Row="3"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Background="#FFFDF9"
+                                    Padding="12">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Auto">
+                                    <Canvas x:Name="WeightInspectorCanvas"
+                                            ClipToBounds="True"
+                                            MinWidth="260"
+                                            MinHeight="220"
+                                            Background="#FFF9F1" />
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Analysis">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,Auto,Auto,*"
+                              RowSpacing="12">
+                            <TextBlock Text="Analysis reports"
+                                       Classes="section" />
+
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="Auto,*,Auto,*,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="10">
+                                <TextBlock Text="Mode"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisReportTypeComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Source"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSourceComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <Button x:Name="RunAnalysisButton"
+                                        Grid.Column="4"
+                                        Content="Run"
+                                        Click="RunAnalysis_Click" />
+                                <Button x:Name="CopyAnalysisButton"
+                                        Grid.Column="5"
+                                        Content="⧉"
+                                        Width="36"
+                                        ToolTip.Tip="Copy analysis content"
+                                        Click="CopyAnalysis_Click" />
+                                <Button x:Name="SaveAnalysisButton"
+                                        Grid.Column="6"
+                                        Content="🖫"
+                                        Width="36"
+                                        ToolTip.Tip="Save analysis content"
+                                        Click="SaveAnalysis_Click" />
+                                <Button x:Name="SaveAnalysisChartButton"
+                                        Grid.Column="7"
+                                        Content="🖼"
+                                        Width="36"
+                                        ToolTip.Tip="Save analysis chart as PNG"
+                                        Click="SaveAnalysisChart_Click" />
+                            </Grid>
+
+                            <Grid Grid.Row="2"
+                                  x:Name="AnalysisTimeSeriesControlsGrid"
+                                  ColumnDefinitions="Auto,*,Auto,*"
+                                  ColumnSpacing="10"
+                                  IsVisible="False">
+                                <TextBlock Text="Series"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisTimeSeriesKindComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Index"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisTimeSeriesIndexComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+                            </Grid>
+
+                            <Grid Grid.Row="2"
+                                  x:Name="AnalysisSurfaceControlsGrid"
+                                  ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*"
+                                  ColumnSpacing="10"
+                                  IsVisible="False">
+                                <TextBlock Text="X input"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceXComboBox"
+                                          Grid.Column="1"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Y input"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceYComboBox"
+                                          Grid.Column="3"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="4"
+                                           Text="Z series"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceZKindComboBox"
+                                          Grid.Column="5"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+
+                                <TextBlock Grid.Column="6"
+                                           Text="Index"
+                                           VerticalAlignment="Center" />
+                                <ComboBox x:Name="AnalysisSurfaceZIndexComboBox"
+                                          Grid.Column="7"
+                                          SelectionChanged="AnalysisSelectionChanged" />
+                            </Grid>
+
+                            <Grid Grid.Row="3"
+                                  x:Name="AnalysisTextPanel"
+                                  RowDefinitions="Auto,*"
+                                  RowSpacing="8">
+                                <TextBlock x:Name="AnalysisReportTitleTextBlock"
+                                           Classes="muted"
+                                           Text="Run an analysis report." />
+                                <TextBox x:Name="AnalysisReportTextBox"
+                                         Grid.Row="1"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="NoWrap"
+                                         FontFamily="Cascadia Mono, Consolas, monospace" />
+                            </Grid>
+
+                            <Grid Grid.Row="3"
+                                  x:Name="AnalysisChartPanel"
+                                  RowDefinitions="Auto,*,Auto"
+                                  RowSpacing="8"
+                                  IsVisible="False">
+                                <TextBlock x:Name="AnalysisChartTitleTextBlock"
+                                           Classes="muted"
+                                           Text="Run a time-series analysis." />
+                                <Border Grid.Row="1"
+                                        x:Name="AnalysisChartBorder"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        CornerRadius="10"
+                                        Background="#FFF9F1"
+                                        Padding="8">
+                                    <Canvas x:Name="AnalysisTimeSeriesCanvas"
+                                            MinHeight="260"
+                                            ClipToBounds="True" />
+                                </Border>
+                                <TextBlock x:Name="AnalysisChartSummaryTextBlock"
+                                           Grid.Row="2"
+                                           Classes="muted"
+                                           Text="" />
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Border>
+
+            <GridSplitter Grid.Row="0"
+                          Grid.Column="1"
+                          Width="6"
+                          HorizontalAlignment="Stretch"
+                          ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D7CCBD"
+                          ShowsPreview="True" />
+
+            <Border Grid.Row="0"
+                    Grid.Column="2"
+                    Classes="card"
+                    Padding="0">
+                <TabControl x:Name="ControlTabs"
+                            Margin="0"
+                            TabStripPlacement="Top">
+                    <TabItem Header="Network">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <Grid Margin="16"
+                                  ColumnDefinitions="Auto,*"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="12"
+                                  RowSpacing="10">
+                                <TextBlock Text="Project name" VerticalAlignment="Center" />
+                                <TextBox x:Name="ProjectNameTextBox" Grid.Column="1" />
+
+                                <TextBlock Grid.Row="1" Text="Network type" VerticalAlignment="Center" />
+                                <ComboBox x:Name="NetworkKindComboBox"
+                                          Grid.Row="1"
+                                          Grid.Column="1"
+                                          SelectedIndex="0"
+                                          SelectionChanged="NetworkKindComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="FeedForward" />
+                                    <ComboBoxItem Content="SimpleRecurrent" />
+                                </ComboBox>
+
+                                <TextBlock Grid.Row="2" Text="Inputs" VerticalAlignment="Center" />
+                                <Grid Grid.Row="2"
+                                      Grid.Column="1"
+                                      ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="10">
+                                    <Slider x:Name="InputUnitsSlider"
+                                            Minimum="1"
+                                            Maximum="32"
+                                            TickFrequency="1"
+                                            IsSnapToTickEnabled="True"
+                                            ValueChanged="TopologySliderChanged" />
+                                    <TextBlock x:Name="InputUnitsValueTextBlock"
+                                               Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               Width="36"
+                                               TextAlignment="Right" />
+                                </Grid>
+
+                                <TextBlock Grid.Row="3" Text="Hidden layer 1" VerticalAlignment="Center" />
+                                <Grid Grid.Row="3"
+                                      Grid.Column="1"
+                                      ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="10">
+                                    <Slider x:Name="HiddenUnitsSlider"
+                                            Minimum="0"
+                                            Maximum="32"
+                                            TickFrequency="1"
+                                            IsSnapToTickEnabled="True"
+                                            ValueChanged="TopologySliderChanged" />
+                                    <TextBlock x:Name="HiddenUnitsValueTextBlock"
+                                               Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               Width="36"
+                                               TextAlignment="Right" />
+                                </Grid>
+
+                                <TextBlock Grid.Row="4" Text="Hidden layer 2" VerticalAlignment="Center" />
+                                <Grid Grid.Row="4"
+                                      Grid.Column="1"
+                                      ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="10">
+                                    <Slider x:Name="SecondHiddenUnitsSlider"
+                                            Minimum="0"
+                                            Maximum="32"
+                                            TickFrequency="1"
+                                            IsSnapToTickEnabled="True"
+                                            ValueChanged="TopologySliderChanged" />
+                                    <TextBlock x:Name="SecondHiddenUnitsValueTextBlock"
+                                               Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               Width="36"
+                                               TextAlignment="Right" />
+                                </Grid>
+
+                                <TextBlock Grid.Row="5" Text="Outputs" VerticalAlignment="Center" />
+                                <Grid Grid.Row="5"
+                                      Grid.Column="1"
+                                      ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="10">
+                                    <Slider x:Name="OutputUnitsSlider"
+                                            Minimum="1"
+                                            Maximum="32"
+                                            TickFrequency="1"
+                                            IsSnapToTickEnabled="True"
+                                            ValueChanged="TopologySliderChanged" />
+                                    <TextBlock x:Name="OutputUnitsValueTextBlock"
+                                               Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               Width="36"
+                                               TextAlignment="Right" />
+                                </Grid>
+
+                                <TextBlock Grid.Row="6" Text="Biases" VerticalAlignment="Center" />
+                                <StackPanel Grid.Row="6"
+                                            Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            Spacing="12">
+                                    <CheckBox x:Name="InputBiasCheckBox" Content="Input" Click="TopologyOptionChanged" />
+                                    <CheckBox x:Name="HiddenBiasCheckBox" Content="Hidden 1" Click="TopologyOptionChanged" />
+                                    <CheckBox x:Name="SecondHiddenBiasCheckBox" Content="Hidden 2" Click="TopologyOptionChanged" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="7" Text="Weight range" VerticalAlignment="Center" />
+                                <ComboBox x:Name="WeightRangeComboBox"
+                                          Grid.Row="7"
+                                          Grid.Column="1" />
+                            </Grid>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <TabItem Header="Training">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,Auto,Auto,*"
+                              RowSpacing="14">
+                            <Grid ColumnDefinitions="Auto,*"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+                                  ColumnSpacing="12"
+                                  RowSpacing="10">
+                                <TextBlock Text="Learning rate" VerticalAlignment="Center" />
+                                <ComboBox x:Name="LearningRateComboBox"
+                                          Grid.Column="1"
+                                          IsEditable="True" />
+
+                                <TextBlock Grid.Row="1" Text="Momentum" VerticalAlignment="Center" />
+                                <ComboBox x:Name="MomentumComboBox"
+                                          Grid.Row="1"
+                                          Grid.Column="1"
+                                          IsEditable="True" />
+
+                                <TextBlock Grid.Row="2" Text="Error threshold" VerticalAlignment="Center" />
+                                <TextBox x:Name="ErrorThresholdTextBox"
+                                         Grid.Row="2"
+                                         Grid.Column="1" />
+
+                                <TextBlock Grid.Row="3" Text="Learning steps" VerticalAlignment="Center" />
+                                <ComboBox x:Name="LearningStepsComboBox"
+                                          Grid.Row="3"
+                                          Grid.Column="1"
+                                          IsEditable="True" />
+
+                                <TextBlock Grid.Row="4" Text="Training mode" VerticalAlignment="Center" />
+                                <CheckBox x:Name="BatchUpdateCheckBox"
+                                          Grid.Row="4"
+                                          Grid.Column="1"
+                                          Content="Batch update" />
+
+                                <TextBlock Grid.Row="5" Text="Error function" VerticalAlignment="Center" />
+                                <CheckBox x:Name="CrossEntropyCheckBox"
+                                          Grid.Row="5"
+                                          Grid.Column="1"
+                                          Content="Cross entropy" />
+
+                            </Grid>
+
+                            <UniformGrid Grid.Row="1"
+                                         Columns="2"
+                                         Rows="1"
+                                         ColumnSpacing="10"
+                                         RowSpacing="10">
+                                <Button x:Name="ResetButton"
+                                        Classes="action"
+                                        Content="Reset"
+                                        Click="Reset_Click" />
+                                <Button x:Name="TrainButton"
+                                        Classes="action"
+                                        Content="Train"
+                                        Click="Train_Click" />
+                            </UniformGrid>
+
+                            <Border Grid.Row="2"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Padding="12">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="8">
+                                        <TextBlock Text="Progress"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock x:Name="ProgressLabelTextBlock"
+                                                   Grid.Column="1"
+                                                   Classes="muted"
+                                                   Text="Idle" />
+                                    </Grid>
+                                    <ProgressBar x:Name="TrainingProgressBar"
+                                                 Minimum="0"
+                                                 Maximum="100"
+                                                 Value="0"
+                                                 Height="14" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="3"
+                                    BorderBrush="#D7CCBD"
+                                    BorderThickness="1"
+                                    Padding="12">
+                                <Grid RowDefinitions="Auto,*"
+                                      RowSpacing="8">
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="8">
+                                        <TextBlock Text="Training sessions"
+                                                   FontWeight="SemiBold" />
+                                        <Button x:Name="RollbackButton"
+                                                Grid.Column="1"
+                                                Content="Rollback"
+                                                Click="RollbackTrainingSession_Click" />
+                                    </Grid>
+
+                                    <ListBox x:Name="TrainingSessionsListBox"
+                                             Grid.Row="1"
+                                             SelectionChanged="TrainingSessionsListBox_SelectionChanged"
+                                             MinHeight="120" />
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Tests">
+                        <Grid Margin="16"
+                              RowDefinitions="Auto,*"
+                              RowSpacing="12">
+                            <Grid ColumnDefinitions="Auto,Auto,*"
+                                  ColumnSpacing="10">
+                                <Button x:Name="TestSelectedButton"
+                                        Classes="action"
+                                        Content="Test selected"
+                                        Click="TestOne_Click" />
+                                <Button x:Name="TestAllButton"
+                                        Grid.Column="1"
+                                        Classes="action"
+                                        Content="Test all"
+                                        Click="TestAll_Click" />
+                                <TextBlock Grid.Column="2"
+                                           Classes="muted"
+                                           VerticalAlignment="Center"
+                                           Text="Select a pattern to inspect its inputs, targets, outputs, hidden activations, and latest graph result." />
+                            </Grid>
+
+                            <Grid Grid.Row="1"
+                                  ColumnDefinitions="1.05*,6,1.15*">
+                                <ListBox x:Name="TestPatternListBox"
+                                         SelectionChanged="TestPatternListBox_SelectionChanged" />
+
+                                <GridSplitter Grid.Column="1"
+                                              Width="6"
+                                              HorizontalAlignment="Stretch"
+                                              ResizeDirection="Columns"
+                                              ResizeBehavior="PreviousAndNext"
+                                              Background="#D7CCBD"
+                                              ShowsPreview="True" />
+
+                                <Border Grid.Column="2"
+                                        BorderBrush="#D7CCBD"
+                                        BorderThickness="1"
+                                        Background="#FFFDF9"
+                                        Padding="12">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled">
+                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*"
+                                              RowSpacing="12">
+                                            <TextBlock x:Name="PatternInspectorTitleTextBlock"
+                                                       Text="Pattern inspector"
+                                                       Classes="section" />
+
+                                            <Grid Grid.Row="1"
+                                                  ColumnDefinitions="1.2*,Auto,Auto"
+                                                  ColumnSpacing="10">
+                                                <TextBlock x:Name="PatternInspectorStatusTextBlock"
+                                                           Classes="muted"
+                                                           VerticalAlignment="Center"
+                                                           Text="No pattern selected." />
+                                                <Border Grid.Column="1"
+                                                        Background="#EFE8DD"
+                                                        CornerRadius="10"
+                                                        Padding="8,3">
+                                                    <TextBlock x:Name="PatternInspectorResultBadgeTextBlock"
+                                                               Classes="muted"
+                                                               Text="Not tested" />
+                                                </Border>
+                                                <TextBlock x:Name="PatternInspectorErrorTextBlock"
+                                                           Grid.Column="2"
+                                                           Classes="muted"
+                                                           VerticalAlignment="Center"
+                                                           Text="Error: -" />
+                                            </Grid>
+
+                                            <Border Grid.Row="2"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <TextBlock x:Name="PatternInspectorMetaTextBlock"
+                                                           Classes="muted"
+                                                           TextWrapping="Wrap"
+                                                           Text="Select a pattern to inspect the current result." />
+                                            </Border>
+
+                                            <Border Grid.Row="3"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <Grid RowDefinitions="Auto,*"
+                                                      RowSpacing="8">
+                                                    <TextBlock Text="Inputs"
+                                                               FontWeight="SemiBold" />
+                                                    <StackPanel x:Name="PatternInspectorInputsHost"
+                                                                Grid.Row="1"
+                                                                Spacing="4" />
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Grid.Row="4"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <Grid RowDefinitions="Auto,*"
+                                                      RowSpacing="8">
+                                                    <TextBlock Text="Targets"
+                                                               FontWeight="SemiBold" />
+                                                    <StackPanel x:Name="PatternInspectorTargetsHost"
+                                                                Grid.Row="1"
+                                                                Spacing="4" />
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Grid.Row="5"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <Grid RowDefinitions="Auto,*"
+                                                      RowSpacing="8">
+                                                    <TextBlock Text="Outputs"
+                                                               FontWeight="SemiBold" />
+                                                    <StackPanel x:Name="PatternInspectorOutputsHost"
+                                                                Grid.Row="1"
+                                                                Spacing="4" />
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Grid.Row="6"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <Grid RowDefinitions="Auto,*"
+                                                      RowSpacing="8">
+                                                    <TextBlock Text="Delta"
+                                                               FontWeight="SemiBold" />
+                                                    <StackPanel x:Name="PatternInspectorDeltaHost"
+                                                                Grid.Row="1"
+                                                                Spacing="4" />
+                                                </Grid>
+                                            </Border>
+
+                                            <Border Grid.Row="7"
+                                                    BorderBrush="#E2D8CA"
+                                                    BorderThickness="1"
+                                                    Padding="10">
+                                                <Grid RowDefinitions="Auto,*"
+                                                      RowSpacing="8">
+                                                    <Grid ColumnDefinitions="*,Auto,Auto"
+                                                          ColumnSpacing="8">
+                                                        <TextBlock Text="Hidden activations"
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center" />
+                                                        <Button x:Name="ExportSelectedHiddenButton"
+                                                                Grid.Column="1"
+                                                                Content="Export selected"
+                                                                Click="ExportSelectedHiddenActivations_Click" />
+                                                        <Button x:Name="ExportPatternSetHiddenButton"
+                                                                Grid.Column="2"
+                                                                Content="Export set"
+                                                                Click="ExportPatternSetHiddenActivations_Click" />
+                                                    </Grid>
+                                                    <StackPanel x:Name="PatternInspectorHiddenHost"
+                                                                Grid.Row="1"
+                                                                Spacing="4" />
+                                                </Grid>
+                                            </Border>
+
+                                            <TextBlock Grid.Row="8"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap"
+                                                       Text="Selecting a pattern updates the network graph with its latest cached test result." />
+                                        </Grid>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Patterns">
+                        <Border Background="#FFFDF9"
+                                Padding="0">
+                            <Grid RowDefinitions="Auto,Auto,*"
+                                  RowSpacing="12"
+                                  Margin="16">
+                                <TextBlock Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="Patterns now live in the side control stack. They are saved inside the project file together with settings and weights." />
+
+                                <TextBlock Grid.Row="1"
+                                           x:Name="PatternEditorStatusTextBlock"
+                                           Classes="muted"
+                                           Text="Pattern editor ready." />
+
+                                <TabControl Grid.Row="2"
+                                            x:Name="PatternModeTabs"
+                                            TabStripPlacement="Top">
+                                    <TabItem Header="Text mode">
+                                        <TextBox x:Name="PatternEditorTextBox"
+                                                 AcceptsReturn="True"
+                                                 TextWrapping="NoWrap"
+                                                 TextChanged="PatternEditorTextBox_TextChanged"
+                                                 FontFamily="Cascadia Mono, Consolas, monospace" />
+                                    </TabItem>
+
+                                    <TabItem Header="Graphic mode">
+                                        <Grid RowDefinitions="Auto,*"
+                                              RowSpacing="12">
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  ColumnSpacing="10">
+                                                <TextBlock Classes="muted"
+                                                           VerticalAlignment="Center"
+                                                           Text="Edit patterns in a table view. Changes are mirrored back into the text editor." />
+                                                <Button Grid.Column="1"
+                                                        Content="Add pattern"
+                                                        Click="AddPatternRow_Click" />
+                                            </Grid>
+
+                                            <ScrollViewer Grid.Row="1"
+                                                          HorizontalScrollBarVisibility="Auto"
+                                                          VerticalScrollBarVisibility="Auto">
+                                                <StackPanel x:Name="PatternTableHost"
+                                                            Spacing="6" />
+                                            </ScrollViewer>
+                                        </Grid>
+                                    </TabItem>
+                                </TabControl>
+                            </Grid>
+                        </Border>
+                    </TabItem>
+
+						<TabItem Header="Summary">
+							<ScrollViewer VerticalScrollBarVisibility="Auto">
+								<Grid Margin="16"
+                                  RowDefinitions="Auto,Auto,*"
+                                  RowSpacing="14">
+									<TextBlock Text="Summary"
+                                           Classes="section" />
+
+								<TextBlock Grid.Row="1"
+                                           x:Name="LatestRunSummaryTextBlock"
+                                           Classes="muted"
+                                           TextWrapping="Wrap"
+                                           Text="No run executed yet." />
+
+								<Grid Grid.Row="2"
+                                      RowDefinitions="Auto,*"
+                                      RowSpacing="12">
+									<Grid ColumnDefinitions="1.1*,1*"
+                                          ColumnSpacing="16">
+										<StackPanel Spacing="6">
+											<TextBlock Text="Project summary"
+                                                       FontWeight="SemiBold" />
+											<TextBlock x:Name="ProjectSummaryTextBlock"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap" />
+										</StackPanel>
+
+										<StackPanel Grid.Column="1"
+                                                    Spacing="6">
+											<TextBlock Text="Weights"
+                                                       FontWeight="SemiBold" />
+											<TextBlock x:Name="WeightsSummaryTextBlock"
+                                                       Classes="muted"
+                                                       TextWrapping="Wrap" />
+										</StackPanel>
+									</Grid>
+
+									<Border Grid.Row="1"
+                                            BorderBrush="#D7CCBD"
+                                            BorderThickness="1"
+                                            Padding="12">
+										<TextBlock x:Name="ProjectStateTextBlock"
+                                                   Classes="muted"
+                                                   TextWrapping="Wrap"
+                                                   Text="Save the project to persist the current network settings, weights, and control-panel state." />
+									</Border>
+								</Grid>
+								</Grid>
+							</ScrollViewer>
+						</TabItem>
+
+						</TabControl>
+		            </Border>
+
+            <GridSplitter Grid.Row="1"
+                          Grid.ColumnSpan="3"
+                          Height="6"
+                          VerticalAlignment="Stretch"
+                          ResizeDirection="Rows"
+                          ResizeBehavior="PreviousAndNext"
+                          Background="#D7CCBD"
+                          ShowsPreview="True" />
+
+            <Grid Grid.Row="2"
+                  Grid.ColumnSpan="3"
+                  ColumnDefinitions="1.7*,6,1.2*">
+                <Border Classes="card"
+                        Grid.Column="0"
+                        Padding="0">
+                    <Grid RowDefinitions="Auto,*"
+                          RowSpacing="10"
+                          Margin="16">
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="12">
+                            <TextBlock Text="Console"
+                                       Classes="section" />
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                <Button Content="⧉"
+                                        ToolTip.Tip="Copy all console content"
+                                        Width="36"
+                                        Click="CopyConsole_Click" />
+                                <Button Content="🖫"
+                                        ToolTip.Tip="Save console as Markdown"
+                                        Width="36"
+                                        Click="SaveConsole_Click" />
+                                <Button Content="🗑"
+                                        ToolTip.Tip="Clear console"
+                                        Width="36"
+                                        Click="ClearConsole_Click" />
+                            </StackPanel>
+                        </Grid>
+
+                        <ScrollViewer Grid.Row="1"
+                                      x:Name="ConsoleScrollViewer"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel x:Name="ConsoleContentHost"
+                                        Spacing="8" />
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <GridSplitter Grid.Column="1"
+                              Width="6"
+                              HorizontalAlignment="Stretch"
+                              ResizeDirection="Columns"
+                              ResizeBehavior="PreviousAndNext"
+                              Background="#D7CCBD"
+                              ShowsPreview="True" />
+
+                <Border Grid.Column="2"
+                        x:Name="ErrorGraphPanelBorder"
+                        Classes="card"
+                        Padding="0">
+                    <Grid RowDefinitions="Auto,*"
+                          RowSpacing="10"
+                          Margin="16">
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="12">
+                            <TextBlock Text="Error graph"
+                                       Classes="section" />
+                            <Button Grid.Column="1"
+                                    Content="🖫"
+                                    Width="36"
+                                    ToolTip.Tip="Save error graph as PNG"
+                                    Click="SaveErrorGraph_Click" />
+                        </Grid>
+
+                        <Canvas Grid.Row="1"
+                                x:Name="ErrorPlotCanvas"
+                                ClipToBounds="True"
+                                MinHeight="220"
+                                Background="#FFF9F1" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</UserControl>
