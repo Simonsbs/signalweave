@@ -60,7 +60,7 @@ code {
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 16px 20px 0;
+  padding: 14px 20px 0;
   backdrop-filter: blur(10px);
 }
 
@@ -71,15 +71,21 @@ code {
   gap: 24px;
   max-width: 1240px;
   margin: 0 auto;
-  padding: 14px 18px;
+  padding: 12px 14px;
   border: 1px solid rgba(191, 174, 152, 0.72);
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.86);
+  border-radius: 22px;
+  background: rgba(255, 253, 248, 0.95);
   box-shadow: var(--shadow-tight);
 }
 
 .brand {
-  font-size: 1.08rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffefb 0%, #f4ece0 100%);
+  font-size: 1.02rem;
   font-weight: 800;
   color: var(--text);
 }
@@ -87,13 +93,26 @@ code {
 .site-nav {
   display: flex;
   align-items: center;
-  gap: 18px;
+  justify-content: flex-end;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .site-nav a {
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f7f1e6;
+  color: var(--text);
   font-weight: 700;
+}
+
+.site-nav a:hover {
+  background: #fff8ef;
+  text-decoration: none;
 }
 
 .page {
@@ -138,11 +157,16 @@ code {
 
 .hero-shot {
   padding: 16px;
+  overflow: hidden;
 }
 
 .hero-shot img {
+  width: 100%;
+  max-height: 560px;
   border: 1px solid var(--line);
   border-radius: 18px;
+  background: #f0eadf;
+  object-fit: contain;
 }
 
 .hero-shot figcaption {
@@ -169,8 +193,10 @@ h3 {
 }
 
 h1 {
-  max-width: 12ch;
-  font-size: clamp(2.8rem, 5.2vw, 4.6rem);
+  max-width: 11ch;
+  font-size: clamp(2.2rem, 4vw, 3.7rem);
+  overflow-wrap: anywhere;
+  line-height: 1.02;
 }
 
 h2 {
@@ -364,11 +390,16 @@ h3 {
 
 .shot-card {
   padding: 14px;
+  overflow: hidden;
 }
 
 .shot-card img {
+  width: 100%;
+  max-height: 560px;
   border: 1px solid var(--line);
   border-radius: 16px;
+  background: #f0eadf;
+  object-fit: contain;
 }
 
 .shot-card figcaption {
@@ -540,6 +571,11 @@ h3 {
     border-radius: 24px;
   }
 
+  .site-nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .page {
     padding-top: 18px;
   }
@@ -563,5 +599,6 @@ h3 {
 
   h1 {
     max-width: none;
+    font-size: clamp(1.9rem, 10vw, 2.9rem);
   }
 }
