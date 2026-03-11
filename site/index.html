@@ -3,109 +3,351 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SignalWeave</title>
-  <meta name="description" content="SignalWeave downloads and product overview for the Classic and Modern desktop apps." />
+  <title>SignalWeave Modern | Neural Network Trainer, Analysis Workbench, and BasicProp Alternative</title>
+  <meta
+    name="description"
+    content="SignalWeave Modern is a cross-platform .NET neural network trainer and analysis workbench with desktop and WebAssembly builds. Train feed-forward and recurrent networks, inspect weights, test patterns, and analyze results from a single project file."
+  />
+  <meta
+    name="keywords"
+    content="SignalWeave, neural network trainer, BasicProp alternative, .NET neural network app, WebAssembly neural network app, cross-platform machine learning desktop app"
+  />
+  <meta name="robots" content="index,follow" />
+  <meta name="theme-color" content="#19352d" />
+  <meta name="application-name" content="SignalWeave Modern" />
+  <link rel="canonical" href="https://signalweave.bestdev.co.il/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SignalWeave Modern | Neural Network Trainer and Analysis Workbench" />
+  <meta
+    property="og:description"
+    content="Use SignalWeave Modern in the browser or on desktop to train, test, inspect, and analyze neural networks from one project file."
+  />
+  <meta property="og:url" content="https://signalweave.bestdev.co.il/" />
+  <meta property="og:image" content="https://signalweave.bestdev.co.il/media/modern-workspace.png" />
+  <meta property="og:image:alt" content="SignalWeave Modern workspace showing the network graph, project controls, console, and error graph." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SignalWeave Modern | Neural Network Trainer and Analysis Workbench" />
+  <meta
+    name="twitter:description"
+    content="Train neural networks, inspect weights, test patterns, and analyze results in one Modern workflow across desktop and browser."
+  />
+  <meta name="twitter:image" content="https://signalweave.bestdev.co.il/media/modern-workspace.png" />
   <link rel="stylesheet" href="./styles.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SignalWeave Modern",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Windows, Linux, macOS, Web",
+      "url": "https://signalweave.bestdev.co.il/",
+      "downloadUrl": "https://github.com/Simonsbs/signalweave/releases",
+      "image": "https://signalweave.bestdev.co.il/media/modern-workspace.png",
+      "description": "SignalWeave Modern is a cross-platform .NET neural network trainer and analysis workbench with desktop and WebAssembly builds.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+  </script>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SignalWeave Modern used for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SignalWeave Modern is used to train, test, inspect, and analyze feed-forward and simple recurrent neural networks from one project file. It combines network settings, patterns, weights, training history, and analysis tools in one workflow."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need the Classic version?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Modern is the main recommended workflow. Classic remains available only if you specifically want the BasicProp-style reference interface."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I use SignalWeave in the browser?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. SignalWeave Modern is available as a WebAssembly app at https://signalweave.bestdev.co.il/app/ and shares the same .NET engine and general workflow as the desktop build."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is inside a SignalWeave project file?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A SignalWeave Modern project file stores network settings, pattern data, current weights, training sessions, rollback checkpoints, and workspace-oriented state so you can reopen the project without managing separate files for each part."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I start with a sample?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Download the seventeen-patterns-7x7 sample project, open it in SignalWeave Modern, click Train #1, then open the Tests, Weights, and Analysis areas to inspect the run."
+          }
+        }
+      ]
+    }
+  </script>
 </head>
 <body>
-  <main class="page">
+  <header class="site-header">
+    <div class="brand-row">
+      <a class="brand" href="#top">SignalWeave</a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="#use-cases">Use Cases</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#sample">How To Start</a>
+        <a href="#faq">FAQ</a>
+        <a href="#downloads">Downloads</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page" id="top">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">SignalWeave</p>
-        <h1>Cross-platform neural-network tooling with two desktop experiences.</h1>
+        <p class="eyebrow">SignalWeave Modern</p>
+        <h1>Train, test, inspect, and analyze neural networks from one project file.</h1>
         <p class="lead">
-          Download the current BasicProp-style <strong>Classic</strong> app or the project-first <strong>Modern</strong> app.
-          Both share the same .NET engine, but each ships as a separate desktop bundle.
+          SignalWeave Modern is the main SignalWeave experience: a cross-platform <strong>.NET 8</strong>
+          desktop and <strong>WebAssembly</strong> app for feed-forward and simple recurrent network work.
+          It keeps network settings, patterns, weights, rollback checkpoints, and analysis in one workflow.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#modern">Get Modern</a>
-          <a class="button primary-alt" href="/app/">Launch Web App</a>
-          <a class="button secondary" href="#classic">Get Classic</a>
-          <a class="button secondary" href="https://github.com/Simonsbs/signalweave" target="_blank" rel="noreferrer">GitHub</a>
+          <a class="button primary" href="/app/">Launch Web App</a>
+          <a class="button primary-alt" href="#downloads">Download Desktop</a>
+          <a class="button secondary" href="https://raw.githubusercontent.com/Simonsbs/signalweave/modern-ui/samples/seventeen-patterns-7x7-modern.swproj.json">Download Sample Project</a>
+        </div>
+        <div class="hero-points">
+          <span>Single project workflow</span>
+          <span>Desktop and browser builds</span>
+          <span>Weights, tests, clustering, time series, and surface analysis</span>
         </div>
       </div>
-      <aside class="hero-panel">
-        <h2>Included today</h2>
-        <ul class="feature-list">
-          <li>Windows, Linux, and macOS desktop bundles</li>
-          <li>Shared .NET 8 engine across product lines</li>
-          <li>Project save/load, training, testing, and analysis</li>
-          <li>Time-series, surface plotting, and clustering tools</li>
-        </ul>
-      </aside>
+      <figure class="hero-shot">
+        <img
+          src="./media/modern-workspace.png"
+          alt="SignalWeave Modern workspace with the network graph, workflow tabs, console, and error graph."
+        />
+        <figcaption>The current Modern workspace running in the browser-hosted WebAssembly build.</figcaption>
+      </figure>
     </section>
 
-    <section class="products">
-      <article class="product-card featured" id="modern">
-        <div class="product-header">
-          <div>
-            <p class="product-kicker">Recommended</p>
-            <h2>SignalWeave Modern</h2>
-          </div>
-          <span class="badge">Current workflow</span>
-        </div>
-        <p class="product-copy">
-          The project-file-first desktop line. Network settings, patterns, weights, training history, and analysis
-          live in one workflow instead of being spread across separate files and popup windows.
-        </p>
-        <p class="product-copy">
-          A browser-hosted WebAssembly build is also available for direct use on this site.
-        </p>
-        <div class="release-meta" data-product="modern">
-          <p class="loading">Loading latest Modern release…</p>
-        </div>
-        <div class="downloads" data-product="modern"></div>
-        <div class="product-links">
-          <a href="/app/">Launch Modern Web</a>
-          <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Modern guide</a>
-          <a href="https://github.com/Simonsbs/signalweave/tree/modern-ui/samples" target="_blank" rel="noreferrer">Samples</a>
-        </div>
+    <section class="proof-strip" aria-label="Why SignalWeave Modern">
+      <article class="proof-card">
+        <h2>One file instead of five</h2>
+        <p>Project settings, patterns, weights, training sessions, and rollback history live together in one Modern project file.</p>
       </article>
-
-      <article class="product-card" id="classic">
-        <div class="product-header">
-          <div>
-            <p class="product-kicker">Reference workflow</p>
-            <h2>SignalWeave Classic</h2>
-          </div>
-          <span class="badge muted">BasicProp-style</span>
-        </div>
-        <p class="product-copy">
-          The BasicProp-inspired desktop line. Use this if you want the classic workflow surface and compatibility-oriented
-          analysis flow.
-        </p>
-        <div class="release-meta" data-product="classic">
-          <p class="loading">Loading latest Classic release…</p>
-        </div>
-        <div class="downloads" data-product="classic"></div>
-        <div class="product-links">
-          <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/product-lines.md" target="_blank" rel="noreferrer">Product lines</a>
-          <a href="https://github.com/Simonsbs/signalweave/releases" target="_blank" rel="noreferrer">All releases</a>
-        </div>
+      <article class="proof-card">
+        <h2>Built for inspection</h2>
+        <p>Move from training to tests, weights, hidden activations, clustering, time series, and surface plots without leaving the app.</p>
+      </article>
+      <article class="proof-card">
+        <h2>Runs anywhere</h2>
+        <p>Use the desktop build on Windows, Linux, or macOS, or open the same Modern workflow directly in the browser.</p>
       </article>
     </section>
 
-    <section class="help">
-      <div class="help-card">
-        <h2>Quick start</h2>
-        <ol>
-          <li>Download the bundle for your OS.</li>
-          <li>Extract the ZIP locally.</li>
-          <li>Launch the desktop executable inside the extracted folder.</li>
-          <li>Or open <code>/app/</code> on this site to use the WebAssembly build.</li>
-          <li>For Modern, load <code>samples/seventeen-patterns-7x7-modern.swproj.json</code> and start with <code>Train #1</code>.</li>
-        </ol>
+    <section class="section" id="use-cases">
+      <div class="section-heading">
+        <p class="eyebrow">Use Cases</p>
+        <h2>What people use SignalWeave Modern for</h2>
+        <p>Modern is best when you want a visual, inspectable neural-network workflow rather than a bare library or notebook-only loop.</p>
       </div>
-      <div class="help-card">
-        <h2>Docs</h2>
-        <ul>
-          <li><a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/README.md" target="_blank" rel="noreferrer">Repository overview</a></li>
-          <li><a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Modern user guide</a></li>
-          <li><a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/basicprop-compatibility.md" target="_blank" rel="noreferrer">Compatibility basis</a></li>
-        </ul>
+      <div class="use-case-grid">
+        <article class="use-case-card">
+          <h3>Teaching and demonstrations</h3>
+          <p>Show how topology, training steps, weights, and outputs change without forcing students into a code-first workflow.</p>
+        </article>
+        <article class="use-case-card">
+          <h3>Small dataset experiments</h3>
+          <p>Load a project, train in blocks, test patterns individually, roll back, and compare sessions without rebuilding your setup.</p>
+        </article>
+        <article class="use-case-card">
+          <h3>Pattern debugging</h3>
+          <p>Inspect targets, outputs, deltas, hidden activations, and per-pattern pass/fail state to find exactly where a model is going wrong.</p>
+        </article>
+        <article class="use-case-card">
+          <h3>Weight and structure analysis</h3>
+          <p>Inspect weight matrices, cluster outputs or hidden states, and understand how the model organizes your patterns internally.</p>
+        </article>
+        <article class="use-case-card">
+          <h3>Sequence and SRN behavior</h3>
+          <p>Use time-series and hidden-state tools to inspect how recurrent behavior changes across ordered patterns and resets.</p>
+        </article>
+        <article class="use-case-card">
+          <h3>Browser-based sharing</h3>
+          <p>Share a live app URL for quick demos and evaluations without asking users to install the desktop build first.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="sample">
+      <div class="section-heading">
+        <p class="eyebrow">How To Start</p>
+        <h2>Use the sample project in under five minutes</h2>
+        <p>The fastest way to understand the app is to open the sample and walk one training and test cycle.</p>
+      </div>
+      <div class="steps-grid">
+        <article class="step-card">
+          <span class="step-number">1</span>
+          <h3>Open Modern</h3>
+          <p>Launch the web app or download the desktop build for your OS.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">2</span>
+          <h3>Load the sample</h3>
+          <p>Open <code>seventeen-patterns-7x7-modern.swproj.json</code> to load the saved network, patterns, and weights.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">3</span>
+          <h3>Train one block</h3>
+          <p>Go to <strong>Training</strong> and click <code>Train #1</code>. The error graph and session history update as the run completes.</p>
+        </article>
+        <article class="step-card">
+          <span class="step-number">4</span>
+          <h3>Inspect the result</h3>
+          <p>Use <strong>Tests</strong>, <strong>Weights</strong>, and <strong>Analysis</strong> to inspect outputs, hidden activations, and learned structure.</p>
+        </article>
+      </div>
+      <div class="sample-links">
+        <a class="inline-link" href="/app/">Launch the web app</a>
+        <a class="inline-link" href="https://raw.githubusercontent.com/Simonsbs/signalweave/modern-ui/samples/seventeen-patterns-7x7-modern.swproj.json">Download the sample project</a>
+        <a class="inline-link" href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Read the full step-by-step guide</a>
+      </div>
+    </section>
+
+    <section class="section screenshots" id="screenshots">
+      <div class="section-heading">
+        <p class="eyebrow">Screenshots</p>
+        <h2>Modern workflow at a glance</h2>
+        <p>The page focuses on Modern because that is the primary product line. Classic is still available, but it is a side workflow rather than the recommended starting point.</p>
+      </div>
+      <div class="screenshot-grid">
+        <figure class="shot-card shot-large">
+          <img
+            src="./media/modern-workspace.png"
+            alt="SignalWeave Modern main workspace with the network graph, workflow tabs, console, and error graph."
+          />
+          <figcaption>Main Modern workspace: network graph, project controls, console, and error history in one surface.</figcaption>
+        </figure>
+        <figure class="shot-card">
+          <img
+            src="./media/modern-graph-detail.png"
+            alt="Close-up of the SignalWeave Modern network graph and weight coloring."
+          />
+          <figcaption>Visual network graph with weight coloring and a live topology-first workspace.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="downloads">
+      <div class="section-heading">
+        <p class="eyebrow">Downloads</p>
+        <h2>Get Modern first. Use Classic only if you specifically need the BasicProp-style workflow.</h2>
+      </div>
+      <div class="download-layout">
+        <article class="release-card release-card-featured" id="modern">
+          <div class="release-header">
+            <div>
+              <p class="product-kicker">Recommended</p>
+              <h3>SignalWeave Modern</h3>
+            </div>
+            <span class="badge">Main product line</span>
+          </div>
+          <p class="product-copy">
+            The project-file-first workflow for day-to-day use. Use this if you want the app that the landing page,
+            sample guide, browser build, and current documentation are centered around.
+          </p>
+          <div class="release-meta" data-product="modern">
+            <p class="loading">Loading latest Modern release…</p>
+          </div>
+          <div class="downloads" data-product="modern"></div>
+          <div class="product-links">
+            <a href="/app/">Launch Modern Web</a>
+            <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Modern guide</a>
+            <a href="https://github.com/Simonsbs/signalweave/tree/modern-ui/samples" target="_blank" rel="noreferrer">Samples</a>
+          </div>
+        </article>
+
+        <aside class="release-card release-card-aside" id="classic">
+          <div class="release-header">
+            <div>
+              <p class="product-kicker">Side note</p>
+              <h3>SignalWeave Classic</h3>
+            </div>
+            <span class="badge muted">Reference workflow</span>
+          </div>
+          <p class="product-copy">
+            Classic is the BasicProp-style reference surface. Keep it if you want the legacy interaction model,
+            menu structure, and parity-oriented workflow. Otherwise, start with Modern.
+          </p>
+          <div class="release-meta" data-product="classic">
+            <p class="loading">Loading latest Classic release…</p>
+          </div>
+          <div class="downloads compact" data-product="classic"></div>
+          <div class="product-links">
+            <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/product-lines.md" target="_blank" rel="noreferrer">Product lines</a>
+            <a href="https://github.com/Simonsbs/signalweave/releases" target="_blank" rel="noreferrer">All releases</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section faq" id="faq">
+      <div class="section-heading">
+        <p class="eyebrow">FAQ</p>
+        <h2>Common questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item" open>
+          <summary>What is SignalWeave Modern for?</summary>
+          <p>It is a visual neural-network trainer and analysis workbench for feed-forward and simple recurrent networks. It is intended for people who want a usable application, not just a code library.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What makes Modern different from Classic?</summary>
+          <p>Modern is organized around one project file and integrated tabs for training, tests, weights, patterns, and analysis. Classic preserves the BasicProp-style workflow and is useful mainly if you want that exact reference surface.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What is stored in the project file?</summary>
+          <p>Modern stores the network definition, embedded patterns, current weights, training sessions, rollback checkpoints, and related workspace state together, so you do not need separate load/save actions for each item.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Can I use the app without installing anything?</summary>
+          <p>Yes. The Modern workflow is available directly in the browser as a WebAssembly app at <a href="/app/">/app/</a>. Desktop builds are also available for Windows, Linux, and macOS.</p>
+        </details>
+        <details class="faq-item">
+          <summary>How do I start with a real example?</summary>
+          <p>Download the sample project, open it in Modern, run <code>Train #1</code>, then use <strong>Tests</strong>, <strong>Weights</strong>, and <strong>Analysis</strong> to inspect what changed.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is SignalWeave open source?</summary>
+          <p>Yes. The full project, release history, and source are available on <a href="https://github.com/Simonsbs/signalweave" target="_blank" rel="noreferrer">GitHub</a>.</p>
+        </details>
       </div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <p>SignalWeave Modern is the main workflow. Classic remains available as a reference-oriented side line.</p>
+    <div class="footer-links">
+      <a href="https://github.com/Simonsbs/signalweave" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="https://github.com/Simonsbs/signalweave/blob/modern-ui/docs/modern-ui-guide.md" target="_blank" rel="noreferrer">Modern guide</a>
+      <a href="/app/">Web app</a>
+    </div>
+  </footer>
+
   <script src="./app.js"></script>
 </body>
 </html>
