@@ -68,7 +68,9 @@ Modern workflow direction:
 - one project file stores network settings, embedded patterns, current weights, completed cycles, and Modern control-panel state
 - Modern no longer needs separate load/save actions for network settings, weights, or patterns
 - the network settings surface lives inside the main window as a control-panel tab instead of a popup dialog
-- detailed Modern usage docs live in `docs/modern-ui-guide.md`
+- detailed Modern usage docs live in:
+  - `docs/modern-ui-guide.md`
+  - `docs/modern-user-manual.md`
 
 ## Projects
 
@@ -182,6 +184,7 @@ dotnet run --project src/SignalWeave.Modern.Desktop
 Full step-by-step instructions are in:
 
 - `docs/modern-ui-guide.md`
+- `docs/modern-user-manual.md`
 
 ## Release automation
 
@@ -230,3 +233,4 @@ SignalWeave targets BasicProp 1.3 behavioral parity using the local reference JA
 - `docs/product-lines.md`: Classic/Modern product-line and release strategy
 - `docs/modern-ui-todo.md`: Modern-specific backlog for porting analysis and utility workflows
 - `docs/modern-ui-guide.md`: step-by-step guide for loading, training, testing, analyzing, and saving Modern projects
+- `docs/modern-user-manual.md`: full Modern reference manual covering every section, setting, and workflow surface

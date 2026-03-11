@@ -2,6 +2,8 @@
 
 This guide covers the current `Modern` desktop workflow in SignalWeave.
 
+If you need the full reference manual for every section and setting, use [modern-user-manual.md](/home/simon/signalweave/docs/modern-user-manual.md).
+
 ## What Modern is
 
 `Modern` is the project-file-first SignalWeave desktop line:
