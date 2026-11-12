@@ -28,6 +28,9 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Restore browser workloads
+        run: dotnet workload restore SignalWeave.sln
+
       - name: Restore
         run: dotnet restore SignalWeave.sln
 
